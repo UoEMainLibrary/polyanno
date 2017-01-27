@@ -1,0 +1,129 @@
+
+#polyanno_map{
+	height: 500px;
+}
+
+
+#polyanno-top-bar {
+	/*height: 5%;*/
+	background-color: grey;
+	border-radius: 5px;
+	position: relative;
+	/*z-index: -1000;*/
+}
+
+.popover {
+	z-index: 100000;
+}
+
+
+.dragondrop-handlebar {
+	position: relative;
+	/*z-index: -10000;*/
+}
+.textEditorMainBox {
+	position: relative;
+	z-index: 10000;
+}
+
+
+
+.polyanno-language-buttons {
+	display: inline-block;
+}
+
+.polyanno-other-button {
+	display: inline-block;
+}
+
+#polyanno-bar-other-buttons {
+	background-color: grey;
+}
+
+.polyanno-add-keyboard {
+	background-color: grey;
+}
+
+.polyannoMinEditor {
+	display: inline-block;
+}
+
+
+.annoPopup {
+  	border: 1px solid grey;
+	border-radius: 5px;
+}
+
+.textEditorPopup {
+	background-color: white;
+	z-index: 1000;
+}
+.popupBoxHandlebar {
+  background-color: buttonface;
+  border-radius: 5px 5px 0px 0px;
+}
+
+.polyanno-image {
+  background-color: buttonface;
+  border-radius: 5px;	
+}
+
+.polyanno-options-row {
+  background-color: grey;
+  padding: 5px;
+  font-size: 0.875em;
+  display: none;
+}
+
+.addNewContainer {
+	padding: 5%;
+}
+
+.newAnnotation {
+	width: 100%;
+}
+
+.pTextDisplay{
+	padding: 5%;
+}
+
+.polyanno-anno-well {
+	text-align: center;
+}
+
+.editorTitle {
+	font-size: 1.5em;
+	color: white;
+	text-align: center;
+}
+
+
+
+
+.openTranscriptionChildrenPopup {
+	background-color:yellow;
+	font-weight: normal;
+	color: black;
+}
+
+
+
+
+.polyanno-carousel-controls {
+	padding: 2%;
+}
+
+
+
+.poly-ed-editors-change {
+	width: 100%;
+}
+
+#imageViewer {
+  -webkit-user-select: none;  
+  -moz-user-select: none;    
+  -ms-user-select: none;      
+  user-select: none;
+}
+
+
