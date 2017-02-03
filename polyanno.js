@@ -1797,7 +1797,7 @@ var polyanno_setup = function(opts) {
   var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
-  document.getElementById("polyanno-page-body").addClass("atu-keyboard-parent");
+  $("#polyanno-page-body").addClass("atu-keyboard-parent");
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
   //$(".polyanno-image-box").find("") find handlebar and remove close button
