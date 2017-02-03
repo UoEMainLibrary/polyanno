@@ -1794,7 +1794,7 @@ var polyanno_setup = function(opts) {
     };
     
   };
-  var polyanno_image_title_HTML = "<span>"+polyanno_image_title()+"</span>";
+  var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
   document.getElementById("polyanno-page-body").addClass("atu-keyboard-parent");
