@@ -1781,12 +1781,20 @@ var polyanno_setup = function(opts) {
       return e.label == "Repro Title"; 
     }
     else {
-      return [{"value":" "}];
+      return false;
     };
   });
 
-  var polyanno_image_title = polyanno_metadata_title_search[0].value;
-  var polyanno_image_title_HTML = "<span>"+polyanno_image_title+"</span>";
+  var polyanno_image_title = function() {
+    if (!isUseless(polyanno_metadata_title_search)) {
+      return polyanno_metadata_title_search[0].value;
+    }
+    else {
+      return " ";
+    };
+    
+  };
+  var polyanno_image_title_HTML = "<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
   document.getElementById("polyanno-page-body").addClass("atu-keyboard-parent");
