@@ -1776,12 +1776,14 @@ var polyanno_setup = function(opts) {
   else {  polyanno_setup_voting()  };
 
   //Inserting a metadate title ...
-  var polyanno_metadata_title_search;
-  if (!isUseless(imageSelectedMetadata)) {
-    polyanno_metadata_title_search = $.grep(imageSelectedMetadata, function(e){ 
+  var polyanno_metadata_title_search = $.grep(imageSelectedMetadata, function(e){ 
+    if (!isUseless(e.label)) {
       return e.label == "Repro Title"; 
-    });
-  };
+    }
+    else {
+      return [{"value":" "}];
+    };
+  });
 
   var polyanno_image_title = polyanno_metadata_title_search[0].value;
   var polyanno_image_title_HTML = "<span>"+polyanno_image_title+"</span>";
