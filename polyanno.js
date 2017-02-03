@@ -15,6 +15,7 @@ var polyanno_transcription = true;
 var polyanno_translation = true;
 
 var imageSelected; //info.json format URL
+var imageSelectedMetadata = []; ////???
 
 var vectorSelected = ""; //API URL
 var vectorSelectedParent; //API URL
@@ -470,10 +471,9 @@ var lookupTargetChildren = function(target, baseURL) {
     success: 
       function (data) {
         childTexts = data.list;
+        alert("searching annos by "+aSearch+" and returned with "+encodeURIComponent(childTexts));
       }
   });
-
-  alert("searching annos by "+aSearch+" and returned with "+encodeURIComponent(childTexts));
 
   if ((isUseless(childTexts))||(isUseless(childTexts[0]))) {
     return false;
@@ -1328,7 +1328,7 @@ var polyanno_leaflet_basic_setup = function() {
   polyanno_map.addLayer(baseLayer);
 
   polyanno_map.addLayer(allDrawnItems);
-  new L.Control.Draw(controlOptions).addTo(polyanno_map);
+  new L.Control.Draw(controlOptions).addTo(polyanno_map); //
 
   polyanno_map.whenReady(function(){
     mapset = true;
@@ -1366,7 +1366,7 @@ var polyanno_load_existing_vectors = function() {
 };
 
 var polyanno_creating_vec = function() {
-  polyanno_map.on('draw:created', function(evt) {
+  polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
 
     var layer = evt.layer;
     var shape = layer.toGeoJSON();
@@ -1775,8 +1775,14 @@ var polyanno_setup = function(opts) {
   if (opts.voting == false) {  polyanno_voting = false;  }
   else {  polyanno_setup_voting()  };
 
-  //Inserting a metadate title ...Need to put in checks in case it doesn't exist
-  var polyanno_metadata_title_search = $.grep(imageSelectedMetadata, function(e){ return e.label == "Repro Title"; });
+  //Inserting a metadate title ...
+  var polyanno_metadata_title_search;
+  if (!isUseless(imageSelectedMetadata)) {
+    polyanno_metadata_title_search = $.grep(imageSelectedMetadata, function(e){ 
+      return e.label == "Repro Title"; 
+    });
+  };
+
   var polyanno_image_title = polyanno_metadata_title_search[0].value;
   var polyanno_image_title_HTML = "<span>"+polyanno_image_title+"</span>";
 
