@@ -1310,11 +1310,13 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
   };
 });
 
+
+
 /////////LEAFLET
 
 var polyanno_leaflet_basic_setup = function() {
   popupVectorMenu = L.popup()
-      .setContent(popupVectorMenuHTML; /////
+      .setContent(popupVectorMenuHTML); /////
 
   polyanno_map = L.map('polyanno_map');
   polyanno_map.options.crs = L.CRS.Simple;
@@ -1766,6 +1768,43 @@ var polyanno_setup_editor_events = function() {
 
 };
 
+/////LUNA IIIF DATA
+
+var polyanno_findLUNAimage_title = function(IIIFmetadata) {
+  var searchingIIIF = $.grep(IIIFMetadata, function(e){ 
+      if (!isUseless(e.label)) {
+        return e.label == "Repro Title"; 
+      }
+      else {
+        return false;
+      };
+  });
+    if (!isUseless(polyanno_metadata_title_search)) {
+      return searchingIIIF[0].value;
+    }
+    else {
+      return " ";
+    };
+};
+var polyanno_findLUNAimage_description = function(IIIFmetadata) {
+  var searchingIIIF = $.grep(IIIFMetadata, function(e){ 
+      if (!isUseless(e.label)) {
+        return e.label == "Description"; 
+      }
+      else {
+        return false;
+      };
+  });
+    if (!isUseless(polyanno_metadata_title_search)) {
+      return searchingIIIF[0].value;
+    }
+    else {
+      return " ";
+    };
+};
+
+////SETUP
+
 var polyanno_setup = function(opts) {
 
   if (opts.minimising == false) {  polyanno_minimising = false;  };
@@ -1780,25 +1819,8 @@ var polyanno_setup = function(opts) {
   if (opts.voting == false) {  polyanno_voting = false;  }
   else {  polyanno_setup_voting()  };
 
-  //Inserting a metadate title ...
-  var polyanno_metadata_title_search = $.grep(imageSelectedMetadata, function(e){ 
-    if (!isUseless(e.label)) {
-      return e.label == "Repro Title"; 
-    }
-    else {
-      return false;
-    };
-  });
 
-  var polyanno_image_title = function() {
-    if (!isUseless(polyanno_metadata_title_search)) {
-      return polyanno_metadata_title_search[0].value;
-    }
-    else {
-      return " ";
-    };
-    
-  };
+  var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
   var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
