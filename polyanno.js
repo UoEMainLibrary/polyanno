@@ -1473,9 +1473,10 @@ var polyanno_vector_edit_setup = function() {
 var polyanno_image_popovers_setup = function() {
   polyanno_map.on('popupopen', function() {
 
-    alert("the popup has opened.");
+    ///this happens for vectors old and new
 
-    $('.openTranscriptionMenu').one("click", function(event) {
+    $('.openTranscriptionMenu').on("click", function(event) {
+      //this is only triggered for newly made vectors???
       alert("acknowledging the click");
       checkEditorsOpen("vector", "transcription");
       polyanno_map.closePopup();
