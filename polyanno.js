@@ -987,6 +987,7 @@ var findNewTextData = function(editorString) {
   var textData = {text: newText, metadata: imageSelectedMetadata, target: []}; ////
 
   if (targetType.includes("vector") == true) {
+    alert("the vector selected is "+vectorSelected);
     textData.target.push({id: vectorSelected, format: "image/SVG"});
   };
 
@@ -1010,7 +1011,7 @@ var addAnnotation = function(thisEditor){
   var createdText;
   var createdAnno;
   var theData = findNewTextData(editorString);
-  alert("data found is "+JSON.stringify(theData));
+  alert("posting to "+findBaseURL()+" is "+JSON.stringify(theData));
 
   $.ajax({
     type: "POST",
@@ -1088,6 +1089,7 @@ var openNewEditor = function(fromType) {
     polyanno_text_selected = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
     polyanno_text_selectedParent = checkFor(polyanno_text_selected, "parent");
     if ( polyanno_text_selected != false ) { setpolyanno_text_selectedID(polyanno_text_selected) };
+    alert("going to open up new editor for a vector with textSelected "+polyanno_text_selected);
   }
   else if (fromType == "text") {
     polyanno_text_selected = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
@@ -1472,6 +1474,7 @@ var polyanno_image_popovers_setup = function() {
   polyanno_map.on('popupopen', function() {
 
     $('.openTranscriptionMenu').one("click", function(event) {
+      alert("acknowledging the click");
       checkEditorsOpen("vector", "transcription");
       polyanno_map.closePopup();
     });
