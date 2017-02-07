@@ -122,15 +122,13 @@ var polyanno_top_bar_HTML = `
 
 `;
 
-var popupVectorMenuHTML = function() {
-  var openHTML = "<div class='popupAnnoMenu'>";
-  var transcriptionOpenHTML = "<a class='openTranscriptionMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSCRIPTION</a><br>";
-  var translationOpenHTML = "<a class='openTranslationMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSLATION</a>";
-  var endHTML = "</div>";
-  var totalHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
-  /////this as a function instead of one line string allows for flexibility during development but may fix later 
-  return totalHTML;
-};
+
+var openHTML = "<div class='popupAnnoMenu'>";
+var transcriptionOpenHTML = "<a class='openTranscriptionMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSCRIPTION</a><br>";
+var translationOpenHTML = "<a class='openTranslationMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSLATION</a>";
+var endHTML = "</div>";
+var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
+
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
@@ -1316,7 +1314,7 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
 var polyanno_leaflet_basic_setup = function() {
   popupVectorMenu = L.popup()
-      .setContent(popupVectorMenuHTML()); /////
+      .setContent(popupVectorMenuHTML; /////
 
   polyanno_map = L.map('polyanno_map');
   polyanno_map.options.crs = L.CRS.Simple;
