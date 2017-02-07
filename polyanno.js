@@ -1780,7 +1780,7 @@ var polyanno_findLUNAimage_title = function(IIIFmetadata) {
       };
   });
     if (!isUseless(polyanno_searchingIIIF)) {
-      return searchingIIIF[0].value;
+      return polyanno_searchingIIIF[0].value;
     }
     else {
       return " ";
@@ -1796,7 +1796,7 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
       };
   });
     if (!isUseless(polyanno_searchingIIIF)) {
-      return searchingIIIF[0].value;
+      return polyanno_searchingIIIF[0].value;
     }
     else {
       return " ";
