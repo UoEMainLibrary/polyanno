@@ -1771,7 +1771,7 @@ var polyanno_setup_editor_events = function() {
 /////LUNA IIIF DATA
 
 var polyanno_findLUNAimage_title = function(IIIFmetadata) {
-  var searchingIIIF = $.grep(IIIFMetadata, function(e){ 
+  var polyanno_searchingIIIF = $.grep(IIIFmetadata, function(e){ 
       if (!isUseless(e.label)) {
         return e.label == "Repro Title"; 
       }
@@ -1779,7 +1779,7 @@ var polyanno_findLUNAimage_title = function(IIIFmetadata) {
         return false;
       };
   });
-    if (!isUseless(polyanno_metadata_title_search)) {
+    if (!isUseless(polyanno_searchingIIIF)) {
       return searchingIIIF[0].value;
     }
     else {
@@ -1787,7 +1787,7 @@ var polyanno_findLUNAimage_title = function(IIIFmetadata) {
     };
 };
 var polyanno_findLUNAimage_description = function(IIIFmetadata) {
-  var searchingIIIF = $.grep(IIIFMetadata, function(e){ 
+  var polyanno_searchingIIIF = $.grep(IIIFmetadata, function(e){ 
       if (!isUseless(e.label)) {
         return e.label == "Description"; 
       }
@@ -1795,7 +1795,7 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
         return false;
       };
   });
-    if (!isUseless(polyanno_metadata_title_search)) {
+    if (!isUseless(polyanno_searchingIIIF)) {
       return searchingIIIF[0].value;
     }
     else {
