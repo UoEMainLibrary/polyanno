@@ -1473,6 +1473,8 @@ var polyanno_vector_edit_setup = function() {
 var polyanno_image_popovers_setup = function() {
   polyanno_map.on('popupopen', function() {
 
+    alert("the popup has opened.");
+
     $('.openTranscriptionMenu').one("click", function(event) {
       alert("acknowledging the click");
       checkEditorsOpen("vector", "transcription");
