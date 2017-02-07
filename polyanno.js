@@ -486,6 +486,7 @@ var lookupTargetChildren = function(target, baseURL) {
     });
 
     var theSearch = baseURL.concat("ids/"+encodeURIComponent(ids)+"/target/"+encodeURIComponent(target));
+    //////
     var theDocs;
     $.ajax({
       type: "GET",
