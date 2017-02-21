@@ -124,8 +124,12 @@ var polyanno_top_bar_HTML = `
 
 
 var openHTML = "<div class='popupAnnoMenu'>";
-var transcriptionOpenHTML = "<a class='openTranscriptionMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSCRIPTION</a><br>";
-var translationOpenHTML = "<a class='openTranslationMenu ui-btn ui-corner-all ui-shadow ui-btn-inline'>TRANSLATION</a>";
+var transcriptionOpenHTML = `<a class="openTranscriptionMenu btn btn-default" onclick="checkEditorsOpen('vector', 'transcription');
+      polyanno_map.closePopup();">
+      TRANSCRIPTION
+      </a><br>`;
+var translationOpenHTML = `<a class="openTranslationMenu btn btn-default" onclick="checkEditorsOpen('vector', 'translation');
+      polyanno_map.closePopup();">TRANSLATION</a>`;
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
 
@@ -169,8 +173,8 @@ var popupVectorParentMenuHTML = `
   <div id="popupVectorParentMenu" class="popupAnnoMenu">
     <div data-role="main" class="ui-content">
       <p>Please find that area in the relevant parent text</p>
-      <a class="openTranscriptionMenuParent editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">PARENT TRANSCRIPTION</a><br>
-      <a class="openTranslationMenuParent editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">PARENT TRANSLATION</a>
+      <a class="openTranscriptionMenuParent editorPopover btn btn-default">PARENT TRANSCRIPTION</a><br>
+      <a class="openTranslationMenuParent editorPopover btn btn-default">PARENT TRANSLATION</a>
     </div>
   </div>
 `;
@@ -179,7 +183,7 @@ var popupTranscriptionNewMenuHTML = `
   <!-- New Transcription Text Select Popup Menu -->
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
      <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">ADD NEW TRANSCRIPTION</a></br>
+        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">ADD NEW TRANSCRIPTION</a></br>
         <a class="polyanno-add-discuss">Discuss</a>
      </div>
   </div>
@@ -199,7 +203,7 @@ var popupTranscriptionChildrenMenuHTML = `
   <!-- Children Transcription Text Select Popup Menu-->
   <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuOld editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">VIEW OTHER TRANSCRIPTIONS</a>
+        <a class="openTranscriptionMenuOld editorPopover btn btn-default">VIEW OTHER TRANSCRIPTIONS</a>
         <a class="polyanno-add-discuss">Discuss</a>
       </div>
   </div>
@@ -208,7 +212,7 @@ var popupTranslationChildrenMenuHTML = `
   <!-- Children Translation Text Select Popup Menu -->
   <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuOld editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">VIEW OTHER TRANSLATIONS</a>
+        <a class="openTranslationMenuOld editorPopover btn btn-default">VIEW OTHER TRANSLATIONS</a>
         <a class="polyanno-add-discuss">Discuss</a>
       </div>
   </div>
@@ -682,7 +686,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     }
   });
 
-  $('.openTranscriptionMenuNew').one("click", function(event) {
+  $('.openTranscriptionMenuNew').on("click", function(event) {
     insertSpanDivs();
     polyanno_text_selectedParent = polyanno_urls.transcription.concat(theParent);
     newAnnotationFragment(polyanno_urls.transcription);
@@ -1028,6 +1032,8 @@ var addAnnotation = function(thisEditor){
     },
     "target": theData.target
   };
+
+  //////**** the createdText variable is not saving - synchronicity problems.... ****
 
   alert("the anno to be added is "+JSON.stringify(annoData));
 
@@ -1466,28 +1472,14 @@ var polyanno_vector_edit_setup = function() {
 
   //////update DB whenever vector is deleted
   allDrawnItems.on('remove', function(vec){
+    //////******
+    var shape = vec.layer.toGeoJSON();
 
   });
 };
 
+
 var polyanno_image_popovers_setup = function() {
-  polyanno_map.on('popupopen', function() {
-
-    ///this happens for vectors old and new
-
-    $('.openTranscriptionMenu').on("click", function(event) {
-      //this is only triggered for newly made vectors???
-      alert("acknowledging the click");
-      checkEditorsOpen("vector", "transcription");
-      polyanno_map.closePopup();
-    });
-
-    $('.openTranslationMenu').one("click", function(event) {
-      checkEditorsOpen("vector", "translation");
-      polyanno_map.closePopup();
-    });
-
-  });
 
   /////maybe change to be more specific to the drawing?
   /*
@@ -1820,7 +1812,7 @@ var polyanno_setup = function(opts) {
   else {  polyanno_setup_voting()  };
 
 
-  var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
+  //var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
   var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
