@@ -808,7 +808,7 @@ var setNewTextVariables = function(selection, classCheck) {
 ///// VIEWER WINDOWS
 
 var setChildrenArray = function(callback_function) {  
-  alert("the target selected is "+JSON.stringify(targetSelected));
+  alert("the target for the children array selected is "+JSON.stringify(targetSelected));
   childrenArray = lookupTargetChildren(targetSelected[0], findBaseURL()); 
 //  alert("the childrenArray is "+JSON.stringify(childrenArray));
   if (!isUseless(callback_function)) { callback_function(); };
