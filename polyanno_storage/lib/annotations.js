@@ -172,13 +172,15 @@ exports.getByTarget = function(req, res) {
 exports.getVectorsByTarget = function(req, res) {
 
     var targetID = req.params.target;
-    //console.log(targetID);
+    console.log("looking for target ID of "+targetID);
     /////change search
     var theSearch = setup.anno_model
     .where('target.id', targetID);
     //.where('body.id', '/.*vectors.*/' );
 
     theSearch.exec(function(err, texts){
+
+        console.log("running the search and finding "+texts);
 
         if (err) {
             console.log("in getVectorsByTarget - "+err);
@@ -190,6 +192,7 @@ exports.getVectorsByTarget = function(req, res) {
             texts.forEach(function(doc){
                 ids.push(doc);
             });
+            console.log("the ids founds are: "+ids);
             res.json({"list": ids}); 
         };
     });

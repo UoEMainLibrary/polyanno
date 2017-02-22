@@ -1033,7 +1033,7 @@ var polyanno_add_annotationdata = function(thisAnnoData) {
 
   if (  targetType.includes("vector") && (  isUseless(childrenArray[0]) )) {
     var polyanno_new_target_data = {};
-    targetData[polyanno_text_type_selected] = thisAnnoData.body.id;
+    polyanno_new_target_data[polyanno_text_type_selected] = thisAnnoData.body.id;
 
     alert("updating the vector "+vectorSelected+" with "+JSON.stringify(polyanno_new_target_data));
 

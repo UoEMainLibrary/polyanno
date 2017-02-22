@@ -10,7 +10,7 @@ exports.anno_model    = require('./newAnno');
 var hostname = "http://localhost:";
 var thisport = 8080;
 exports.applicationport = thisport;
-exports.databaseport = "mongodb://localhost:27017/testMongoDB";
+exports.databaseport = "mongodb://localhost:27017/demoData";
 
 
 var website_address = hostname + thisport.toString(); 
