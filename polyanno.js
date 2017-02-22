@@ -1007,12 +1007,46 @@ var findNewTextData = function(editorString) {
   
 };
 
+var polyanno_add_annotationdata = function(thisAnnoData) {
+
+  alert("the anno to be added is "+JSON.stringify(thisAnnoData));
+
+  $.ajax({
+    type: "POST",
+    url: polyanno_urls.annotation,
+    async: false,
+    data: thisAnnoData,
+    success: 
+      function (data) {
+        createdAnno = data.url;
+      }
+  });
+
+  /////double check synchronicity of this - what is stopping empty brackets being sent?
+
+  //if the annotation is a child then it is targeting its own type, so update parent
+  if (targetType.includes(polyanno_text_type_selected)) {
+
+    var polyanno_new_target_data = {children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
+    updateAnno(polyanno_text_selectedParent, polyanno_new_target_data);
+  };
+
+  if (  targetType.includes("vector") && (  isUseless(childrenArray[0]) )) {
+    var polyanno_new_target_data = {};
+    targetData[polyanno_text_type_selected] = thisAnnoData.body.id;
+
+    alert("updating the vector "+vectorSelected+" with "+JSON.stringify(polyanno_new_target_data));
+
+    updateAnno(vectorSelected, polyanno_new_target_data);
+  };
+
+};
+
 var addAnnotation = function(thisEditor){
 
   var editorString = "#" + thisEditor;
-  var createdText;
-  var createdAnno;
   var theData = findNewTextData(editorString);
+
   alert("posting to "+findBaseURL()+" is "+JSON.stringify(theData));
 
   $.ajax({
@@ -1022,45 +1056,24 @@ var addAnnotation = function(thisEditor){
     data: theData,
     success: 
       function (data) {
-        createdText = data.url;
+
+        var thisAnnoData = { 
+          "body": {
+            "id" : data.url
+          },
+          "target": theData.target
+        };
+
+        polyanno_add_annotationdata(thisAnnoData);
       }
   });
 
-  var annoData = { 
-    "body": {
-      "id" : createdText
-    },
-    "target": theData.target
-  };
-
-  //////**** the createdText variable is not saving - synchronicity problems.... ****
-
-  alert("the anno to be added is "+JSON.stringify(annoData));
-
-  $.ajax({
-    type: "POST",
-    url: polyanno_urls.annotation,
-    async: false,
-    data: annoData,
-    success: 
-      function (data) {
-        createdAnno = data.url;
-      }
-  });
+////****synchronicity checks needed!!
 
   $(editorString).find(".newAnnotation").val("");  
-  if (targetType.includes(polyanno_text_type_selected)) {
-    var targetData = {children: [{id: polyanno_text_selectedID, fragments: [{id: createdText}] }]};
-    updateAnno(polyanno_text_selectedParent, targetData);
-  };
-  if (  targetType.includes("vector") && (  isUseless(childrenArray[0]) )) {
-    var targetData = {};
-    targetData[polyanno_text_type_selected] = createdText;
-    alert("updating the vector "+vectorSelected+" with "+JSON.stringify(targetData));
-    updateAnno(vectorSelected, targetData);
-  };
 
 //  polyanno_text_selected = createdText; //////only if there was none before??
+
   closeEditorMenu(thisEditor);
   if (  targetType.includes("vector") ) { openNewEditor("vector") }
   else { openNewEditor("text")  };
