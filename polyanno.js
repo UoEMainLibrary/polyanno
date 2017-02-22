@@ -900,6 +900,7 @@ var updateEditor = function(popupIDstring) {
   $(popupIDstring).find(".editorTitle").html(returnTextIcon(polyanno_text_type_selected));
   canLink(popupIDstring);
   setChildrenArray();
+  alert("at this point the textSelected is "+polyanno_text_selected);
   addCarouselItems(popupIDstring);
   $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text"); 
 };
@@ -1106,7 +1107,7 @@ var openNewEditor = function(fromType) {
     polyanno_text_selected = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
     polyanno_text_selectedParent = checkFor(polyanno_text_selected, "parent");
     if ( polyanno_text_selected != false ) { setpolyanno_text_selectedID(polyanno_text_selected) };
-    alert("going to open up new editor for a vector with textSelected "+polyanno_text_selected);
+    alert("going to open up new editor for a vector with textSelected "+polyanno_text_selected+" of type "+typeof(polyanno_text_selected));
   }
   else if (fromType == "text") {
     polyanno_text_selected = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
