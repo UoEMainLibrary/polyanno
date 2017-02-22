@@ -872,7 +872,7 @@ var canVoteAdd = function(popupIDstring, theVectorParent) {
 
 var addCarouselItems = function(popupIDstring) {
   var theVectorParent = checkFor(vectorSelected, "parent");
-  if (  isUseless(childrenArray[0]) && isUseless(theVectorParent) ) {
+  if (( isUseless(childrenArray) || isUseless(childrenArray[0]) ) && isUseless(theVectorParent) ) {
     $(popupIDstring).find(".editorCarouselWrapper").append(addNewAnnoHTML);
     $(popupIDstring).find(".newAnnotation").attr("id", "addBox"+popupIDstring);
     $(popupIDstring).find(".addNewItem").addClass("active");
