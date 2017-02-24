@@ -1073,7 +1073,7 @@ var polyanno_setting_global_variables = function(fromType) {
   else if (fromType == "refresh") {
     var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
     var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
-    if (does_text_have_parent != false) && (does_have_vector_target != false) {
+    if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
@@ -1081,14 +1081,14 @@ var polyanno_setting_global_variables = function(fromType) {
       return targetSelected = [theHashHere, does_have_vector_target];
       targetType = "vector " + polyanno_text_type_selected;
     }
-    else if (does_text_have_parent != false) && (does_have_vector_target == false) {
+    else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
 
       return targetSelected = [theHashHere];
       targetType = polyanno_text_type_selected;
     }
-    else if (does_text_have_parent == false) && (does_have_vector_target != false) {
+    else if ((does_text_have_parent == false) && (does_have_vector_target != false)) {
       return targetSelected = [does_have_vector_target];
       targetType = "vector";
     };
