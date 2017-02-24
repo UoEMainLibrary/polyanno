@@ -20,7 +20,9 @@ var vectorSelected = ""; //API URL
 var vectorSelectedParent; //API URL
 var currentCoords;
 
-var polyanno_text_selected = ""; //API URL
+var polyanno_text_selected = ""; //API URL of the image currently being displayed
+
+//target variables
 var polyanno_text_selectedParent = ""; //API URL
 var polyanno_text_selectedID; //DOM id
 var polyanno_text_selectedHash; //parent API URL + ID
@@ -634,7 +636,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     newAnnotationFragment(polyanno_urls.transcription);
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
-    setTargets(openEditorMenu);
+    polyanno_set_and_open("text");
     $(theTextIDstring).popover('hide');    
   });
 
@@ -783,16 +785,6 @@ var polyannoSetSiblingArray = function(callback_function) {
 var polyanno_can_vote_add = function(popupIDstring) {
   if ( targetType.includes(polyanno_text_type_selected) ) {
     $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
-
-    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(event){
-      var this_add_new_row = $(popupIDstring).find(".polyanno-add-new-row");
-      if (this_add_new_row.css("display") == "none") {
-        this_add_new_row.css("display", "block");
-      }
-      else {
-        this_add_new_row.css("display", "none");
-      };
-    });
 
     //enable listening event for voting display   
     $(popupIDstring).on("mouseover", ".polyanno-text-display", function(event){
@@ -1111,7 +1103,7 @@ var polyanno_setting_global_variables = function(fromType) {
       targetType = "vector";
     };
   };
-  //setTargets(openEditorMenu);
+
 };
 
 var polyanno_set_and_open = function(fromType) {
@@ -1726,7 +1718,6 @@ var polyanno_setup_editor_events = function() {
   $('#polyanno-page-body').on("click", '.addAnnotationSubmit', function(event) {
     var thisEditor = $(event.target).closest(".annoPopup").attr("id"); 
     settingEditorVars(thisEditor);
-    ////
     addAnnotation(thisEditor);
   });
 
@@ -1734,29 +1725,27 @@ var polyanno_setup_editor_events = function() {
     $(event.target).closest(".popover").popover("hide"); ///////
   });
 
-
-  $('#polyanno-page-body').on('slid.bs.carousel', '.editorCarousel', function(event) {
-
-    var currentSlideID = $(event.target).find(".active").find(".content-area").attr("id");
-    var thisEditor = $(event.target).closest(".annoPopup").attr("id"); 
-    settingEditorVars(thisEditor);
-    if (!isUseless(currentSlideID))  {  textSelected = findBaseURL() + currentSlideID;  };
-
+  $('#polyanno-page-body').on("click", ".polyanno-add-new-toggle-row", function(event){
+    var this_add_new_row = $(this).closest(".textEditorPopup").find(".polyanno-add-new-row");
+    if (this_add_new_row.css("display") == "none") {
+      this_add_new_row.css("display", "block");
+    }
+    else {
+      this_add_new_row.css("display", "none");
+    };
   });
 
-  $('#polyanno-page-body').on("click", ".addNewBtn", function(event){
-    $(event.target).closest(".textEditorPopup").find(".editorCarousel").carousel(0);
+  $('#polyanno-page-body').on("click", ".polyanno-alternatives-toggle-row", function(event){
+    var this_alternatives_row = $(this).closest(".textEditorPopup").find(".polyanno-list-alternatives-row");
+    if (this_alternatives_row.css("display") == "none") {
+      this_alternatives_row.css("display", "block");
+    }
+    else {
+      this_alternatives_row.css("display", "none");
+    };
   });
 
-  $('#polyanno-page-body').on("click", ".polyanno-carousel-next", function(event){
-    $(event.target).closest(".textEditorPopup").find(".editorCarousel").carousel("next");
-  });
-
-  $('#polyanno-page-body').on("click", ".polyanno-carousel-prev", function(event){
-    $(event.target).closest(".textEditorPopup").find(".editorCarousel").carousel("prev");
-  });
-
-  $('#polyanno-page-body').on("click", ".polyanno_linkBtn", function(){
+  $('#polyanno-page-body').on("click", ".polyannoLinkVectorBtn", function(){
     var thisEditor = $(event.target).closest(".textEditorPopup").attr("id"); 
     settingEditorVars(thisEditor);
     selectingVector = polyanno_siblingArray;
