@@ -10,7 +10,6 @@ var polyanno_minimising = true;
 
 var polyanno_current_username;
 
-var polyanno_voting = true;
 var polyanno_transcription = true;
 var polyanno_translation = true;
 
@@ -31,7 +30,7 @@ var polyanno_text_type_selected = "";
 //URLs
 var targetSelected; //array
 var targetType = ""; 
-var childrenArray;
+var polyanno_siblingArray;
 
 ///[editor, vector, span] colours
 var polyanno_highlight_colours_array = ["#EC0028","#EC0028","#EC0028"];
@@ -136,24 +135,15 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
-var addNewAnnoHTML = `<div class='item addNewItem row'> 
-                        <div class='addNewContainer col-md-12'> 
-                          <textarea id='testingKeys' class='newAnnotation row' placeholder='Add new annotation text here'></textarea><br>
-                          <button type='button' class='btn addAnnotationSubmit row'>Submit <span class='glyphicon glyphicon-ok'></span></button>  
-                        </div> 
-                      </div>`;
-var voteButtonsHTML = `<div class='row polyanno-below-anno-well' >
-                        <button type='button' class='btn btn-default voteBtn votingUpButton'>
+var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
+                        <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
                           <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
                         </button>
-                        <button type='button' class='btn btn-default votesUpBadge'>
+                        <button type='button' class='btn btn-default polyannoVotesUpBadge'>
                           <span class='badge'></span>
                         </button>
                       </div>`;
 var closeButtonHTML = `<span class='closePopoverMenuBtn glyphicon glyphicon-remove'></span>`;
-var linkButtonHTML = `<button type='button' class='btn linkBtn'>
-                        <span class="glyphicon glyphicon-picture"></span>
-                      </button>`;
 
 var transcriptionIconHTML = `<span class='glyphicon glyphicon-edit'></span>
                             <span>Transcription</span>`;
@@ -230,119 +220,73 @@ var polyannoEditorHandlebarHTML = `
           <span class="caret"></span>
       </button>
 `;
-var polyannoEditorHTML = `
+var polyannoEditorHTML_partone = `
 
-    <div class="textEditorMainBox row ui-content">
+  <div class="textEditorMainBox row ui-content">
     <div class="col-md-12">
-
-      <div class="row polyanno-options-row">
-        <div class="btn-group polyanno-options-buttons" role="group" aria-label="options_buttons">
-          <button type="button" class="btn btn-success addNewBtn">
-            <span class="glyphicon glyphicon-pencil" ></span> NEW
-          </button>
-          <button class="btn btn-default polyanno-add-keyboard" type="button"><span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span></button> <!--add keyboard characters-->
-          <button class="btn btn-default polyanno-metadata-btn"><span class="glyphicon glyphicon-tags"></span></button>
-          <button class="btn btn-default polyanno-export-text" type="button"><span class="glyphicon glyphicon-save"></span></button> <!--export as txt or PDF??-->
-          <button class="btn btn-default polyanno-social" type="button"><span class="glyphicon glyphicon-share"></span></button> <!-- social media sharing-->
-          <button class="btn btn-default polyanno-report" type="button"><span class="glyphicon glyphicon-exclamation-sign"></span><!--report inappropriate content--></button>
-        </div>
-      </div>
-
-        <div class="row polyanno-carousel-controls">
-        <button class="polyanno-carousel-prev col-md-3" role="button" >
-            <span class="glyphicon glyphicon-chevron-left"></span>
-        </button>
-        <div class="col-md-6 polyanno-mid-carousel-controls"></div>
-        <button class="polyanno-carousel-next col-md-3" role="button">
-            <span class="glyphicon glyphicon-chevron-right"></span>
-        </button>
-        </div>
-
-      <div class="row editorCarousel carousel slide" data-interval="false">
-        <!-- Wrapper for slides -->
-        <div class="editorCarouselWrapper col-md-12 carousel-inner" role="listbox">
-            <!--appended slides go here-->
-        </div>
-      </div>
-
-      <div class="row polyanno-below-anno-display">
-
-      </div>
-
-    </div>
-    </div>
 
 `;
 
-var polyannoEditorHTMLFull = `
+var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEditorHTML_options_parttwo;
 
-  <!-- EDITOR BOX -->
-  <div id="theEditor" class="row textEditorBox">
-  <div class="col-md-12">
+var polyannoEditorHTML_options_partone = `<div class="row polyanno-options-row">`;
+var polyannoEditorHTML_options_parttwo = `</div>`;
 
-    <div class="row popupBoxHandlebar polyanno-colour-change ui-draggable-handle">
-      <button class="btn col-md-1 polyanno-colour-change">
-        <span class="closePopupBtn glyphicon glyphicon-remove"></span>
-      </button>
-      <button class="btn col-md-1 polyanno-colour-change polyanno-popup-min">
-        <span> _ </span>
-      </button>
-      <div class="col-md-7">
-        <div class="editorTitle"></div>
+var polyannoEditorHTML_partfinal = `
+      <div class="row polyanno-vector-link-row">
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoLinkVectorBtn'>
+          Draw a Shape For This Text On the Image!
+        </button> 
       </div>
-      <button class="btn col-md-1 polyanno-colour-change polyanno-favourite">
-        <span class="glyphicon glyphicon-star-empty"></span>
-      </button>
-      <button class="btn polyanno-options-dropdown-toggle polyanno-colour-change col-md-2" type="button" >
-          <span class="glyphicon glyphicon-cog"></span>
-          <span class="caret"></span>
-      </button>
-    </div>
 
-
-    <div class="textEditorMainBox row ui-content">
-    <div class="col-md-12">
-
-      <div class="row polyanno-options-row">
-        <div class="btn-group polyanno-options-buttons" role="group" aria-label="options_buttons">
-          <button type="button" class="btn btn-success addNewBtn">
-            <span class="glyphicon glyphicon-pencil" ></span> NEW
+      <div class="row polyanno-top-voted polyanno-text-display-row">
+      
+        <div class='polyanno-voting-overlay' >
+          <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
+            <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
           </button>
-          <button class="btn btn-default polyanno-add-keyboard" type="button"><span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span></button> <!--add keyboard characters-->
-          <button class="btn btn-default polyanno-metadata-btn"><span class="glyphicon glyphicon-tags"></span></button>
-          <button class="btn btn-default polyanno-export-text" type="button"><span class="glyphicon glyphicon-save"></span></button> <!--export as txt or PDF??-->
-          <button class="btn btn-default polyanno-social" type="button"><span class="glyphicon glyphicon-share"></span></button> <!-- social media sharing-->
-          <button class="btn btn-default polyanno-report" type="button"><span class="glyphicon glyphicon-exclamation-sign"></span><!--report inappropriate content--></button>
+          <button type='button' class='btn btn-default polyannoVotesUpBadge'>
+            <span class='badge'></span>
+          </button>
         </div>
       </div>
 
-        <div class="row polyanno-carousel-controls">
-        <button class="polyanno-carousel-prev col-md-3" role="button" >
-            <span class="glyphicon glyphicon-chevron-left"></span>
-        </button>
-        <div class="col-md-6 polyanno-mid-carousel-controls"></div>
-        <button class="polyanno-carousel-next col-md-3" role="button">
-            <span class="glyphicon glyphicon-chevron-right"></span>
-        </button>
-        </div>
-
-      <div class="row editorCarousel carousel slide" data-interval="false">
-        <!-- Wrapper for slides -->
-        <div class="editorCarouselWrapper col-md-12 carousel-inner" role="listbox">
-            <!--appended slides go here-->
-        </div>
+      <div class="row polyanno-alternatives-toggle-row">
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoToggleAlternatives'>
+          Show Alternatives
+        </button> 
       </div>
 
-      <div class="row polyanno-below-anno-display">
+      <div class="row polyanno-add-new-toggle-row">
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
+          Add New Annotation
+        </button> 
+      </div>
+
+      <div class="row polyanno-add-new-row">
+        <div class='polyannoAddNewContainer col-md-12'> 
+          <textarea id='testingKeys' class='newAnnotation row' placeholder='Add new annotation text here'></textarea><br>
+          <button type='button' class='btn addAnnotationSubmit polyannoEditorDropdownBtn row'>Submit <span class='glyphicon glyphicon-ok'></span></button>  
+        </div> 
+
+      </div>
+
+      <div class="row polyanno-add-new-cancel-row">
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationCancel'>
+          Cancel 
+        </button> 
+      </div>
+
+      <div class="row polyanno-list-alternatives-row">
+
+      </div>
+
+      <div class="row polyanno-metadata-tags-row">
 
       </div>
 
     </div>
-    </div>
-
   </div>
-  </div>
-
 `;
 
 /////GENERIC FUNCTIONS
@@ -461,7 +405,7 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
 };
 
-var lookupTargetChildren = function(target, baseURL) {
+var polyanno_annos_of_target = function(target, baseURL) {
   var childTexts;
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
@@ -469,11 +413,11 @@ var lookupTargetChildren = function(target, baseURL) {
     type: "GET",
     dataType: "json",
     url: aSearch,
-    async: false,
+    //async: false,
     success: 
       function (data) {
         childTexts = data.list;
-        alert("searching annos by "+aSearch+" and returned with "+encodeURIComponent(childTexts));
+        //alert("searching annos by "+aSearch+" and returned with "+encodeURIComponent(childTexts));
       }
   });
 
@@ -494,14 +438,14 @@ var lookupTargetChildren = function(target, baseURL) {
       type: "GET",
       dataType: "json",
       url: theSearch,
-      async: false,
+      //async: false,
       success: 
         function (data) {
           theDocs = data.list;
         }
     });
 
-    alert("searching the targets by "+theSearch+" and returned with "+JSON.stringify(theDocs));
+    //alert("searching the targets by "+theSearch+" and returned with "+JSON.stringify(theDocs));
     return theDocs;
 
   };
@@ -509,18 +453,19 @@ var lookupTargetChildren = function(target, baseURL) {
 
 var updateVectorSelection = function(the_vector_url) {
 
+  ///this is the process for linking vectors
+
   var textData = {target: [{id: the_vector_url, format: "SVG"}]};
   selectingVector.forEach(function(child){
     ////check selectingVector is not anno
     updateAnno(child[0].body.id, textData);
   });
-  var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector[0][0].parent).editor;
+  //need to ensure asynchronicity here
   selectingVector = false;
 
-  /////remove linkVector button
-
-  closeEditorMenu(editorID);
-  setTargets(openEditorMenu);
+  var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector[0][0].parent).editor;
+  ///////NEEDS WORK!!
+  closeEditorMenu(editorID, true);
 
 };
 
@@ -552,23 +497,21 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
       }
   });
 
-  if (updatedTranscription) {    polyanno_text_selected = targetID;  };
+  if (updatedTranscription) {    
+    polyanno_text_selected = targetID;
+    closeEditorMenu(editorID, targetID);  
+  };
   if (updatedTranscription && (!isUseless(vectorSelected))) {
     var updateTargetData = {};
     updateTargetData[polyanno_text_type_selected] = targetID;
     updateAnno(vectorSelected, updateTargetData);
   };
 
-  closeEditorMenu(editorID);
-  setTargets(openEditorMenu);
-
 ///////if the parent is open in an editor rebuild carousel with new transcription 
   editorsOpen.forEach(function(editorOpen){
     editorOpen.children.forEach(function(eachChild){
       if ( eachChild.id == polyanno_text_selectedID ){
-        closeEditorMenu(editorOpen.editor);
-        ////reopen???
-        //$(editorOpen.editor).effect("shake");
+        closeEditorMenu(editorOpen.editor, editorOpen.body.id);
       };
     });
   });
@@ -655,7 +598,8 @@ var setpolyanno_text_selectedID = function(theText) {
   var theTarget = fieldMatching(checkFor(findByBodyURL, "target"), "format", "text/html");
   if ( theTarget != false ) { 
     polyanno_text_selectedHash = theTarget.id;
-    polyanno_text_selectedID = polyanno_text_selectedHash.substring(polyanno_text_selectedParent.length + 1); //the extra one for the hash        
+    polyanno_text_selectedID = polyanno_text_selectedHash.substring(polyanno_text_selectedParent.length + 1); //the extra one for the hash   
+    return theTarget.id;     
   };
 
 };
@@ -807,84 +751,183 @@ var setNewTextVariables = function(selection, classCheck) {
 
 ///// VIEWER WINDOWS
 
-var setChildrenArray = function(callback_function) {  
-  alert("the target for the children array selected is "+JSON.stringify(targetSelected));
-  childrenArray = lookupTargetChildren(targetSelected[0], findBaseURL()); 
-//  alert("the childrenArray is "+JSON.stringify(childrenArray));
+var createEditorPopupBox = function() {
+
+  var dragon_opts = {
+    "minimise": polyanno_minimising,
+    "initialise_min_bar": false,
+    "beforeclose": preBtnClosing
+  };
+  var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
+  var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
+  $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
+  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
+  $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
+  $(popupIDstring).find(".dragondrop-title").html(returnTextIcon(polyanno_text_type_selected));
+  $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text");
+
+  return popupIDstring;
+
+};
+
+var polyanno_can_link = function(popupIDstring) {
+  if (targetType.includes("vector") == false){ 
+    $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
+    //add event listener for this
+  };
+};
+
+var polyannoSetSiblingArray = function(callback_function) {  
+  return polyanno_siblingArray = polyanno_annos_of_target(targetSelected[0], findBaseURL()); 
   if (!isUseless(callback_function)) { callback_function(); };
 };
 
-var buildCarousel = function(existingChildren, popupIDstring, extraHTML) {
+var polyanno_can_vote_add = function(popupIDstring) {
+  if ( targetType.includes(polyanno_text_type_selected) ) {
+    $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
 
-  var openingHTML = "<div class='item row pTextDisplayItem ";
-  var openingHTML2 = "'> <div class='pTextDisplay col-md-12'> <div class='row well well-sm polyanno-anno-well'> <p id='";
+    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(this){
+      var this_add_new_row = $(popupIDstring).find(".polyanno-add-new-row");
+      if (this_add_new_row.css("display") == "none") {
+        this_add_new_row.css("display", "block");
+      }
+      else {
+        this_add_new_row.css("display", "none");
+      };
+    });
+
+    //enable listening event for voting display
+    $(popupIDstring).on("mouseover", ".polyanno-text-display", function(this){
+      $(this).find(".polyanno-voting-overlay").css("display", "block");
+    });
+    $(popupIDstring).on("mouseout", ".polyanno-text-display", function(this){
+      $(this).find(".polyanno-voting-overlay").css("display", "none");
+    });
+
+  };
+};
+
+var polyanno_is_new = function(popupIDstring, theSiblingArray) {
+  if ( isUseless(theSiblingArray) || isUseless(theSiblingArray[0]) ) {
+
+    $(popupIDstring).find(".polyanno-add-new-row")
+    .css("display", "block")
+    .attr("id", "addBox"+popupIDstring);
+
+    return true;
+  }
+  else {
+    return false;
+  };
+};
+
+var polyanno_build_text_display_row = function(polyannoTextAnno) {
+  var paragraphHTML = " <p id='";
   var middleHTML = "' class='content-area' title=' '>";
-  var endTextHTML = "</p></div>";
-  var endDivHTML = "</div></div>";
-  var closingHTML = endTextHTML + extraHTML + endDivHTML;
+  var closingHTML1 = "</p>"
+  var itemText = polyannoTextAnno.text;
+  var itemID = polyannoTextAnno._id;
+  var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
+  return itemHTML;
+};
 
-  existingChildren.forEach(function(subarray) {
+var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring) {
 
-    var itemText = subarray[0].text;
-    var itemID = subarray[0]._id;
-    var itemHTML = openingHTML + itemID + openingHTML2 + itemID + middleHTML + itemText + closingHTML;
-    $(popupIDstring).find(".editorCarouselWrapper").append(itemHTML);
+  $(popupIDstring).find(".polyanno-alternatives-toggle-row").css("display", "block");
+  var openingHTML1 = "<div class='col-md-12'><div class='polyanno-text-display row  ";
+  var openingHTML2 = "'>"
+  var closingHTML2 = `</div></div>`;
+
+  $(popupIDstring).find(".polyanno-alternatives-toggle-row").on("click", function(this){
+    var this_add_new_row = $(popupIDstring).find(".polyanno-list-alternatives-row");
+    if (this_add_new_row.css("display") == "none") {
+      this_add_new_row.css("display", "block");
+    }
+    else {
+      this_add_new_row.css("display", "none");
+    };
+  });
+
+  existingTextAnnos.forEach(function(subarray) {
+
+    var theParagraphHTML = polyanno_build_text_display_row(subarray[0]);
+    var thisItemID = subarray[0]._id;
+
+    //if this is the top voted
+    alert("checking if the top voted id of "+polyanno_text_selected+" is equal to "+thisItemID);
+    if (thisItemID == polyanno_text_selected){
+      $(popupIDstring).find(".polyanno-top-voted").append(thisParagraphHTML);
+    }
+    else {
+      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + polyannoVoteOverlayHTML + closingHTML2;
+      $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
+    };
 
     if ( !isUseless(subarray[1]) )  {
       var votesUp = subarray[1].votesUp;
-      $("."+itemID).find(".votesUpBadge").find(".badge").html(votesUp); 
+      $("."+thisItemID).find(".polyanno-voting-overlay").find(".polyannoVotesUpBadge").find(".badge").html(votesUp); 
     }; 
-/////////update metadata options with defaults and placeholders???    
+ 
   });
-
 };
 
-var highlightTopVoted = function() {
-  var theTextString = "#" + polyanno_text_selected.slice(findBaseURL().length, polyanno_text_selected.length);
-  $(theTextString).closest(".item").addClass("active"); //ensures it is the first slide people see
-  $(theTextString).addClass("currentTop");
-///////////choose better styling later!!!!!///////
-  $(theTextString).css("color", "grey");
-  $(theTextString).find(".polyanno-below-anno-well").append("<span='glyphicon glyphicon-star'></span><span='glyphicon glyphicon-star'></span><span='glyphicon glyphicon-star'></span><span='glyphicon glyphicon-star'></span>");
-};
+var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 
-var canLink = function(popupIDstring) {
-  if (targetType.includes("vector") == false){ 
-    $(popupIDstring).find(".polyanno-options-buttons").append(linkButtonHTML);
-  };
-};
+  $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
 
-var canVoteAdd = function(popupIDstring, theVectorParent) {
-  //if it is targeting it's own type OR it is targeting a vector with parents THEN you can vote and add
-  if ( targetType.includes(polyanno_text_type_selected) || ( ( targetType.includes("vector") ) && ( !isUseless(theVectorParent) ) ) ) { 
-    $(popupIDstring).find(".editorCarouselWrapper").append(addNewAnnoHTML);
-    var stuffToAdd = " ";
-    if (polyanno_voting) { stuffToAdd += voteButtonsHTML };
-    ///////metadata stuff too!!!!!!!
-    return stuffToAdd; 
+  if (existingTextAnnos.length == 1) {
+    var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0]);
+    $(popupIDstring).find(".polyanno-top-voted").append(itemHTML);
   }
   else {
-    $(popupIDstring).find(".polyanno-carousel-controls").css("display", "none");
-    $(popupIDstring).find(".addNewBtn").css("display", "none");
-    return "";
+    polyanno_build_alternatives_list(existingTextAnnos, popupIDstring);
   };
+
 };
 
-var addCarouselItems = function(popupIDstring) {
-  var theVectorParent = checkFor(vectorSelected, "parent");
-  if (( isUseless(childrenArray) || isUseless(childrenArray[0]) ) && isUseless(theVectorParent) ) {
-    $(popupIDstring).find(".editorCarouselWrapper").append(addNewAnnoHTML);
-    $(popupIDstring).find(".newAnnotation").attr("id", "addBox"+popupIDstring);
-    $(popupIDstring).find(".addNewItem").addClass("active");
-    $(popupIDstring).find(".polyanno-carousel-controls").css("display", "none");
-    $(popupIDstring).find(".addNewBtn").css("display", "none");
-  }
-  else {
-    var theExtras = canVoteAdd(popupIDstring, theVectorParent);
-    buildCarousel(childrenArray, popupIDstring, theExtras);
-    highlightTopVoted();
-  };
+var addEditorsOpen = function(popupIDstring) {
+  return editorsOpen.push({
+    "editor": popupIDstring,
+    "typesFor": targetType,
+    "vSelected": vectorSelected,
+    "tSelectedParent": polyanno_text_selectedParent,
+    "tSelectedID": polyanno_text_selectedID,
+    "tSelectedHash": polyanno_text_selectedHash,
+    "tTypeSelected": polyanno_text_type_selected,
+    "children": polyanno_siblingArray
+  });
 };
+
+var polyanno_reset_EditorsOpen = function(editorsOpen) {
+  vectorSelected = "";
+  polyanno_text_selectedParent = "";
+  polyanno_text_selectedID = "";
+  polyanno_text_selectedHash = "";
+  polyanno_text_type_selected = "";
+  polyanno_siblingArray = [];
+};
+
+var openEditorMenu = function() {
+
+  var popupIDstring = createEditorPopupBox();
+  var thisSiblingArray = polyannoSetSiblingArray();
+
+  polyanno_can_link(popupIDstring);
+  polyanno_can_vote_add(popupIDstring);
+
+  var checkIfNew = polyanno_is_new(popupIDstring, thisSiblingArray);
+  if (!checkIfNew) {
+    polyanno_display_editor_texts(thisSiblingArray, popupIDstring)
+  };
+
+  //just to ensure simple asynchronicity
+  var polyanno_currentEditorsOpen = addEditorsOpen(popupIDstring); 
+  polyanno_reset_EditorsOpen(polyanno_currentEditorsOpen);
+
+};
+
+//////////////////////////////////////////////////////////////////
+
 
 var returnTextIcon = function(polyanno_text_type_selected){
   if(polyanno_text_type_selected == "transcription") {
@@ -895,74 +938,9 @@ var returnTextIcon = function(polyanno_text_type_selected){
   };
 };
 
-var updateEditor = function(popupIDstring) {
-  $(popupIDstring).find("#theEditor").attr("id", "newEditor");
-  $(popupIDstring).find(".editorTitle").html(returnTextIcon(polyanno_text_type_selected));
-  canLink(popupIDstring);
-  setChildrenArray();
-  alert("at this point the textSelected is "+polyanno_text_selected);
-  addCarouselItems(popupIDstring);
-  $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text"); 
-};
-
 var checkingItself = function(searchField, searchFieldValue, theType) {
   if (theType == searchField) { return false }
   else {  return fieldMatching(editorsOpen, searchField, searchFieldValue)[theType] };
-};
-
-var addEditorsOpen = function(popupIDstring) {
-  editorsOpen.push({
-    "editor": popupIDstring,
-    "typesFor": targetType,
-    "vSelected": vectorSelected,
-    "tSelectedParent": polyanno_text_selectedParent,
-    "tSelectedID": polyanno_text_selectedID,
-    "tSelectedHash": polyanno_text_selectedHash,
-    "tTypeSelected": polyanno_text_type_selected,
-    "children": childrenArray
-  });
-  vectorSelected = "";
-  polyanno_text_selectedParent = "";
-  polyanno_text_selectedID = "";
-  polyanno_text_selectedHash = "";
-  polyanno_text_type_selected = "";
-  childrenArray = [];
-  return editorsOpen;
-};
-
-var createEditorPopupBox = function() {
-
-  var dragon_opts = {
-    "minimise": polyanno_minimising,
-    "initialise_min_bar": false,
-    "beforeclose": preBtnClosing
-  };
-  var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
-  $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
-  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
-  //id="theEditor" class="row textEditorBox"
-  $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
-  var newCarouselID = "Carousel" + Math.random().toString().substring(2);
-  $(popupIDstring).find(".editorCarousel").attr("id", newCarouselID);
-  $(popupIDstring).find(".polyanno-carousel-controls").attr("href", "#" + newCarouselID);
-
-  return popupIDstring;
-
-};
-
-var openEditorMenu = function() {
-
-  var popupIDstring = createEditorPopupBox();
-  /*$('.opentranscriptionChildrenPopup').popover({ 
-    trigger: 'manual',
-    placement: 'top',
-    html : true,
-    title: "  ",
-    content: popupTranscriptionChildrenMenuHTML
-  });*/
-  updateEditor(popupIDstring); 
-  addEditorsOpen(popupIDstring); 
-
 };
 
 var removeEditorsOpen = function(popupIDstring) {
@@ -971,11 +949,19 @@ var removeEditorsOpen = function(popupIDstring) {
   editorsOpen.splice(currentIndex,1);
 };
 
-var closeEditorMenu = function(thisEditor) {
+var closeEditorMenu = function(thisEditor, reopen) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   resetVectorHighlight(thisEditor);
   removeEditorsOpen(thisEditor);
-  return dragondrop_remove_pop(thisEditor);
+  var the_editor_gone = dragondrop_remove_pop(thisEditor);
+  if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
+    polyanno_text_selected = repoen;
+    polyanno_set_and_open("refresh");
+    return the_editor_gone;
+  }
+  else {
+    return the_editor_gone;
+  }
 };
 
 var preBtnClosing = function(thisEditor) {
@@ -986,31 +972,24 @@ var preBtnClosing = function(thisEditor) {
 var findNewTextData = function(editorString) {
 
   var newText = $(editorString).find(".newAnnotation").val();
-  polyanno_text_selected = newText; ////////
   var textData = {text: newText, metadata: imageSelectedMetadata, target: []}; ////
 
-  if (targetType.includes("vector") == true) {
-    alert("the vector selected is "+vectorSelected);
+  if (targetType.includes("vector")) {
     textData.target.push({id: vectorSelected, format: "image/SVG"});
   };
 
   if (targetType.includes(polyanno_text_type_selected)) {
-      textData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
-      textData.parent = polyanno_text_selectedParent;
-  }
-  else if (targetType.includes(polyanno_text_type_selected) == false) {
-      //textData.target.push({id: ???, format: "text/html"});
+    textData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
+    textData.parent = polyanno_text_selectedParent;
   };
 
-  if (textData.target[0] != 'undefined') {
+  if (textData.target[0] != 'undefined') { 
     return textData;
   };
   
 };
 
 var polyanno_add_annotationdata = function(thisAnnoData) {
-
-  alert("the anno to be added is "+JSON.stringify(thisAnnoData));
 
   $.ajax({
     type: "POST",
@@ -1019,27 +998,26 @@ var polyanno_add_annotationdata = function(thisAnnoData) {
     data: thisAnnoData,
     success: 
       function (data) {
-        createdAnno = data.url;
+        var createdAnno = data.url;
       }
   });
-
-  /////double check synchronicity of this - what is stopping empty brackets being sent?
 
   //if the annotation is a child then it is targeting its own type, so update parent
   if (targetType.includes(polyanno_text_type_selected)) {
 
     var polyanno_new_target_data = {children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
-    updateAnno(polyanno_text_selectedParent, polyanno_new_target_data);
+    var polyanno_the_parent = polyanno_text_selectedParent;
+    updateAnno(polyanno_the_parent, polyanno_new_target_data);
   };
 
-  if (  targetType.includes("vector") && (  isUseless(childrenArray[0]) )) {
+  if (  targetType.includes("vector") && (  isUseless(polyanno_siblingArray[0]) )) {
     var polyanno_new_target_data = {};
     polyanno_new_target_data[polyanno_text_type_selected] = thisAnnoData.body.id;
-
-    alert("updating the vector "+vectorSelected+" with "+JSON.stringify(polyanno_new_target_data));
-
-    updateAnno(vectorSelected, polyanno_new_target_data);
+    var polyanno_this_vector = vectorSelected;
+    updateAnno(polyanno_this_vector, polyanno_new_target_data);
   };
+  
+  var has_pop_closed = closeEditorMenu(thisEditor, thisAnnoData.body.id);
 
 };
 
@@ -1047,8 +1025,6 @@ var addAnnotation = function(thisEditor){
 
   var editorString = "#" + thisEditor;
   var theData = findNewTextData(editorString);
-
-  alert("posting to "+findBaseURL()+" is "+JSON.stringify(theData));
 
   $.ajax({
     type: "POST",
@@ -1065,60 +1041,91 @@ var addAnnotation = function(thisEditor){
           "target": theData.target
         };
 
-        polyanno_add_annotationdata(thisAnnoData);
+        polyanno_add_annotationdata(thisAnnoData, thisEditor);
       }
   });
 
-////****synchronicity checks needed!!
-
-  $(editorString).find(".newAnnotation").val("");  
-
-//  polyanno_text_selected = createdText; //////only if there was none before??
-
-  closeEditorMenu(thisEditor);
-  if (  targetType.includes("vector") ) { openNewEditor("vector") }
-  else { openNewEditor("text")  };
 };
 
-var setTargets = function(callback_function) {
- 
-  if (  isUseless(vectorSelected) ){ 
-    targetSelected = [polyanno_text_selectedHash];
-    targetType = polyanno_text_type_selected;
-    if (!isUseless(callback_function)) { callback_function(); };
-  }
-  else if ( isUseless(polyanno_text_selected) || isUseless(polyanno_text_selectedParent) ) { 
-    targetSelected = [vectorSelected];
-    targetType = "vector";
-    alert("the target selected is vector alone and it is "+vectorSelected);
-    if (!isUseless(callback_function)) { callback_function(); };
-  }
-  else {
-    targetSelected = [polyanno_text_selectedHash, vectorSelected];
-    targetType = "vector " + polyanno_text_type_selected;
-    if (!isUseless(callback_function)) { callback_function(); };
-  };
-
-};
-
-var openNewEditor = function(fromType) {
+var polyanno_setting_global_variables = function(fromType) {
 
   if (fromType == "vector") {
-    polyanno_text_selected = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
-    polyanno_text_selectedParent = checkFor(polyanno_text_selected, "parent");
-    if ( polyanno_text_selected != false ) { setpolyanno_text_selectedID(polyanno_text_selected) };
-    alert("going to open up new editor for a vector with textSelected "+polyanno_text_selected+" of type "+typeof(polyanno_text_selected));
+    var does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
+    if (does_vector_have_text != false) {
+      polyanno_text_selected = does_vector_have_text;
+
+      var does_text_have_parent = checkFor(does_vector_have_text, "parent");
+      if (does_text_have_parent != false) {
+
+        polyanno_text_selectedParent = does_text_have_parent;
+        var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+
+        return targetSelected = [theHashHere, vectorSelected];
+        targetType = "vector " + polyanno_text_type_selected;
+      }
+      else {
+        return targetSelected = [vectorSelected];
+        targetType = "vector";
+      };
+    }
+    else {
+      return targetSelected = [vectorSelected];
+      targetType = "vector";
+    };
+    
   }
   else if (fromType == "text") {
-    polyanno_text_selected = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
-    vectorSelected = checkForVectorTarget(polyanno_text_selected); 
+    var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+    polyanno_text_selected = what_is_topvoted_here;
+
+    var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here);
+    if (does_have_vector_target != false) {
+      vectorSelected =  does_have_vector_target;
+
+      return targetSelected = [polyanno_text_selectedHash, does_have_vector_target];
+      targetType = "vector " + polyanno_text_type_selected;
+    }
+    else {
+      return targetSelected = [polyanno_text_selectedHash];
+      targetType = polyanno_text_type_selected;
+    };   
+  }
+  else if (fromType == "refresh") {
+    var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
+    var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
+    if (does_text_have_parent != false) && (does_have_vector_target != false) {
+
+      polyanno_text_selectedParent = does_text_have_parent;
+      var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+
+      return targetSelected = [theHashHere, does_have_vector_target];
+      targetType = "vector " + polyanno_text_type_selected;
+    }
+    else if (does_text_have_parent != false) && (does_have_vector_target == false) {
+      polyanno_text_selectedParent = does_text_have_parent;
+      var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+
+      return targetSelected = [theHashHere];
+      targetType = polyanno_text_type_selected;
+    }
+    else if (does_text_have_parent == false) && (does_have_vector_target != false) {
+      return targetSelected = [does_have_vector_target];
+      targetType = "vector";
+    };
   };
-  setTargets(openEditorMenu);
+  //setTargets(openEditorMenu);
+};
+
+var polyanno_set_and_open = function(fromType) {
+  var the_targets = polyanno_setting_global_variables(fromType);
+  if (!isUseless(the_targets)) {
+    openEditorMenu();
+  };
 };
 
 var checkEditorsOpen = function(fromType, textType) {
   polyanno_text_type_selected = textType;
-  if (isUseless(editorsOpen)) {    openNewEditor(fromType);  }
+  if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType);  }
   else {
     var canOpen = true;
     editorsOpen.forEach(function(editorOpen){
@@ -1127,7 +1134,7 @@ var checkEditorsOpen = function(fromType, textType) {
         canOpen = false;
       };
     });
-    if (canOpen == true) {  openNewEditor(fromType) };
+    if (canOpen == true) {  polyanno_set_and_open(fromType) };
   };
 };
 
@@ -1163,7 +1170,7 @@ var settingEditorVars = function(thisEditor) {
       polyanno_text_selectedID = target.tSelectedID;
       polyanno_text_selectedHash = target.tSelectedHash;
       polyanno_text_type_selected = target.tTypeSelected;
-      childrenArray = target.children;
+      polyanno_siblingArray = target.children;
     };
   });
 };
@@ -1361,7 +1368,7 @@ var polyanno_leaflet_basic_setup = function() {
 //load the existing vectors
 var polyanno_load_existing_vectors = function() {
 
-  var existingVectors = lookupTargetChildren(imageSelected, polyanno_urls.vector);
+  var existingVectors = polyanno_annos_of_target(imageSelected, polyanno_urls.vector);
 
   var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{}  };
   var currentVectorLayers = {};
@@ -1751,10 +1758,10 @@ var polyanno_setup_editor_events = function() {
     $(event.target).closest(".textEditorPopup").find(".editorCarousel").carousel("prev");
   });
 
-  $('#polyanno-page-body').on("click", ".linkBtn", function(){
+  $('#polyanno-page-body').on("click", ".polyanno_linkBtn", function(){
     var thisEditor = $(event.target).closest(".textEditorPopup").attr("id"); 
     settingEditorVars(thisEditor);
-    selectingVector = childrenArray;
+    selectingVector = polyanno_siblingArray;
     $("#imageViewer").effect("bounce");
     $("#map").popover( "show");
   });
@@ -1809,6 +1816,7 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
     };
 };
 
+
 ////SETUP
 
 var polyanno_setup = function(opts) {
@@ -1822,9 +1830,7 @@ var polyanno_setup = function(opts) {
 
   if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
 
-  if (opts.voting == false) {  polyanno_voting = false;  }
-  else {  polyanno_setup_voting()  };
-
+  if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
   //var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
   var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
