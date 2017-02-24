@@ -1,7 +1,101 @@
 # polyanno
 Package to develop crowd sourced transcription and translations of images!
 
-##Setup Options
+##Contents
+
+ - [Introduction](#)
+ -- [Basic Examples](#)
+ -- [Get In Touch!](#)
+
+ - [10 Really Easy Steps from Nothing to Your Own Polyanno Demo](#)
+
+ - [The Longer Guide - Setup Options](#)
+ -- [Dependencies](#)
+ -- [Page Structure](#)
+ -- [The Image](#)
+ -- [Setup Function](#)
+
+ - [The Longer Guide - The Polyanno Code](#)
+ -- [Framework and Model Structures](#)
+ -- [Contributions](#)
+
+##Introduction
+
+The Polyanno package is designed to allow anyone to develop a lightweight, modular web design for easy crowd sourcing of transcriptions and translations of digitised images, with support for input across a large variety of languages and formats.
+
+###Basic Examples
+
+
+####Get In Touch!
+
+
+##10 Really Easy Steps from Nothing to Your Own Polyanno Demo
+
+###1. Install NodeJS
+
+###2. Install NPM
+
+###3. Install MongoDB
+Now you have NPM installed you easily install the software recommended for the basic storage of the 
+
+```
+ npm install mongodb
+```
+
+###4. Get Your MongoDB Database Working
+
+```
+./mongod --dbpath 
+```
+
+###5. Download Polyanno
+
+You will need your own local copy of the Polyanno package and this is easily done using the Github repo right here!
+
+```
+ git clone ""
+```
+
+###7. 
+
+
+###7. Get Polyanno Setup
+
+You will need to make sure that your device has all the necessary software packages to work with Polyanno and this is easily done through the example folder by going inside it on your command line window, and simply typing "npm install".
+
+```
+ npm install
+```
+
+###8. Get Polyanno Running
+
+```
+npm start
+```
+
+###9. 
+
+
+###10. Choose Your Options!
+If you open up the **example.js** file then you will see a basic example of a Polyanno application. For more information about the different options available to setup Polyanno to your needs, see the [Setup Function](#) section of the longer guide, but if you want to you can just leave the options given in the example provided.
+
+One thing you might want to do though is change the image displayed to your own one.
+
+Polyanno uses the IIIF API framework so all you have to do is change the variable **imageViewing** to your own IIIF info.json URL.
+
+```
+ imageViewing = ""
+```
+
+Don't have a clue what IIIF is? 
+See here for more information about it. It is the standard format for loading the large, high resolution images commonly used by museums, libraries, and other collections around the world.
+
+If you don't have any IIIF images of your own then don't worry! You can go find your favourites from amongst the collections of others who are kind enough to share them online, for example ...
+
+So there you go! Hope that has been helpful (and not too patronising for the more advanced technical users)! Happy annotating!
+
+
+##The Longer Guide - Setup Options
 
 ###Dependencies
 
@@ -114,7 +208,6 @@ The function that takes one input, *opts*,  a JSON object of the following forma
 {
   "highlighting": Boolean,
   "minimising": Boolean,
-  "voting": Boolean,
   "users": Object,
   "storage": Object
 }
@@ -145,13 +238,6 @@ Type: Boolean
 Default: True
 
 If false then the editor boxes displaying the annotations and the image cannot be minimised, only opened and closed.
-
-###voting
-
-Type: Boolean
-Default: True
-
-If false then users cannot vote annotations up using Polyanno voting structure - see [here]("https://pigeonsblue.com/2017/01/18/polyanno-verification/") for more info on voting.
 
 ###users (Optional)
 
