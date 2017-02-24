@@ -796,7 +796,7 @@ var polyanno_can_vote_add = function(popupIDstring) {
       };
     });
 
-    //enable listening event for voting display
+    //enable listening event for voting display   
     $(popupIDstring).on("mouseover", ".polyanno-text-display", function(this){
       $(this).find(".polyanno-voting-overlay").css("display", "block");
     });
