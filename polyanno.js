@@ -52,8 +52,6 @@ var controlOptions = {
     draw: {
         polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
         marker: false,
-        //polygon: false,
-        //circle: false
     },
     edit: {
         featureGroup: allDrawnItems, //passes draw controlOptions to the FeatureGroup of editable layers
@@ -786,7 +784,7 @@ var polyanno_can_vote_add = function(popupIDstring) {
   if ( targetType.includes(polyanno_text_type_selected) ) {
     $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
 
-    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(){
+    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(event){
       var this_add_new_row = $(popupIDstring).find(".polyanno-add-new-row");
       if (this_add_new_row.css("display") == "none") {
         this_add_new_row.css("display", "block");
@@ -797,11 +795,11 @@ var polyanno_can_vote_add = function(popupIDstring) {
     });
 
     //enable listening event for voting display   
-    $(popupIDstring).on("mouseover", ".polyanno-text-display", function(this){
-      $(this).find(".polyanno-voting-overlay").css("display", "block");
+    $(popupIDstring).on("mouseover", ".polyanno-text-display", function(event){
+      $(event.target).find(".polyanno-voting-overlay").css("display", "block");
     });
-    $(popupIDstring).on("mouseout", ".polyanno-text-display", function(this){
-      $(this).find(".polyanno-voting-overlay").css("display", "none");
+    $(popupIDstring).on("mouseout", ".polyanno-text-display", function(event){
+      $(event.target).find(".polyanno-voting-overlay").css("display", "none");
     });
 
   };
