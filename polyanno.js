@@ -828,16 +828,6 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
   var openingHTML2 = "'>"
   var closingHTML2 = `</div></div>`;
 
-  $(popupIDstring).find(".polyanno-alternatives-toggle-row").on("click", function(this){
-    var this_add_new_row = $(popupIDstring).find(".polyanno-list-alternatives-row");
-    if (this_add_new_row.css("display") == "none") {
-      this_add_new_row.css("display", "block");
-    }
-    else {
-      this_add_new_row.css("display", "none");
-    };
-  });
-
   existingTextAnnos.forEach(function(subarray) {
 
     var theParagraphHTML = polyanno_build_text_display_row(subarray[0]);
@@ -1492,27 +1482,6 @@ var polyanno_vector_edit_setup = function() {
 
 var polyanno_image_popovers_setup = function() {
 
-  /////maybe change to be more specific to the drawing?
-  /*
-  $('#imageViewer').popover({ 
-    trigger: 'manual',
-    placement: 'top',
-    html : true,
-    title: closeButtonHTML,
-    content: popupLinkVectorMenuHTML
-  });
-
-  $('#imageViewer').on("shown.bs.popover", function(event) {
-      $('#polyanno-page-body').on("click", function(event) {
-        if ($(event.target).hasClass("popupAnnoMenu") == false) {
-          $('#map').popover("hide");
-        }
-      });
-      $('.closeThePopover').on("click", function(event){
-        $('#map').popover("hide");
-      });
-  });
-  */
   $('#map').popover({ 
     trigger: 'manual',
     placement: 'top',
@@ -1643,22 +1612,6 @@ var polyanno_enable_favourites = function () {
 
 };
 
-
-/*
-$(".polyanno-image-box").draggable();
-$(".polyanno-image-box").draggable({
-  addClasses: false,
-  handle: ".imageHandlebar",
-  revert: function(theObject) {
-    return adjustDragBootstrapGrid($(this));
-  },
-  revertDuration: 0,
-  snap: ".annoPopup",
-  snapMode: "outer"
-});
-$( ".polyanno-image-box" ).resizable();
-$( ".polyanno-image-box" ).resizable( "enable" );
-*/
 /////////////
 
 var polyanno_setup_storage_fields = function(opts) {
@@ -1765,6 +1718,9 @@ var polyanno_setup_editor_events = function() {
         theHandlebar.css("border-radius", "5px");
       };
   });
+
+
+  ///add metedata tags dropdown and closing event listeners here
 
 };
 
