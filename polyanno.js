@@ -397,7 +397,6 @@ var findClassID = function(classString, IDstring) {
 var checkForVectorTarget = function(theText, the_target_type) {
 
   var findByBodyURL = polyanno_urls.annotation + "body/"+encodeURIComponent(theText);
-  alert("the URL to check "+findByBodyURL);
   var the_regex = '/.*'+the_target_type+'.*/';
   var theChecking = checkFor(findByBodyURL, "target");
   if (  isUseless(theChecking[0])  ) { return false } 
@@ -417,7 +416,6 @@ var polyanno_annos_of_target = function(target, baseURL) {
     success: 
       function (data) {
         childTexts = data.list;
-        //alert("searching annos by "+aSearch+" and returned with "+encodeURIComponent(childTexts));
       }
   });
 
@@ -444,8 +442,6 @@ var polyanno_annos_of_target = function(target, baseURL) {
           theDocs = data.list;
         }
     });
-
-    //alert("searching the targets by "+theSearch+" and returned with "+JSON.stringify(theDocs));
     return theDocs;
 
   };
