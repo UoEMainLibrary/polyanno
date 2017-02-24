@@ -786,7 +786,7 @@ var polyanno_can_vote_add = function(popupIDstring) {
   if ( targetType.includes(polyanno_text_type_selected) ) {
     $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
 
-    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(this){
+    $(popupIDstring).find(".polyanno-add-new-toggle-row").on("click", function(){
       var this_add_new_row = $(popupIDstring).find(".polyanno-add-new-row");
       if (this_add_new_row.css("display") == "none") {
         this_add_new_row.css("display", "block");
