@@ -1472,6 +1472,7 @@ var polyanno_vector_edit_setup = function() {
   allDrawnItems.on('remove', function(vec){
     //////******
     var shape = vec.layer.toGeoJSON();
+    alert("are you sure you want to delete that? I'm probably keeping it anyway whilst this project is in development.");
 
   });
 };
@@ -1509,6 +1510,7 @@ var polyanno_image_popovers_setup = function() {
 $('#polyanno-page-body').on("click", '.newAnnotation', function(event) {
 
   atu_the_input = this;
+  //change the text input area that the IME conversions are using to this one
   atu_initialise_IMEs();
 
 });
@@ -1762,7 +1764,7 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
 var polyanno_setup = function(opts) {
 
   if (opts.minimising == false) {  polyanno_minimising = false;  };
-  addIMEs(true, true, true); //why is this not working??????
+  addIMEs(true, true, true, true);
 
   document.getElementById("polyanno-top-bar").innerHTML = polyanno_top_bar_HTML;
 
