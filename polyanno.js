@@ -770,6 +770,7 @@ var polyanno_can_link = function(popupIDstring) {
   if (targetType.includes("vector") == false){ 
     $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
     //add event listener for this
+    alert("so the targetType currently is "+targetType);
   };
 };
 
@@ -965,7 +966,7 @@ var findNewTextData = function(editorString) {
   
 };
 
-var polyanno_add_annotationdata = function(thisAnnoData) {
+var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
 
   $.ajax({
     type: "POST",
@@ -1654,8 +1655,8 @@ var polyanno_setup_users = function(opts) {
 var polyanno_setup_voting = function() {
 
   $('#polyanno-page-body').on("click", '.votingUpButton', function(event) {
-    var votedID = $(event.target).closest(".pTextDisplay").find("p").attr("id");
-    var currentTopText = $(event.target).closest(".textEditorPopup").find(".currentTop").html();
+    var votedID = $(event.target).closest(".polyanno-text-display").find("p").attr("id");
+    var currentTopText = $(event.target).closest(".textEditorPopup").find(".polyanno-top-voted").find("p").html();
     var thisEditor = $(event.target).closest(".textEditorPopup").attr("id");
     settingEditorVars(thisEditor);
     votingFunction("up", votedID, currentTopText, thisEditor);
