@@ -1764,9 +1764,12 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
 var polyanno_setup = function(opts) {
 
   if (opts.minimising == false) {  polyanno_minimising = false;  };
-  addIMEs(true, true, true, true);
 
   document.getElementById("polyanno-top-bar").innerHTML = polyanno_top_bar_HTML;
+  if (document.getElementById("polyanno-top-bar").innerHTML == polyanno_top_bar_HTML) {
+    //to try and stop the synchronicity problems?
+    addIMEs(true, true, true, true);
+  };
 
   polyanno_setup_storage(opts.storage);
 
