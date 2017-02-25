@@ -1768,7 +1768,7 @@ var polyanno_setup = function(opts) {
   document.getElementById("polyanno-top-bar").innerHTML = polyanno_top_bar_HTML;
   if (document.getElementById("polyanno-top-bar").innerHTML == polyanno_top_bar_HTML) {
     //to try and stop the synchronicity problems?
-    addIMEs(true, true, true, true);
+    addIMEs(true, true, true);
   };
 
   polyanno_setup_storage(opts.storage);
