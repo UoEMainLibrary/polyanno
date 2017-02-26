@@ -769,6 +769,7 @@ var createEditorPopupBox = function() {
 var polyanno_can_link = function(popupIDstring) {
   if ((!isUseless(targetType))&&(targetType.includes("vector") == false)){ 
     $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
+    alert("the target type does not include vectors ");
     //add event listener for this
   };
 };
@@ -1510,8 +1511,9 @@ var polyanno_image_popovers_setup = function() {
 $('#polyanno-page-body').on("click", '.newAnnotation', function(event) {
 
   atu_the_input = this;
+  alert(this.html());
   //change the text input area that the IME conversions are using to this one
-  atu_initialise_IMEs();
+  atu_initialise_IMEs(this);
 
 });
 
@@ -1768,10 +1770,6 @@ var polyanno_setup = function(opts) {
   document.getElementById("polyanno-top-bar").innerHTML = polyanno_top_bar_HTML;
   if (document.getElementById("polyanno-top-bar").innerHTML == polyanno_top_bar_HTML) {
     addIMEs(true, true, true);
-  };
-
-  if (atu_have_all_ime_scripts_loaded) {
-    alert("the scripts are all here!");
   };
 
   polyanno_setup_storage(opts.storage);
