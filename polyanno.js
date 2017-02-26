@@ -71,6 +71,8 @@ var currentlyDeleting = false;
 var polyanno_top_bar_HTML = `
   <div class="col-md-6 polyanno-bar-buttons">
 
+    <textarea id="polyanno-dummy-textarea "></textarea>
+
     <div class="row">
 
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
@@ -288,6 +290,8 @@ var polyannoEditorHTML_partfinal = `
     </div>
   </div>
 `;
+
+atu_the_input = $("#polyanno-dummy-textarea");
 
 /////GENERIC FUNCTIONS
 
@@ -931,7 +935,7 @@ var closeEditorMenu = function(thisEditor, reopen) {
   removeEditorsOpen(thisEditor);
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
-    polyanno_text_selected = repoen;
+    polyanno_text_selected = reopen;
     polyanno_set_and_open("refresh");
     return the_editor_gone;
   }

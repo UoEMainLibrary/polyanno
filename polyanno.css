@@ -27,6 +27,10 @@
 }
 
 
+#polyanno-dummy-textarea {
+	display: none;
+}
+
 
 .polyanno-language-buttons {
 	display: inline-block;
