@@ -769,7 +769,7 @@ var createEditorPopupBox = function() {
 var polyanno_can_link = function(popupIDstring) {
   if ((!isUseless(targetType))&&(targetType.includes("vector") == false)){ 
     $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
-    alert("the target type does not include vectors ");
+    alert("the target type does not include vectors");
     //add event listener for this
   };
 };
@@ -1096,7 +1096,7 @@ var polyanno_setting_global_variables = function(fromType) {
 var polyanno_set_and_open = function(fromType) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
-    alert("so the targets are now of type "+targetType+typeof(targetType));
+    alert("so the targets are now of type "+targetType+" because the fromType is "+fromType);
     openEditorMenu();
   };
 };
