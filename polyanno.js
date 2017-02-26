@@ -1097,6 +1097,7 @@ var polyanno_setting_global_variables = function(fromType) {
 };
 
 var polyanno_set_and_open = function(fromType) {
+  alert("setting and reopening with type "+fromType);
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
     openEditorMenu();
@@ -1513,7 +1514,6 @@ var polyanno_image_popovers_setup = function() {
 $('#polyanno-page-body').on("click", '.newAnnotation', function(event) {
 
   atu_the_input = $(this);
-  alert(atu_the_input.html());
   //change the text input area that the IME conversions are using to this one
   atu_initialise_IMEs($(this));
 
