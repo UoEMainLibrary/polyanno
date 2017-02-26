@@ -1511,7 +1511,7 @@ var polyanno_image_popovers_setup = function() {
 $('#polyanno-page-body').on("click", '.newAnnotation', function(event) {
 
   atu_the_input = $(this);
-  alert(this.html());
+  alert(atu_the_input.html());
   //change the text input area that the IME conversions are using to this one
   atu_initialise_IMEs(this);
 
