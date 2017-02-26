@@ -1095,7 +1095,7 @@ var polyanno_setting_global_variables = function(fromType) {
 var polyanno_set_and_open = function(fromType) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
-    alert("so the targets are now of type "+targetType);
+    alert("so the targets are now of type "+targetType+typeof(targetType));
     openEditorMenu();
   };
 };
