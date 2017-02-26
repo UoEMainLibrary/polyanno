@@ -1037,17 +1037,17 @@ var polyanno_setting_global_variables = function(fromType) {
         polyanno_text_selectedParent = does_text_have_parent;
         var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
 
-        return targetSelected = [theHashHere, vectorSelected];
         targetType = "vector " + polyanno_text_type_selected;
+        return targetSelected = [theHashHere, vectorSelected];
       }
       else {
-        return targetSelected = [vectorSelected];
         targetType = "vector";
+        return targetSelected = [vectorSelected];
       };
     }
     else {
-      return targetSelected = [vectorSelected];
       targetType = "vector";
+      return targetSelected = [vectorSelected];
     };
     
   }
@@ -1059,12 +1059,12 @@ var polyanno_setting_global_variables = function(fromType) {
     if (does_have_vector_target != false) {
       vectorSelected =  does_have_vector_target;
 
-      return targetSelected = [polyanno_text_selectedHash, does_have_vector_target];
       targetType = "vector " + polyanno_text_type_selected;
+      return targetSelected = [polyanno_text_selectedHash, does_have_vector_target];
     }
     else {
-      return targetSelected = [polyanno_text_selectedHash];
       targetType = polyanno_text_type_selected;
+      return targetSelected = [polyanno_text_selectedHash];
     };   
   }
   else if (fromType == "refresh") {
@@ -1075,19 +1075,19 @@ var polyanno_setting_global_variables = function(fromType) {
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
 
-      return targetSelected = [theHashHere, does_have_vector_target];
       targetType = "vector " + polyanno_text_type_selected;
+      return targetSelected = [theHashHere, does_have_vector_target];
     }
     else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
 
-      return targetSelected = [theHashHere];
       targetType = polyanno_text_type_selected;
+      return targetSelected = [theHashHere];
     }
     else if ((does_text_have_parent == false) && (does_have_vector_target != false)) {
-      return targetSelected = [does_have_vector_target];
       targetType = "vector";
+      return targetSelected = [does_have_vector_target];
     };
   };
 
