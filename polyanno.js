@@ -416,7 +416,7 @@ var polyanno_annos_of_target = function(target, baseURL) {
     type: "GET",
     dataType: "json",
     url: aSearch,
-    //async: false,
+    async: false,
     success: 
       function (data) {
         childTexts = data.list;
@@ -440,7 +440,7 @@ var polyanno_annos_of_target = function(target, baseURL) {
       type: "GET",
       dataType: "json",
       url: theSearch,
-      //async: false,
+      async: false,
       success: 
         function (data) {
           theDocs = data.list;
@@ -1343,6 +1343,11 @@ var polyanno_leaflet_basic_setup = function() {
 
   polyanno_map.whenReady(function(){
     mapset = true;
+    polyanno_load_existing_vectors();
+    polyanno_creating_vec();
+    polyanno_vec_select();
+    polyanno_vector_edit_setup();
+    polyanno_image_popovers_setup();
   });
 };
 
@@ -1355,6 +1360,7 @@ var polyanno_load_existing_vectors = function() {
   var currentVectorLayers = {};
 
   if (!isUseless(existingVectors)) {
+    alert("there are existingVectors");
     existingVectors.forEach(function(vector) {
 
       var oldData = tempGeoJSON;
@@ -1791,11 +1797,13 @@ var polyanno_setup = function(opts) {
   $(image_viewer_id).attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
+  /*
   polyanno_load_existing_vectors();
   polyanno_creating_vec();
   polyanno_vec_select();
   polyanno_vector_edit_setup();
   polyanno_image_popovers_setup();
+  */
 
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
 
