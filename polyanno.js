@@ -1029,8 +1029,11 @@ var addAnnotation = function(thisEditor){
 
 var polyanno_setting_global_variables = function(fromType) {
 
+  alert("setting global variables with from type of "+fromType);
+
   if (fromType == "vector") {
     var does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
+    alert("from vector with text of "+does_vector_have_text);
     if (does_vector_have_text != false) {
       polyanno_text_selected = does_vector_have_text;
 
