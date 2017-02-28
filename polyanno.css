@@ -27,10 +27,6 @@
 }
 
 
-#polyanno-dummy-textarea {
-	display: none;
-}
-
 
 .polyanno-language-buttons {
 	display: inline-block;
@@ -138,8 +134,17 @@
 }
 
 
+.content-area {
+	position: absolute;
+  	top: 0;
+  	left: 0;
+}
+
 
 .polyanno-voting-overlay {
+  	position: absolute;
+  	top: 0;
+  	left: 0;
 	background-color: #03f;
 	opacity: 0.5;
 	width: 100%;

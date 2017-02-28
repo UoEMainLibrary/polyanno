@@ -227,10 +227,10 @@ var polyannoEditorHTML_partone = `
 
 `;
 
-var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEditorHTML_options_parttwo;
-
 var polyannoEditorHTML_options_partone = `<div class="row polyanno-options-row">`;
 var polyannoEditorHTML_options_parttwo = `</div>`;
+
+var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEditorHTML_options_parttwo;
 
 var polyannoEditorHTML_partfinal = `
       <div class="row polyanno-vector-link-row">
@@ -756,6 +756,7 @@ var createEditorPopupBox = function() {
     "initialise_min_bar": false,
     "beforeclose": preBtnClosing
   };
+  alert("so the options HTML row is "+polyannoEditorHTML_options);
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
@@ -1797,13 +1798,6 @@ var polyanno_setup = function(opts) {
   $(image_viewer_id).attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
-  /*
-  polyanno_load_existing_vectors();
-  polyanno_creating_vec();
-  polyanno_vec_select();
-  polyanno_vector_edit_setup();
-  polyanno_image_popovers_setup();
-  */
 
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
 
