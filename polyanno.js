@@ -1748,11 +1748,11 @@ var polyanno_setup_editor_events = function() {
 
   $("#polyanno-page-body").on("click", ".polyanno-metadata-tags-btn", function(event){
       var theTagsRow = $(this).closest(".textEditorPopup").find(".polyanno-metadata-tags-row");
-      if (theTagsRows.css("display") == "none") {
-        theTagsRows.css("display", "block");
+      if (theTagsRow.css("display") == "none") {
+        theTagsRow.css("display", "block");
       }
       else {
-        theTagsRows.css("display", "none");
+        theTagsRow.css("display", "none");
       };
   });
 
