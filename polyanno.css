@@ -135,7 +135,6 @@
 
 
 .content-area {
-	position: absolute;
   	top: 0;
   	left: 0;
 }
@@ -154,9 +153,11 @@
 }
 
 .polyannoVotesUpBadge {
+	margin-right: 30%;
 	z-index: 100001;
 }
 .polyannoVotingUpButton {
+	margin-left: 30%;
 	z-index: 100001;
 }
 

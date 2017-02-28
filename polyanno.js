@@ -831,10 +831,13 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
 
     var theParagraphHTML = polyanno_build_text_display_row(subarray[0]);
     var thisItemID = subarray[0]._id;
+    var thisItemURL = findBaseURL() + thisItemID;
 
     //if this is the top voted
-    alert("checking if the top voted id of "+polyanno_text_selected+" is equal to "+thisItemID);
-    if (thisItemID == polyanno_text_selected){
+    alert("checking if the top voted id of "+polyanno_text_selected+" is equal to "+thisItemURL);
+    //polyanno_text_selected = full URL of 
+    // thisItemID = number alone
+    if (thisItemURL == polyanno_text_selected){
       $(popupIDstring).find(".polyanno-top-voted").append(thisParagraphHTML);
     }
     else {
@@ -1784,6 +1787,8 @@ var polyanno_setup = function(opts) {
   polyanno_setup_storage(opts.storage);
 
   if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
+
+  alert("the submitted editor options HTML is "+opts.editor_options);
 
   if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
