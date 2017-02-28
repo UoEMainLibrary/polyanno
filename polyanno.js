@@ -813,6 +813,7 @@ var polyanno_build_text_display_row = function(polyannoTextAnno) {
   var paragraphHTML = " <p id='";
   var middleHTML = "' class='content-area' title=' '>";
   var closingHTML1 = "</p>"
+  alert("so the text to display is "+JSON.stringify(polyannoTextAnno));
   var itemText = polyannoTextAnno.text;
   var itemID = polyannoTextAnno._id;
   var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
@@ -854,10 +855,12 @@ var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
   $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
 
   if (existingTextAnnos.length == 1) {
+    alert("there is only one text and the array is "+JSON.stringify(existingTextAnnos));
     var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0]);
     $(popupIDstring).find(".polyanno-top-voted").append(itemHTML);
   }
   else {
+    alert("there are multiple texts");
     polyanno_build_alternatives_list(existingTextAnnos, popupIDstring);
   };
 
