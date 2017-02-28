@@ -759,7 +759,6 @@ var createEditorPopupBox = function() {
     "initialise_min_bar": false,
     "beforeclose": preBtnClosing
   };
-  alert("so the options HTML row is "+polyannoEditorHTML_options);
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
@@ -855,6 +854,7 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
 var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 
   $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
+  alert("the existing annos array is "+JSON.stringify(existingTextAnnos));
 
   if (existingTextAnnos.length == 1) {
     //[[ {} ]]
