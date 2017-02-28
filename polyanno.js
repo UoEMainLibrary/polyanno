@@ -227,7 +227,10 @@ var polyannoEditorHTML_partone = `
 
 `;
 
-var polyannoEditorHTML_options_partone = `<div class="row polyanno-options-row">`;
+var polyannoEditorHTML_options_partone = `<div class="row polyanno-options-row">
+                                            <div class="col-md-2 polyanno-options-buttons">
+                                              <button class="btn btn-default polyanno-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
+                                            </div>`;
 var polyannoEditorHTML_options_parttwo = `</div>`;
 
 var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEditorHTML_options_parttwo;
