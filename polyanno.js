@@ -173,8 +173,8 @@ var popupTranscriptionNewMenuHTML = `
   <!-- New Transcription Text Select Popup Menu -->
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
      <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">ADD NEW TRANSCRIPTION</a></br>
-        <a class="polyanno-add-discuss">Discuss</a>
+        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">ALTERNATIVE TRANSCRIPTION</a></br>
+        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
      </div>
   </div>
 `;
@@ -183,8 +183,8 @@ var popupTranslationNewMenuHTML = `
   <!-- New Translation Text Select Popup Menu -->
   <div id="popupTranslationNewMenu" class="popupAnnoMenu" >
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">ADD NEW TRANSLATION</a>
-        <a class="polyanno-add-discuss">Discuss</a>
+        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">ALTERNATIVE TRANSLATION</a>
+        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>  
 `;
@@ -194,7 +194,7 @@ var popupTranscriptionChildrenMenuHTML = `
   <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
         <a class="openTranscriptionMenuOld editorPopover btn btn-default">VIEW OTHER TRANSCRIPTIONS</a>
-        <a class="polyanno-add-discuss">Discuss</a>
+        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
 `;
@@ -203,7 +203,7 @@ var popupTranslationChildrenMenuHTML = `
   <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
         <a class="openTranslationMenuOld editorPopover btn btn-default">VIEW OTHER TRANSLATIONS</a>
-        <a class="polyanno-add-discuss">Discuss</a>
+        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
 `;
@@ -833,10 +833,6 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
     var thisItemID = subarray[0]._id;
     var thisItemURL = findBaseURL() + thisItemID;
 
-    //if this is the top voted
-    alert("checking if the top voted id of "+polyanno_text_selected+" is equal to "+thisItemURL);
-    //polyanno_text_selected = full URL of 
-    // thisItemID = number alone
     if (thisItemURL == polyanno_text_selected){
       $(popupIDstring).find(".polyanno-top-voted").append(thisParagraphHTML);
     }
@@ -890,6 +886,20 @@ var polyanno_reset_EditorsOpen = function(editorsOpen) {
   polyanno_siblingArray = [];
 };
 
+var polyanno_populate_tags = function(theAnno, popupIDstring) {
+  var tagHTML1 = "<a class='polyanno-tag' >";
+  var tagHTML2 = "</a>";
+  if (!isUseless(theAnno.metadata)) {
+    var polyanno_searching = $.grep(theAnno.metadata, function(e){ 
+        if (!isUseless(e.label)) {  return e.label == "Tag";   };
+    });
+    polyanno_searching.forEach(function(theTagSpan){
+      var polyannoTagHTML = tagHTML1 + theTagSpan + tagHTML2;
+      $(popupIDstring).find(".polyanno-metadata-tags-row").append(polyannoTagHTML);
+    });
+  };
+};
+
 var openEditorMenu = function() {
 
   var popupIDstring = createEditorPopupBox();
@@ -900,7 +910,8 @@ var openEditorMenu = function() {
 
   var checkIfNew = polyanno_is_new(popupIDstring, thisSiblingArray);
   if (!checkIfNew) {
-    polyanno_display_editor_texts(thisSiblingArray, popupIDstring)
+    polyanno_display_editor_texts(thisSiblingArray, popupIDstring);
+    polyanno_populate_tags(thisSiblingArray[0][0], popupIDstring);
   };
 
   //just to ensure simple asynchronicity
@@ -1732,8 +1743,15 @@ var polyanno_setup_editor_events = function() {
       };
   });
 
-
-  ///add metedata tags dropdown and closing event listeners here
+  $("#polyanno-page-body").on("click", ".polyanno-metadata-tags-btn", function(event){
+      var theTagsRow = $(this).closest(".textEditorPopup").find(".polyanno-metadata-tags-row");
+      if (theTagsRows.css("display") == "none") {
+        theTagsRows.css("display", "block");
+      }
+      else {
+        theTagsRows.css("display", "none");
+      };
+  });
 
 };
 
@@ -1787,8 +1805,6 @@ var polyanno_setup = function(opts) {
   polyanno_setup_storage(opts.storage);
 
   if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
-
-  alert("the submitted editor options HTML is "+opts.editor_options);
 
   if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
