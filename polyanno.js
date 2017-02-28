@@ -813,7 +813,6 @@ var polyanno_build_text_display_row = function(polyannoTextAnno) {
   var paragraphHTML = " <p id='";
   var middleHTML = "' class='content-area' title=' '>";
   var closingHTML1 = "</p>"
-  alert("so the text to display is "+JSON.stringify(polyannoTextAnno));
   var itemText = polyannoTextAnno.text;
   var itemID = polyannoTextAnno._id;
   var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
@@ -855,12 +854,11 @@ var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
   $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
 
   if (existingTextAnnos.length == 1) {
-    alert("there is only one text and the array is "+JSON.stringify(existingTextAnnos));
-    var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0]);
+    //[[ {} ]]
+    var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0][0]);
     $(popupIDstring).find(".polyanno-top-voted").append(itemHTML);
   }
   else {
-    alert("there are multiple texts");
     polyanno_build_alternatives_list(existingTextAnnos, popupIDstring);
   };
 
@@ -1030,11 +1028,8 @@ var addAnnotation = function(thisEditor){
 
 var polyanno_setting_global_variables = function(fromType) {
 
-  alert("setting global variables with from type of "+fromType);
-
   if (fromType == "vector") {
     var does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
-    alert("from vector with text of "+does_vector_have_text);
     if (does_vector_have_text != false) {
       polyanno_text_selected = does_vector_have_text;
 
@@ -1106,7 +1101,6 @@ var polyanno_setting_global_variables = function(fromType) {
 var polyanno_set_and_open = function(fromType) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
-    alert("targets set now opening");
     openEditorMenu();
   };
 };
