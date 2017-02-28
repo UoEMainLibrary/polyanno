@@ -71,8 +71,6 @@ var currentlyDeleting = false;
 var polyanno_top_bar_HTML = `
   <div class="col-md-6 polyanno-bar-buttons">
 
-    <textarea id="polyanno-dummy-textarea "></textarea>
-
     <div class="row">
 
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
