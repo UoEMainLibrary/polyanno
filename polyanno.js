@@ -91,26 +91,6 @@ var polyanno_top_bar_HTML = `
 
       </div>
 
-      <div class="dropdown polyanno-other-button">
-
-        <button class="btn btn-default " type="button" id="polyanno-bar-other-buttons">
-          <span> ... </span>
-          <span class="caret"></span>
-        </button>
-
-        <ul class="dropdown-menu" aria-labelledby="polyanno-bar-other-buttons">
-            <li>
-            <div class="btn-group polyanno-options-buttons" role="group" aria-label="...">
-              <button class="btn btn-default polyanno-metadata-btn"><span class="glyphicon glyphicon-tags"></span></button>
-              <button class="btn btn-default polyanno-export-text" type="button"><span class="glyphicon glyphicon-save"></span></button> <!--export as txt or PDF??-->
-              <button class="btn btn-default polyanno-social" type="button"><span class="glyphicon glyphicon-share"></span></button> <!-- social media sharing-->
-              <button class="btn btn-default polyanno-report" type="button"><span class="glyphicon glyphicon-exclamation-sign"></span><!--report inappropriate content--></button>
-            </div>
-            </li>
-        </ul>
-
-      </div>
-
     </div>
 
   </div>
