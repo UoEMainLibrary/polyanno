@@ -281,7 +281,7 @@ var isUseless = function(something) {
   else {  return false;  };
 };
 
-var getTargetJSON = function(target) {
+var getTargetJSON = function(target, callback_function) {
 
   if ( isUseless(target) ) { return null;  }
   else {
@@ -301,7 +301,7 @@ var getTargetJSON = function(target) {
   };
 };
 
-var updateAnno = function(targetURL, targetData) {
+var updateAnno = function(targetURL, targetData, callback_function) {
   $.ajax({
     type: "PUT",
     url: targetURL,
@@ -309,7 +309,11 @@ var updateAnno = function(targetURL, targetData) {
     dataType: "json",
     data: targetData,
     success:
-      function (data) {  }
+      function (data) { 
+        if (!isUseless(callback_function)) {
+          callback_function();
+        };
+      }
   });
 };
 
@@ -543,10 +547,8 @@ var newAnnotationFragment = function(baseURL) {
   //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
   polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID); 
   targetSelected = [polyanno_text_selectedHash];
-  //polyanno_text_selectedFragment 
   var targetData = {text: polyanno_text_selectedFragment, metadata: imageSelectedMetadata, parent: polyanno_text_selectedParent};
-
-  //new transcription doc
+  var thisEditorString = $("#"+polyanno_text_selectedID).closest(".textEditorPopup").attr("id");
   
   $.ajax({
     type: "POST",
@@ -558,7 +560,7 @@ var newAnnotationFragment = function(baseURL) {
         var createdText = data.url;
         polyanno_text_selected = createdText;
         var annoData = { body: { id: createdText }, target: [{id: polyanno_text_selectedHash, format: "text/html"}, {id: polyanno_text_selectedParent, format: "application/json"} ] };
-        polyanno_add_annotationdata(annoData, );
+        polyanno_add_annotationdata(annoData, thisEditorString);
       }
   });
 
@@ -611,7 +613,15 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
     newAnnotationFragment(polyanno_urls.transcription);
-    polyanno_set_and_open("text");
+    $(theTextIDstring).popover('hide');    
+  });
+
+  $('.openTranslationMenuNew').on("click", function(event) {
+    insertSpanDivs();
+    polyanno_text_selectedParent = polyanno_urls.translation.concat(theParent);
+    polyanno_text_type_selected = "translation";
+    targetType = "translation";
+    newAnnotationFragment(polyanno_urls.translation);
     $(theTextIDstring).popover('hide');    
   });
 
@@ -963,7 +973,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     data: thisAnnoData,
     success: 
       function (data) {
-        var createdAnno = data.url;
+        
       }
   });
 
@@ -974,6 +984,8 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     var polyanno_new_target_data = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
     var polyanno_the_parent = polyanno_text_selectedParent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
+
+    polyanno_set_and_open("text");
 
     ///refresh parent editor??
 
@@ -986,7 +998,9 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     updateAnno(polyanno_this_vector, polyanno_new_target_data);
   };
   
-  var has_pop_closed = closeEditorMenu(thisEditor, thisAnnoData.body.id);
+  if (!isUseless(thisEditor)) {
+    closeEditorMenu(thisEditor, thisAnnoData.body.id);
+  };
 
 };
 
@@ -1392,17 +1406,6 @@ var polyanno_creating_vec = function() {
         annoData[polyanno_text_type_selected] = theTopText;  
       };
 
-      $.ajax({
-        type: "POST",
-        url: polyanno_urls.vector,
-        async: false,
-        data: annoData,
-        success: 
-          function (data) {
-            vectorSelected = data.url;
-          }
-      });
-
       var targetData = {target: [], body: {}};
       var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
       targetData.target.push({
@@ -1414,20 +1417,22 @@ var polyanno_creating_vec = function() {
           "format": "jpg" ////official jpg file type???
       });
 
-      targetData.body.id = vectorSelected;
-
       $.ajax({
         type: "POST",
-        url: polyanno_urls.annotation,
+        url: polyanno_urls.vector,
         async: false,
-        data: targetData,
+        data: annoData,
         success: 
-          function (data) {}
+          function (data) {
+            vectorSelected = data.url;
+            targetData.body.id = data.url;
+            polyanno_add_annotationdata(targetData);
+            layer._leaflet_id = data.url;
+            if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
+            else {  updateVectorSelection(data.url); };
+          }
       });
 
-      layer._leaflet_id = vectorSelected;
-      if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
-      else {  updateVectorSelection(vectorSelected); };
     };
 
   });
