@@ -409,7 +409,12 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
     async: false,
     success: 
       function (data) {
-        polyanno_search_annos_by_ids(data.list, baseURL, target, callback_function);
+        if (!isUseless(data.list[0])) {
+          polyanno_search_annos_by_ids(data.list, baseURL, target, callback_function);
+        }
+        else {
+          callback_function();
+        };
       }
   });
 
