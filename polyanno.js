@@ -516,7 +516,9 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 
 var findHighestRankingChild = function(parent, locationID) {
   ///returning error of too many HTTP redirects when a new vector has been drawn
-  var theLocation = fieldMatching(getTargetJSON(parent).children, "id", locationID);
+  var the_parent_json = getTargetJSON(parent);
+  alert(JSON.stringify(the_parent_json));
+  var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
   var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
   return findField(the_child, "id");
 };
