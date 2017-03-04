@@ -515,6 +515,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 
 
 var findHighestRankingChild = function(parent, locationID) {
+  ///returning error of too many HTTP redirects when a new vector has been drawn
   var theLocation = fieldMatching(getTargetJSON(parent).children, "id", locationID);
   var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
   return findField(the_child, "id");
@@ -617,8 +618,8 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     polyanno_text_selectedParent = polyanno_urls.transcription.concat(theParent);
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
-    newAnnotationFragment(polyanno_urls.transcription);
-    $(theTextIDstring).popover('hide');    
+    $(theTextIDstring).popover('hide'); 
+    newAnnotationFragment(polyanno_urls.transcription);   
   });
 
   $('.openTranslationMenuNew').on("click", function(event) {
@@ -626,8 +627,8 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     polyanno_text_selectedParent = polyanno_urls.translation.concat(theParent);
     polyanno_text_type_selected = "translation";
     targetType = "translation";
-    newAnnotationFragment(polyanno_urls.translation);
-    $(theTextIDstring).popover('hide');    
+    $(theTextIDstring).popover('hide'); 
+    newAnnotationFragment(polyanno_urls.translation);  
   });
 
   $('.closeThePopover').on("click", function(event){
@@ -888,6 +889,8 @@ var polyanno_populate_tags = function(theAnno, popupIDstring) {
 };
 
 var openEditorMenu = function(thisSiblingArray) {
+
+  alert("now opening menu with array of "+JSON.stringify(thisSiblingArray));
 
   var popupIDstring = createEditorPopupBox();
 
