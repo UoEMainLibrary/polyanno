@@ -405,13 +405,13 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
     async: false,
     success: 
       function (data) {
-        polyanno_search_annos_by_ids(data.list, callback_function);
+        polyanno_search_annos_by_ids(data.list, baseURL, callback_function);
       }
   });
 
 };
 
-var polyanno_search_annos_by_ids = function(childTexts, callback_function) {
+var polyanno_search_annos_by_ids = function(childTexts, baseURL, callback_function) {
     var ids = [];
     childTexts.forEach(function(doc){
         ids.push(doc.body.id);
@@ -452,6 +452,28 @@ var updateVectorSelection = function(the_vector_url) {
 
 };
 
+var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID) {
+  if (updatedTranscription) {    
+    polyanno_text_selected = targetID;
+    closeEditorMenu(editorID, targetID);  
+  };
+  if (updatedTranscription && (!isUseless(vectorSelected))) {
+    var updateTargetData = {};
+    updateTargetData[polyanno_text_type_selected] = targetID;
+    updateAnno(vectorSelected, updateTargetData);
+  };
+
+  ///////if the parent is open in an editor rebuild carousel with new transcription 
+  editorsOpen.forEach(function(editorOpen){
+    editorOpen.children.forEach(function(eachChild){
+      if ( eachChild.id == polyanno_text_selectedID ){
+        closeEditorMenu(editorOpen.editor, editorOpen.body.id);
+      };
+    });
+  });
+
+};
+
 
 var votingFunction = function(vote, votedID, currentTopText, editorID) {
   var theVote = findBaseURL() + "voting/" + vote;
@@ -467,7 +489,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
     }],
     votedText: votedTextBody,  topText: currentTopText
   };
-  var updatedTranscription;
+
   $.ajax({
     type: "PUT",
     url: theVote,
@@ -476,27 +498,8 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
     data: targetData,
     success:
       function (data) {
-        updatedTranscription = data.reloadText;
+        polyanno_voting_reload_editors(data.reloadText, editorID, targetID);
       }
-  });
-
-  if (updatedTranscription) {    
-    polyanno_text_selected = targetID;
-    closeEditorMenu(editorID, targetID);  
-  };
-  if (updatedTranscription && (!isUseless(vectorSelected))) {
-    var updateTargetData = {};
-    updateTargetData[polyanno_text_type_selected] = targetID;
-    updateAnno(vectorSelected, updateTargetData);
-  };
-
-///////if the parent is open in an editor rebuild carousel with new transcription 
-  editorsOpen.forEach(function(editorOpen){
-    editorOpen.children.forEach(function(eachChild){
-      if ( eachChild.id == polyanno_text_selectedID ){
-        closeEditorMenu(editorOpen.editor, editorOpen.body.id);
-      };
-    });
   });
 
 };
@@ -537,12 +540,11 @@ var findBaseURL = function() {
 };
 
 var newAnnotationFragment = function(baseURL) {
-
-  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID); //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
+  //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
+  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID); 
   targetSelected = [polyanno_text_selectedHash];
   //polyanno_text_selectedFragment 
-  var targetData = {text: polyanno_text_selectedFragment, parent: polyanno_text_selectedParent};
-  var createdText;
+  var targetData = {text: polyanno_text_selectedFragment, metadata: imageSelectedMetadata, parent: polyanno_text_selectedParent};
 
   //new transcription doc
   
@@ -553,27 +555,12 @@ var newAnnotationFragment = function(baseURL) {
     data: targetData,
     success: 
       function (data) {
-        createdText = data.url;
+        var createdText = data.url;
+        polyanno_text_selected = createdText;
+        var annoData = { body: { id: createdText }, target: [{id: polyanno_text_selectedHash, format: "text/html"}, {id: polyanno_text_selectedParent, format: "application/json"} ] };
+        polyanno_add_annotationdata(annoData, );
       }
   });
-
-  polyanno_text_selected = createdText;
-  var annoData = { body: { id: createdText }, target: [{id: polyanno_text_selectedHash, format: "text/html"}, {id: polyanno_text_selectedParent, format: "application/json"} ] };
-
-  //new annotation doc
-
-  $.ajax({
-    type: "POST",
-    url: polyanno_urls.annotation,
-    async: false,
-    data: annoData,
-    success: 
-      function (data) {  }
-  });
-
-  var newHTML = $(outerElementTextIDstring).html();
-  var parentData = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: polyanno_text_selected}]}]};
-  updateAnno(polyanno_text_selectedParent, parentData);
 
 };
 
@@ -618,11 +605,12 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
   });
 
   $('.openTranscriptionMenuNew').on("click", function(event) {
+    ///
     insertSpanDivs();
     polyanno_text_selectedParent = polyanno_urls.transcription.concat(theParent);
-    newAnnotationFragment(polyanno_urls.transcription);
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
+    newAnnotationFragment(polyanno_urls.transcription);
     polyanno_set_and_open("text");
     $(theTextIDstring).popover('hide');    
   });
@@ -982,9 +970,13 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
   //if the annotation is a child then it is targeting its own type, so update parent
   if (targetType.includes(polyanno_text_type_selected)) {
 
-    var polyanno_new_target_data = {children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
+    var newHTML = $(outerElementTextIDstring).html();
+    var polyanno_new_target_data = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
     var polyanno_the_parent = polyanno_text_selectedParent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
+
+    ///refresh parent editor??
+
   };
 
   if (  targetType.includes("vector") && (  isUseless(polyanno_siblingArray[0]) )) {
