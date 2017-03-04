@@ -395,6 +395,8 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
 var polyanno_annos_of_target = function(target, baseURL, callback_function) {
 
+  alert("so the base is "+baseURL);
+
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
 
@@ -517,7 +519,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 var findHighestRankingChild = function(parent, locationID) {
   ///returning error of too many HTTP redirects when a new vector has been drawn
   var the_parent_json = getTargetJSON(parent);
-  alert(JSON.stringify(the_parent_json));
+  //alert("find highest ranking of "+JSON.stringify(the_parent_json));
   var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
   var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
   return findField(the_child, "id");
