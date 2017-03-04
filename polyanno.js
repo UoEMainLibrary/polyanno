@@ -555,6 +555,7 @@ var newAnnotationFragment = function(baseURL) {
   targetSelected = [polyanno_text_selectedHash];
   var targetData = {text: polyanno_text_selectedFragment, metadata: imageSelectedMetadata, parent: polyanno_text_selectedParent};
   var thisEditorString = $("#"+polyanno_text_selectedID).closest(".textEditorPopup").attr("id");
+  alert("this editor string for this text is "+thisEditorString);
   
   $.ajax({
     type: "POST",
@@ -934,6 +935,7 @@ var removeEditorsOpen = function(popupIDstring) {
 
 var closeEditorMenu = function(thisEditor, reopen) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
+  alert("closing the editor called "+thisEditor);
   resetVectorHighlight(thisEditor);
   removeEditorsOpen(thisEditor);
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
@@ -993,9 +995,15 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     var polyanno_the_parent = polyanno_text_selectedParent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
 
-    polyanno_set_and_open("text");
+    //refresh parent editor
+    var parentEditor = thisEditor;
+    thisEditor = false; //prevent repeat opening later
+    var closingTheParentMenu = function() {
+      closeEditorMenu(parentEditor, thisAnnoData.body.id); 
+    };
 
-    ///refresh parent editor??
+    //open new editor for child text
+    polyanno_set_and_open("text", closingTheParentMenu);
 
   };
 
@@ -1006,9 +1014,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     updateAnno(polyanno_this_vector, polyanno_new_target_data);
   };
   
-  if (!isUseless(thisEditor)) {
-    closeEditorMenu(thisEditor, thisAnnoData.body.id);
-  };
+  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, thisAnnoData.body.id);  };
 
 };
 
@@ -1111,10 +1117,11 @@ var polyanno_setting_global_variables = function(fromType) {
 
 };
 
-var polyanno_set_and_open = function(fromType) {
+var polyanno_set_and_open = function(fromType, callback_function) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
     polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
+    callback_function();
   };
 };
 
