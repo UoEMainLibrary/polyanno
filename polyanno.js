@@ -1121,7 +1121,7 @@ var polyanno_set_and_open = function(fromType, callback_function) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
     polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
-    callback_function();
+    if (!isUseless(callback_function)) { callback_function()  };
   };
 };
 
