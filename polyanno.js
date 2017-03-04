@@ -389,10 +389,15 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
 };
 
-var polyanno_annos_of_target = function(target, baseURL) {
-  var childTexts;
+var polyanno_annos_of_target = function(target, baseURL, callback_function) {
+
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
+
+  alert("it is getting the list of ids with this target from the url "+aSearch);
+
+  ///currently polyanno_storage is returning all annotations with this target, regardless of annotation type
+
   $.ajax({
     type: "GET",
     dataType: "json",
@@ -400,23 +405,23 @@ var polyanno_annos_of_target = function(target, baseURL) {
     async: false,
     success: 
       function (data) {
-        childTexts = data.list;
+        polyanno_search_annos_by_ids(data.list, callback_function);
       }
   });
 
-  if ((isUseless(childTexts))||(isUseless(childTexts[0]))) {
-    return false;
-  }
-  else {
+};
 
+var polyanno_search_annos_by_ids = function(childTexts, callback_function) {
     var ids = [];
     childTexts.forEach(function(doc){
         ids.push(doc.body.id);
     });
-
     var theSearch = baseURL.concat("ids/"+encodeURIComponent(ids)+"/target/"+encodeURIComponent(target));
-    //////
-    var theDocs;
+
+    alert("it is getting the array of annos with the url "+theSearch);
+
+    //this is searching the transcriptions database for the actual docs
+  
     $.ajax({
       type: "GET",
       dataType: "json",
@@ -424,12 +429,9 @@ var polyanno_annos_of_target = function(target, baseURL) {
       async: false,
       success: 
         function (data) {
-          theDocs = data.list;
+          callback_function(data.list);
         }
     });
-    return theDocs;
-
-  };
 };
 
 var updateVectorSelection = function(the_vector_url) {
@@ -762,11 +764,6 @@ var polyanno_can_link = function(popupIDstring) {
   };
 };
 
-var polyannoSetSiblingArray = function(callback_function) {  
-  return polyanno_siblingArray = polyanno_annos_of_target(targetSelected[0], findBaseURL()); 
-  if (!isUseless(callback_function)) { callback_function(); };
-};
-
 var polyanno_can_vote_add = function(popupIDstring) {
   if ( targetType.includes(polyanno_text_type_selected) ) {
     $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
@@ -887,10 +884,9 @@ var polyanno_populate_tags = function(theAnno, popupIDstring) {
   };
 };
 
-var openEditorMenu = function() {
+var openEditorMenu = function(thisSiblingArray) {
 
   var popupIDstring = createEditorPopupBox();
-  var thisSiblingArray = polyannoSetSiblingArray();
 
   polyanno_can_link(popupIDstring);
   polyanno_can_vote_add(popupIDstring);
@@ -1104,7 +1100,7 @@ var polyanno_setting_global_variables = function(fromType) {
 var polyanno_set_and_open = function(fromType) {
   var the_targets = polyanno_setting_global_variables(fromType);
   if (!isUseless(the_targets)) {
-    openEditorMenu();
+    polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
   };
 };
 
@@ -1347,7 +1343,7 @@ var polyanno_leaflet_basic_setup = function() {
 
   polyanno_map.whenReady(function(){
     mapset = true;
-    polyanno_load_existing_vectors();
+    polyanno_annos_of_target(imageSelected, polyanno_urls.vector, polyanno_load_existing_vectors);
     polyanno_creating_vec();
     polyanno_vec_select();
     polyanno_vector_edit_setup();
@@ -1356,9 +1352,7 @@ var polyanno_leaflet_basic_setup = function() {
 };
 
 //load the existing vectors
-var polyanno_load_existing_vectors = function() {
-
-  var existingVectors = polyanno_annos_of_target(imageSelected, polyanno_urls.vector);
+var polyanno_load_existing_vectors = function(existingVectors) {
 
   var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{}  };
   var currentVectorLayers = {};
@@ -1790,6 +1784,7 @@ var polyanno_setup = function(opts) {
     addIMEs(true, true, true);
   };
 
+  ///this is currently compulsory and synchronous but should use a local storage in parallel soon too like Leaflet Draw?
   polyanno_setup_storage(opts.storage);
 
   if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
