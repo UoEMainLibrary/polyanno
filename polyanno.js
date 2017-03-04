@@ -996,7 +996,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
 
   };
 
-  if (  targetType.includes("vector") && (  isUseless(polyanno_siblingArray[0]) )) {
+  if (  targetType.includes("vector") && (  isUseless(polyanno_siblingArray) || isUseless(polyanno_siblingArray[0]) )) {
     var polyanno_new_target_data = {};
     polyanno_new_target_data[polyanno_text_type_selected] = thisAnnoData.body.id;
     var polyanno_this_vector = vectorSelected;
