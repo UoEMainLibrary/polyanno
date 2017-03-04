@@ -409,13 +409,13 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
     async: false,
     success: 
       function (data) {
-        polyanno_search_annos_by_ids(data.list, baseURL, callback_function);
+        polyanno_search_annos_by_ids(data.list, baseURL, target, callback_function);
       }
   });
 
 };
 
-var polyanno_search_annos_by_ids = function(childTexts, baseURL, callback_function) {
+var polyanno_search_annos_by_ids = function(childTexts, baseURL, target, callback_function) {
     var ids = [];
     childTexts.forEach(function(doc){
         ids.push(doc.body.id);
