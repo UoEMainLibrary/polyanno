@@ -1004,7 +1004,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
   alert("the targetType is "+targetType+" and the text type selected is "+polyanno_text_type_selected);
 
   //if the annotation is a child then it is targeting its own type, so update parent
-  if (targetType.includes(polyanno_text_type_selected)) {
+  if ((!isUseless(polyanno_text_type_selected)) && targetType.includes(polyanno_text_type_selected)) {
 
     var newHTML = $(outerElementTextIDstring).html();
     var polyanno_new_target_data = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
