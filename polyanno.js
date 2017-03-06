@@ -1,7 +1,7 @@
 
 /////GLOBAL VARIABLES
 
-var rejectionOptions = new Set(["false",'""' , null , false , 'undefined']);
+var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
 
 var websiteAddress;
 var polyanno_urls = {};
@@ -16,22 +16,22 @@ var polyanno_translation = true;
 var imageSelected; //info.json format URL
 var imageSelectedMetadata = []; ////???
 
-var vectorSelected = ""; //API URL
+var vectorSelected; //API URL
 var vectorSelectedParent; //API URL
 var currentCoords;
 
-var polyanno_text_selected = ""; //API URL of the image currently being displayed
+var polyanno_text_selected; //API URL of the image currently being displayed
 
 //target variables
-var polyanno_text_selectedParent = ""; //API URL
+var polyanno_text_selectedParent; //API URL
 var polyanno_text_selectedID; //DOM id
 var polyanno_text_selectedHash; //parent API URL + ID
 var polyanno_text_selectedFragment; //HTML Selection Object
-var polyanno_text_type_selected = "";
+var polyanno_text_type_selected;
 
 //URLs
 var targetSelected; //array
-var targetType = ""; 
+var targetType; 
 var polyanno_siblingArray;
 
 ///[editor, vector, span] colours
@@ -882,11 +882,11 @@ var addEditorsOpen = function(popupIDstring) {
 };
 
 var polyanno_reset_global_variables = function() {
-  vectorSelected = "";
-  polyanno_text_selectedParent = "";
-  polyanno_text_selectedID = "";
-  polyanno_text_selectedHash = "";
-  polyanno_text_type_selected = "";
+  vectorSelected = false;
+  polyanno_text_selectedParent = false;
+  polyanno_text_selectedID = false;
+  polyanno_text_selectedHash = false;
+  polyanno_text_type_selected = false;
   polyanno_siblingArray = [];
 };
 
