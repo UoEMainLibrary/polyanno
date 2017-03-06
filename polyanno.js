@@ -1049,7 +1049,7 @@ var addAnnotation = function(thisEditor){
         };
 
         closeEditorMenu(thisEditor);
-        polyanno_add_annotationdata(thisAnnoData, thisEditor);
+        polyanno_add_annotationdata(thisAnnoData);
       }
   });
 
