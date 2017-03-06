@@ -1346,7 +1346,7 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
   var selection = getSelected(); 
   var classCheck;
-  if (!isUseless(selection)) {
+  if (!isUseless(selection) || !isUseless(selection.anchorNode.parentElement) ) {
     classCheck = selection.anchorNode.parentElement.className;
   };
 
