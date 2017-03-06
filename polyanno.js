@@ -940,8 +940,6 @@ var removeEditorsOpen = function(popupIDstring) {
 var closeEditorMenu = function(thisEditor, reopen) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   alert("closing the editor called "+thisEditor);
-  resetVectorHighlight(thisEditor);
-  removeEditorsOpen(thisEditor);
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
     polyanno_text_selected = reopen;
@@ -949,6 +947,8 @@ var closeEditorMenu = function(thisEditor, reopen) {
     return the_editor_gone;
   }
   else {
+    resetVectorHighlight(thisEditor);
+    removeEditorsOpen(thisEditor);
     return the_editor_gone;
   }
 };
@@ -999,14 +999,14 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     var polyanno_the_parent = polyanno_text_selectedParent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
 
-    //refresh parent editor
+    //refresh parent editor setup
     var parentEditor = thisEditor;
     thisEditor = false; //prevent repeat opening later
     var closingTheParentMenu = function() {
       closeEditorMenu(parentEditor, thisAnnoData.body.id); 
     };
 
-    //open new editor for child text
+    //open new editor for child text then as callback refresh the parent editor
     polyanno_set_and_open("text", closingTheParentMenu);
 
   };
