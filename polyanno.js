@@ -387,7 +387,7 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
   ///this is not working because that polyanno_storage function was never built yet...
   var findByBodyURL = polyanno_urls.annotation.concat("body/"+encodeURIComponent(theText));
-  //the url string isn't even loading???
+
   alert("searching for vector target by searching the url of "+findByBodyURL+" that is made of "+polyanno_urls.annotation+" and encoding "+theText);
   //var the_regex = '/.*'+the_target_type+'.*/';
   var theChecking = checkFor(findByBodyURL, "target");
@@ -462,10 +462,10 @@ var updateVectorSelection = function(the_vector_url) {
     ////check selectingVector is not anno
     updateAnno(child[0].body.id, textData);
   });
-  //need to ensure asynchronicity here
-  selectingVector = false;
 
   var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector[0][0].parent).editor;
+  //need to ensure asynchronicity here
+  selectingVector = false;
   ///////NEEDS WORK!!
   closeEditorMenu(editorID, true);
 
@@ -527,6 +527,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 var findHighestRankingChild = function(parent, locationID) {
   ///returning error of too many HTTP redirects when a new vector has been drawn
   /////the_parent_json is returning undefined
+  //the url string isn't even loading when it is the result of a new vector created???
   var the_parent_json = getTargetJSON(parent);
   alert("find highest ranking of "+JSON.stringify(the_parent_json)+" by searching the url "+parent);
   var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
@@ -1422,9 +1423,6 @@ var polyanno_load_existing_vectors = function(existingVectors) {
 var polyanno_creating_vec = function() {
   polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
 
-    ///not sure entirely about synchronicity of this but meh
-    polyanno_reset_global_variables();
-
     var layer = evt.layer;
     var shape = layer.toGeoJSON();
     var vectorOverlapping = searchForVectorParents(allDrawnItems, shape.geometry.coordinates[0]); 
@@ -1439,9 +1437,14 @@ var polyanno_creating_vec = function() {
       var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
 
       if (selectingVector != false) { 
+        alert("the variable selectingvector is "+selectingVector);
         var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
         annoData[polyanno_text_type_selected] = theTopText;  
-      };
+      }
+      else {
+        ///not sure entirely about synchronicity of this but meh
+        polyanno_reset_global_variables();
+      }
 
       var targetData = {target: [], body: {}};
       var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
