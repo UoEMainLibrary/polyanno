@@ -1083,7 +1083,7 @@ var polyanno_setting_global_variables = function(fromType) {
     
   }
   else if (fromType == "text") {
-    ///
+    alert("from text");
     var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
     polyanno_text_selected = what_is_topvoted_here;
     var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); ///returning URL alone, NOT JSON
