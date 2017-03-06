@@ -1311,9 +1311,7 @@ var polyanno_open_existing_text_transcription_menu = function() {
   polyanno_reset_global_variables();
 
   var selection = getSelected(); 
-  var classCheck = selection.anchorNode.parentElement.className;
-
-  alert("running the function for old text annos and classCheck shows "+classCheck+" and the outer element id is "+outerElementTextIDstring);
+  alert("running the function for old text annos and the outer element id is "+outerElementTextIDstring);
 
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
@@ -1347,7 +1345,10 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
   polyanno_reset_global_variables();
 
   var selection = getSelected(); 
-  var classCheck = selection.anchorNode.parentElement.className;
+  var classCheck;
+  if (!isUseless(selection)) {
+    classCheck = selection.anchorNode.parentElement.className;
+  };
 
   if ((classCheck.includes('openTranscriptionMenuOld'))||(classCheck.includes('openTranslationMenuOld')) ) { //if it is a popover within the selection rather than the text itself
 
