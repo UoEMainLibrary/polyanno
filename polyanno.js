@@ -395,12 +395,8 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
 var polyanno_annos_of_target = function(target, baseURL, callback_function) {
 
-  alert("so the base is "+baseURL);
-
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
-
-  alert("it is getting the list of ids with this target from the url "+aSearch);
 
   ///currently polyanno_storage is returning all annotations with this target, regardless of annotation type
 
@@ -414,7 +410,7 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
         if (!isUseless(data.list[0])) {
           polyanno_search_annos_by_ids(data.list, baseURL, target, callback_function);
         }
-        else {
+        else if (!isUseless(callback_function)) {
           callback_function();
         };
       }
@@ -428,8 +424,6 @@ var polyanno_search_annos_by_ids = function(childTexts, baseURL, target, callbac
         ids.push(doc.body.id);
     });
     var theSearch = baseURL.concat("ids/"+encodeURIComponent(ids)+"/target/"+encodeURIComponent(target));
-
-    alert("it is getting the array of annos with the url "+theSearch);
 
     //this is searching the transcriptions database for the actual docs
   
@@ -559,7 +553,6 @@ var newAnnotationFragment = function(baseURL) {
   targetSelected = [polyanno_text_selectedHash];
   var targetData = {text: polyanno_text_selectedFragment, metadata: imageSelectedMetadata, parent: polyanno_text_selectedParent};
   var thisEditorString = $("#"+polyanno_text_selectedID).closest(".textEditorPopup").attr("id");
-  alert("this editor string for this text is "+thisEditorString);
   
   $.ajax({
     type: "POST",
@@ -870,7 +863,7 @@ var addEditorsOpen = function(popupIDstring) {
   });
 };
 
-var polyanno_reset_EditorsOpen = function(editorsOpen) {
+var polyanno_reset_global_variables = function() {
   vectorSelected = "";
   polyanno_text_selectedParent = "";
   polyanno_text_selectedID = "";
@@ -895,8 +888,6 @@ var polyanno_populate_tags = function(theAnno, popupIDstring) {
 
 var openEditorMenu = function(thisSiblingArray) {
 
-  alert("now opening menu with array of "+JSON.stringify(thisSiblingArray));
-
   var popupIDstring = createEditorPopupBox();
 
   polyanno_can_link(popupIDstring);
@@ -908,9 +899,7 @@ var openEditorMenu = function(thisSiblingArray) {
     polyanno_populate_tags(thisSiblingArray[0][0], popupIDstring);
   };
 
-  //just to ensure simple asynchronicity
-  var polyanno_currentEditorsOpen = addEditorsOpen(popupIDstring); 
-  polyanno_reset_EditorsOpen(polyanno_currentEditorsOpen);
+  addEditorsOpen(popupIDstring); 
 
 };
 
@@ -939,7 +928,6 @@ var removeEditorsOpen = function(popupIDstring) {
 
 var closeEditorMenu = function(thisEditor, reopen) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
-  alert("closing the editor called "+thisEditor);
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
     polyanno_text_selected = reopen;
@@ -1096,7 +1084,6 @@ var polyanno_setting_global_variables = function(fromType) {
     var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
     alert("from refresh and text type is"+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
     if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
-      alert("from refresh and has text and vector");
 
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
@@ -1105,15 +1092,13 @@ var polyanno_setting_global_variables = function(fromType) {
       return targetSelected = [theHashHere, does_have_vector_target];
     }
     else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
-      alert("from refresh and has text but no vector");
+      alert("from refresh and has text but no vector and the text type selected is "+polyanno_text_type_selected);
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
-
       targetType = polyanno_text_type_selected;
       return targetSelected = [theHashHere];
     }
     else if ((does_text_have_parent == false) && (does_have_vector_target != false)) {
-      alert("from refresh and has no text but does have vector");
       targetType = "vector";
       return targetSelected = [does_have_vector_target];
     };
@@ -1312,6 +1297,9 @@ var getIIIFsectionURL = function (imageJSON, coordinates, formats) {
 
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
+  ///not sure entirely about synchronicity of this but meh
+  polyanno_reset_global_variables();
+
   var selection = getSelected(); 
   var classCheck = selection.anchorNode.parentElement.className;
 
@@ -1326,6 +1314,17 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
     $(outerElementTextIDstring).popover('hide'); ////
 
   }   
+  else if (classCheck.includes('openTranslationMenuOld')) { //if it is a popover within the selection rather than the text itself
+
+    polyanno_text_selectedID = startParentID;
+    if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
+      polyanno_text_selectedParent = polyanno_urls.translation + $(outerElementTextIDstring).parent().attr('id'); 
+    };
+    polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
+    checkEditorsOpen("text", "translation");
+    $(outerElementTextIDstring).popover('hide'); ////
+
+  }  
   else if (classCheck.includes('popover-title')) { 
     $(outerElementTextIDstring).popover('hide'); ///
   } 
@@ -1406,6 +1405,9 @@ var polyanno_load_existing_vectors = function(existingVectors) {
 
 var polyanno_creating_vec = function() {
   polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
+
+    ///not sure entirely about synchronicity of this but meh
+    polyanno_reset_global_variables();
 
     var layer = evt.layer;
     var shape = layer.toGeoJSON();
