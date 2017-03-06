@@ -837,7 +837,6 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
 var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 
   $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
-  alert("the existing annos array is "+JSON.stringify(existingTextAnnos));
 
   if (existingTextAnnos.length == 1) {
     //[[ {} ]]
@@ -1515,11 +1514,11 @@ var polyanno_image_popovers_setup = function() {
 
   $('#map').on("shown.bs.popover", function(event) {
 
-    $('#polyanno-page-body').one("click", '.openTranscriptionMenuParent', function(event) {
+    $('#polyanno-page-body').on("click", '.openTranscriptionMenuParent', function(event) {
       checkEditorsOpen("vector", "transcription");
       $('#map').popover('hide');
     });
-    $('#polyanno-page-body').one("click", '.openTranslationMenuParent', function(event) {
+    $('#polyanno-page-body').on("click", '.openTranslationMenuParent', function(event) {
       checkEditorsOpen("vector", "translation");
       $('#map').popover('hide');
     });
