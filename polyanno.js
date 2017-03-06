@@ -394,7 +394,15 @@ var checkForVectorTarget = function(theText, the_target_type) {
   if (  isUseless(theChecking[0])  ) { return false } 
   else {   
     alert("have found the transcription targets to be "+JSON.stringify(theChecking));
-    return fieldMatching(theChecking, "format", 'image/SVG').body.id;  
+/* This is returning the JSON of annotation target of the type:
+  {
+    "id": "http:\/\/localhost:8080\/api\/vectors\/58bd6c0e6ef3451b18000007",
+    "_id": "58bd6c2e6ef3451b1800000e",
+    "format": "image\/SVG"
+  }
+  So the .id is only providing the URL alone, not the JSON
+*/
+    return fieldMatching(theChecking, "format", 'image/SVG').id;  
   };
 
 };
@@ -1077,7 +1085,7 @@ var polyanno_setting_global_variables = function(fromType) {
     ///
     var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
     polyanno_text_selected = what_is_topvoted_here;
-    var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here);
+    var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); ///returning URL alone, NOT JSON
     if (does_have_vector_target != false) {
       vectorSelected =  does_have_vector_target;
 
@@ -1091,7 +1099,7 @@ var polyanno_setting_global_variables = function(fromType) {
   }
   else if (fromType == "refresh") {
     var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
-    var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
+    var does_have_vector_target = checkForVectorTarget(polyanno_text_selected); ///returning URL alone, NOT JSON
     alert("from refresh and text type is "+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
     if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
