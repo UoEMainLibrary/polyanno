@@ -707,6 +707,7 @@ var setNewTextVariables = function(selection, classCheck) {
   var startNodeTextEndIndex = startNodeText.toString().length;
   startParentID = startNode.parentElement.id;
   var startParentClass = startNode.parentElement.className;
+  alert("the startParentClass is "+startParentClass);
 
   var nodeLocationStart = selection.anchorOffset; //index from within startNode text where selection starts
   var nodeLocationEnd = selection.focusOffset; //index from within endNode text where selection ends
@@ -731,6 +732,7 @@ var setNewTextVariables = function(selection, classCheck) {
     newNodeInsertID = Math.random().toString().substring(2);
 
     var newSpan = "<a class='" + newSpanClass(startParentClass) + " ' id='" + newNodeInsertID + "' >" + selection + "</a>";
+    alert("the new span is "+newSpan);
     var outerElementHTML = $(outerElementTextIDstring).html().toString(); //includes any spans that are contained within this selection 
 
     ///CONTENT BEFORE HIGHLIGHT IN THE TEXT TYPE NODE
@@ -750,6 +752,7 @@ var setNewTextVariables = function(selection, classCheck) {
     var outerElementEndContent = setOEEC(outerElementHTML, nextSpanContent, nextSpan );
 
     newContent = outerElementStartContent + newSpan + outerElementEndContent;
+    alert("so in total the newContent is "+newContent);
     polyanno_text_selectedFragment = strangeTrimmingFunction(selection);
 
     initialiseNewTextPopovers(outerElementTextIDstring, startParentID);
