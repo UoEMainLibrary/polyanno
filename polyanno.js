@@ -463,8 +463,7 @@ var updateVectorSelection = function(the_vector_url) {
   var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector[0][0].parent).editor;
   //need to ensure asynchronicity here
   selectingVector = false;
-  ///////NEEDS WORK!!
-  closeEditorMenu(editorID, true);
+  $(editorID).find(".polyanno-vector-link-row").css("display", "none");
 
 };
 
@@ -731,7 +730,8 @@ var setNewTextVariables = function(selection, classCheck) {
     var outerElementHTML = $(outerElementTextIDstring).html().toString(); //includes any spans that are contained within this selection 
 
     ///CONTENT BEFORE HIGHLIGHT IN THE TEXT TYPE NODE
-    var previousSpanContent = startNodeText.slice(0, nodeLocationStart);
+    var previousSpanContent = startNodeText.slice(0, nodeLocationStart); 
+    /////this including to the end of the selected text???
 
     //CONTENT BEFORE HIGHLIGHT IN THE ELEMENT TYPE NODE
     var previousSpan = startNode.previousElementSibling; //returns null if none i.e. this text node is first node in element node
@@ -739,6 +739,7 @@ var setNewTextVariables = function(selection, classCheck) {
 
     ///CONTENT AFTER HIGHLIGHT IN THE TEXT TYPE NODE
     var nextSpanContent;
+    ////this is starting before the start of the selected text???
     if (endNode == startNode) { nextSpanContent = startNodeText.slice(nodeLocationEnd, startNodeTextEndIndex)}
     else {nextSpanContent = endNodeText.slice(0, nodeLocationEnd)};
 
@@ -1011,7 +1012,8 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     var parentEditor = thisEditor;
     thisEditor = false; //prevent repeat opening later
     var closingTheParentMenu = function() {
-      closeEditorMenu(parentEditor, thisAnnoData.body.id); 
+      //closeEditorMenu(parentEditor, thisAnnoData.body.id); 
+      $(thisEditor).find(".content-area").html(newHTML);
     };
 
     //open new editor for child text then as callback refresh the parent editor
