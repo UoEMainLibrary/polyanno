@@ -673,7 +673,6 @@ var initialiseOldTextPopovers = function(theTextIDstring) {
 
 var setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
   var outerElementStartContent;
-  alert("to build the OESC we have the outer element HTML to be "+outerElementHTML+" and previous span content is "+previousSpanContent+" and previous span is "+previousSpan);
   if (previousSpan == "null" || previousSpan == null) {outerElementStartContent = previousSpanContent}
   else {
     var previousSpanAll = previousSpan.outerHTML;
@@ -685,7 +684,6 @@ var setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
 
 var setOEEC = function(outerElementHTML, nextSpanContent, nextSpan) {
     var outerElementEndContent;
-  alert("to build the OEEC we have the outer element HTML to be "+outerElementHTML+" and next span content is "+nextSpanContent+" and next span is "+nextSpan);
     if (nextSpan == "null" || nextSpan == null) {outerElementEndContent = nextSpanContent}
     else {
       var EndIndex = outerElementHTML.indexOf(nextSpan.outerHTML);
@@ -701,7 +699,6 @@ var setNewTextVariables = function(selection, classCheck) {
   var startNodeTextEndIndex = startNodeText.toString().length;
   startParentID = startNode.parentElement.id;
   var startParentClass = startNode.parentElement.parentElement.className;
-  alert("the startParentClass is "+startParentClass);
 
   var nodeLocationStart = selection.anchorOffset; //index from within startNode text where selection starts
   var nodeLocationEnd = selection.focusOffset; //index from within endNode text where selection ends
@@ -747,7 +744,6 @@ var setNewTextVariables = function(selection, classCheck) {
     var outerElementEndContent = setOEEC(outerElementHTML, nextSpanContent, nextSpan );
 
     newContent = outerElementStartContent + newSpan + outerElementEndContent;
-    alert("so in total the newContent is "+newContent);
     polyanno_text_selectedFragment = strangeTrimmingFunction(selection);
 
     initialiseNewTextPopovers(outerElementTextIDstring, startParentID);
@@ -836,7 +832,7 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
     var thisItemURL = findBaseURL() + thisItemID;
 
     if (thisItemURL == polyanno_text_selected){
-      $(popupIDstring).find(".polyanno-top-voted").append(thisParagraphHTML);
+      $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
     }
     else {
       var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + polyannoVoteOverlayHTML + closingHTML2;
