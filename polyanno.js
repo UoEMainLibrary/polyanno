@@ -173,7 +173,7 @@ var popupTranscriptionChildrenMenuHTML = `
   <!-- Children Transcription Text Select Popup Menu-->
   <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuOld editorPopover btn btn-default">VIEW OTHER TRANSCRIPTIONS</a>
+        <a class="openTranscriptionMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_transcription_menu();">VIEW OTHER TRANSCRIPTIONS</a>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
@@ -182,7 +182,7 @@ var popupTranslationChildrenMenuHTML = `
   <!-- Children Translation Text Select Popup Menu -->
   <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuOld editorPopover btn btn-default">VIEW OTHER TRANSLATIONS</a>
+        <a class="openTranslationMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_translation_menu();">VIEW OTHER TRANSLATIONS</a>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
@@ -1304,6 +1304,42 @@ var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 ////INITIALISING AND SETUPS
 
 ///text selection
+
+var polyanno_open_existing_text_transcription_menu = function() {
+    alert("running the function for old text annos");
+
+  ///not sure entirely about synchronicity of this but meh
+  polyanno_reset_global_variables();
+
+  var selection = getSelected(); 
+  var classCheck = selection.anchorNode.parentElement.className;
+
+  polyanno_text_selectedID = startParentID;
+  if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
+    polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
+  };
+  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
+  checkEditorsOpen("text", "transcription");
+  $(outerElementTextIDstring).popover('hide'); ////
+};
+
+var polyanno_open_existing_text_translation_menu = function() {
+    alert("running the function for old text annos");
+
+  ///not sure entirely about synchronicity of this but meh
+  polyanno_reset_global_variables();
+
+  var selection = getSelected(); 
+  var classCheck = selection.anchorNode.parentElement.className;
+
+  polyanno_text_selectedID = startParentID;
+  if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
+    polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
+  };
+  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
+  checkEditorsOpen("text", "translation");
+  $(outerElementTextIDstring).popover('hide'); ////
+};
 
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
