@@ -517,8 +517,9 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 
 var findHighestRankingChild = function(parent, locationID) {
   ///returning error of too many HTTP redirects when a new vector has been drawn
+  /////the_parent_json is returning undefined
   var the_parent_json = getTargetJSON(parent);
-  alert("find highest ranking of "+JSON.stringify(the_parent_json));
+  alert("find highest ranking of "+JSON.stringify(the_parent_json)+" by searching the url "+parent);
   var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
   var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
   return findField(the_child, "id");
@@ -568,7 +569,10 @@ var newAnnotationFragment = function(baseURL) {
       function (data) {
         var createdText = data.url;
         polyanno_text_selected = createdText;
-        var annoData = { body: { id: createdText }, target: [{id: polyanno_text_selectedHash, format: "text/html"}, {id: polyanno_text_selectedParent, format: "application/json"} ] };
+        var annoData = { body: { id: createdText }, target: [
+          {id: polyanno_text_selectedHash, format: "text/html"}, 
+          {id: polyanno_text_selectedParent, format: "application/json"}, 
+          {id: imageSelected,  format: "application/json"  } ] };
         polyanno_add_annotationdata(annoData, thisEditorString);
       }
   });
@@ -953,7 +957,7 @@ var preBtnClosing = function(thisEditor) {
 var findNewTextData = function(editorString) {
 
   var newText = $(editorString).find(".newAnnotation").val();
-  var textData = {text: newText, metadata: imageSelectedMetadata, target: []}; ////
+  var textData = {text: newText, metadata: imageSelectedMetadata, target: [{  "id": imageSelected,  "format": "application/json"  }]};
 
   if (targetType.includes("vector")) {
     textData.target.push({id: vectorSelected, format: "image/SVG"});
@@ -1239,7 +1243,7 @@ var resetVectorHighlight = function(thisEditor) {
 
 var generateIIIFregion = function(coordinates) {
 
-    /////how to encode polygon regions?? Are they allowed in IIIF???
+  ///need to allow polygon encoding in IIIF regions
 
     /*
 
