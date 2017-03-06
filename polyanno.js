@@ -1315,6 +1315,8 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
   if (classCheck.includes('openTranscriptionMenuOld')) { //if it is a popover within the selection rather than the text itself
 
+    alert("trying to open menu of existing text annos");
+
     polyanno_text_selectedID = startParentID;
     if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
       polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
