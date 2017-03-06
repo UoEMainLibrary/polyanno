@@ -387,13 +387,10 @@ var checkForVectorTarget = function(theText, the_target_type) {
 
   ///this is not working because that polyanno_storage function was never built yet...
   var findByBodyURL = polyanno_urls.annotation.concat("body/"+encodeURIComponent(theText));
-
-  alert("searching for vector target by searching the url of "+findByBodyURL+" that is made of "+polyanno_urls.annotation+" and encoding "+theText);
   //var the_regex = '/.*'+the_target_type+'.*/';
   var theChecking = checkFor(findByBodyURL, "target");
   if (  isUseless(theChecking[0])  ) { return false } 
   else {   
-    alert("have found the transcription targets to be "+JSON.stringify(theChecking));
 /* This is returning the JSON of annotation target of the type:
   {
     "id": "http:\/\/localhost:8080\/api\/vectors\/58bd6c0e6ef3451b18000007",
@@ -525,11 +522,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 
 
 var findHighestRankingChild = function(parent, locationID) {
-  ///returning error of too many HTTP redirects when a new vector has been drawn
-  /////the_parent_json is returning undefined
-  //the url string isn't even loading when it is the result of a new vector created???
   var the_parent_json = getTargetJSON(parent);
-  alert("find highest ranking of "+JSON.stringify(the_parent_json)+" by searching the url "+parent);
   var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
   var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
   return findField(the_child, "id");
@@ -681,6 +674,7 @@ var initialiseOldTextPopovers = function(theTextIDstring) {
 
 var setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
   var outerElementStartContent;
+  alert("to build the OESC we have the outer element HTML to be "+outerElementHTML+" and previous span content is "+previousSpanContent+" and previous span is "+previousSpan);
   if (previousSpan == "null" || previousSpan == null) {outerElementStartContent = previousSpanContent}
   else {
     var previousSpanAll = previousSpan.outerHTML;
@@ -692,6 +686,7 @@ var setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
 
 var setOEEC = function(outerElementHTML, nextSpanContent, nextSpan) {
     var outerElementEndContent;
+  alert("to build the OEEC we have the outer element HTML to be "+outerElementHTML+" and next span content is "+nextSpanContent+" and next span is "+nextSpan);
     if (nextSpan == "null" || nextSpan == null) {outerElementEndContent = nextSpanContent}
     else {
       var EndIndex = outerElementHTML.indexOf(nextSpan.outerHTML);
@@ -706,7 +701,7 @@ var setNewTextVariables = function(selection, classCheck) {
   var startNodeText = startNode.textContent; // the actual textual body of the startNode - removes all html element tags contained
   var startNodeTextEndIndex = startNodeText.toString().length;
   startParentID = startNode.parentElement.id;
-  var startParentClass = startNode.parentElement.className;
+  var startParentClass = startNode.parentElement.parentElement.className;
   alert("the startParentClass is "+startParentClass);
 
   var nodeLocationStart = selection.anchorOffset; //index from within startNode text where selection starts
@@ -1004,8 +999,6 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
       }
   });
 
-  alert("the targetType is "+targetType+" and the text type selected is "+polyanno_text_type_selected+" which is "+isUseless(polyanno_text_type_selected));
-
   //if the annotation is a child then it is targeting its own type, so update parent
   if ((!isUseless(polyanno_text_type_selected)) && targetType.includes(polyanno_text_type_selected)) {
 
@@ -1088,7 +1081,6 @@ var polyanno_setting_global_variables = function(fromType) {
     
   }
   else if (fromType == "text") {
-    alert("from text");
     var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
     polyanno_text_selected = what_is_topvoted_here;
     var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); ///returning URL alone, NOT JSON
@@ -1106,8 +1098,7 @@ var polyanno_setting_global_variables = function(fromType) {
   else if (fromType == "refresh") {
     var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
     var does_have_vector_target = checkForVectorTarget(polyanno_text_selected); ///returning URL alone, NOT JSON
-    alert("from refresh and text type is "+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
-    if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
+   if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
