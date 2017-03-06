@@ -1001,7 +1001,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
       }
   });
 
-  alert("the targetType is "+targetType+" and the text type selected is "+polyanno_text_type_selected);
+  alert("the targetType is "+targetType+" and the text type selected is "+polyanno_text_type_selected+" which is "+isUseless(polyanno_text_type_selected));
 
   //if the annotation is a child then it is targeting its own type, so update parent
   if ((!isUseless(polyanno_text_type_selected)) && targetType.includes(polyanno_text_type_selected)) {
