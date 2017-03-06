@@ -1273,24 +1273,22 @@ var generateIIIFregion = function(coordinates) {
     var y = -xy2[1];
     var w = xy3[0] - xy2[0];
     var h = xy2[1] - xy1[1];
-    var paramURL = x.toString() + "," + y.toString() + "," + w.toString() + "," + h.toString() + "/full/0/";
+    var paramURL = x.toString() + "," + y.toString() + "," + w.toString() + "," + h.toString() + "/full/0/default";
 
     return paramURL;
 };
 
-var getIIIFsectionURL = function (imageJSON, coordinates, formats) {
+var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 
     var imagewithoutinfo = imageJSON.split("/info.json",1);
     var imagewithoutinfoURL = imagewithoutinfo[0];
+    /*
     var splitIndex = imagewithoutinfoURL.lastIndexOf("/");
     var image_id = imagewithoutinfoURL.substring(splitIndex +1);
     var baseImageURL = imagewithoutinfoURL.slice(0, splitIndex +1);
-
+    */
     var regionParams = generateIIIFregion(coordinates);
-    var pickAFormat = formats;
-
-    var params = regionParams.concat(image_id + "." + pickAFormat);
-    var theURL = baseImageURL.concat(params);
+    var theURL = imagewithoutinfoURL.concat(regionParams + "." + format);
 
     return theURL;
 };
@@ -1440,7 +1438,7 @@ var polyanno_creating_vec = function() {
       });
       targetData.target.push({
           "id": IIIFsection,
-          "format": "jpg" ////official jpg file type???
+          "format": "image/jpg" 
       });
 
       $.ajax({
