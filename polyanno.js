@@ -386,8 +386,9 @@ var findClassID = function(classString, IDstring) {
 var checkForVectorTarget = function(theText, the_target_type) {
 
   ///this is not working because that polyanno_storage function was never built yet...
-  var findByBodyURL = polyanno_urls.annotation + "body/"+encodeURIComponent(theText);
-  alert("searching for vector target by searching the url of "+findByBodyURL);
+  var findByBodyURL = polyanno_urls.annotation.concat("body/"+encodeURIComponent(theText));
+  //the url string isn't even loading???
+  alert("searching for vector target by searching the url of "+findByBodyURL+" that is made of "+polyanno_urls.annotation+" and encoding "+theText);
   //var the_regex = '/.*'+the_target_type+'.*/';
   var theChecking = checkFor(findByBodyURL, "target");
   if (  isUseless(theChecking[0])  ) { return false } 
@@ -960,6 +961,10 @@ var findNewTextData = function(editorString) {
   var textData = {text: newText, metadata: imageSelectedMetadata, target: [{  "id": imageSelected,  "format": "application/json"  }]};
 
   if (targetType.includes("vector")) {
+    ///get vectorSelected JSON
+    //var theCoords = notFeature.notGeometry.notCoordinates;
+    //var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
+    //textData.target.push({id: IIIFsection, format: "image/jpg"});
     textData.target.push({id: vectorSelected, format: "image/SVG"});
   };
 
