@@ -1306,13 +1306,14 @@ var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 ///text selection
 
 var polyanno_open_existing_text_transcription_menu = function() {
-    alert("running the function for old text annos");
 
   ///not sure entirely about synchronicity of this but meh
   polyanno_reset_global_variables();
 
   var selection = getSelected(); 
   var classCheck = selection.anchorNode.parentElement.className;
+
+  alert("running the function for old text annos and classCheck shows "+classCheck+" and the outer element id is "+outerElementTextIDstring);
 
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
@@ -1324,7 +1325,6 @@ var polyanno_open_existing_text_transcription_menu = function() {
 };
 
 var polyanno_open_existing_text_translation_menu = function() {
-    alert("running the function for old text annos");
 
   ///not sure entirely about synchronicity of this but meh
   polyanno_reset_global_variables();
@@ -1334,7 +1334,7 @@ var polyanno_open_existing_text_translation_menu = function() {
 
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
-    polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
+    polyanno_text_selectedParent = polyanno_urls.translation + $(outerElementTextIDstring).parent().attr('id'); 
   };
   polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
   checkEditorsOpen("text", "translation");
@@ -1349,30 +1349,11 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
   var selection = getSelected(); 
   var classCheck = selection.anchorNode.parentElement.className;
 
-  if (classCheck.includes('openTranscriptionMenuOld')) { //if it is a popover within the selection rather than the text itself
+  if ((classCheck.includes('openTranscriptionMenuOld'))||(classCheck.includes('openTranslationMenuOld')) ) { //if it is a popover within the selection rather than the text itself
 
     alert("trying to open menu of existing text annos");
 
-    polyanno_text_selectedID = startParentID;
-    if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
-      polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
-    };
-    polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
-    checkEditorsOpen("text", "transcription");
-    $(outerElementTextIDstring).popover('hide'); ////
-
-  }   
-  else if (classCheck.includes('openTranslationMenuOld')) { //if it is a popover within the selection rather than the text itself
-
-    polyanno_text_selectedID = startParentID;
-    if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
-      polyanno_text_selectedParent = polyanno_urls.translation + $(outerElementTextIDstring).parent().attr('id'); 
-    };
-    polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
-    checkEditorsOpen("text", "translation");
-    $(outerElementTextIDstring).popover('hide'); ////
-
-  }  
+  }    
   else if (classCheck.includes('popover-title')) { 
     $(outerElementTextIDstring).popover('hide'); ///
   } 
