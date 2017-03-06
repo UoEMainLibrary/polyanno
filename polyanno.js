@@ -1438,7 +1438,7 @@ var polyanno_creating_vec = function() {
 
       if (selectingVector != false) { 
         alert("the variable selectingvector is "+selectingVector);
-        var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+        //var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
         annoData[polyanno_text_type_selected] = theTopText;  
       }
       else {
