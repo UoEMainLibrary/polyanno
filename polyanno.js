@@ -1094,7 +1094,7 @@ var polyanno_setting_global_variables = function(fromType) {
   else if (fromType == "refresh") {
     var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
     var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
-    alert("from refresh and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
+    alert("from refresh and text type is"+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
     if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
       alert("from refresh and has text and vector");
 
