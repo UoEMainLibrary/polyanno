@@ -1001,6 +1001,8 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
       }
   });
 
+  alert("the targetType is "+targetType+" and the text type selected is "+polyanno_text_type_selected);
+
   //if the annotation is a child then it is targeting its own type, so update parent
   if (targetType.includes(polyanno_text_type_selected)) {
 
@@ -1134,7 +1136,6 @@ var polyanno_set_and_open = function(fromType, callback_function) {
 };
 
 var checkEditorsOpen = function(fromType, textType) {
-  alert("checking the editors open from the type "+fromType);
   polyanno_text_type_selected = textType;
   if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType);  }
   else {
@@ -1464,7 +1465,11 @@ var polyanno_creating_vec = function() {
         data: annoData,
         success: 
           function (data) {
+            //setting global variables
             vectorSelected = data.url;
+            targetType = "vector";
+            targetSelected = [vectorSelected];
+
             targetData.body.id = data.url;
             polyanno_add_annotationdata(targetData);
             layer._leaflet_id = data.url;
