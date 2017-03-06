@@ -222,7 +222,7 @@ var polyannoEditorHTML_partfinal = `
         </button> 
       </div>
 
-      <div class="row polyanno-top-voted polyanno-text-display-row">
+      <div class="row polyanno-top-voted polyanno-text-display">
       
         <div class='polyanno-voting-overlay' >
           <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
@@ -784,6 +784,7 @@ var polyanno_can_vote_add = function(popupIDstring) {
     $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
 
     //enable listening event for voting display   
+    ////improve to hover because otherwise flickering for small text displays!!
     $(popupIDstring).on("mouseover", ".polyanno-text-display", function(event){
       $(event.target).find(".polyanno-voting-overlay").css("display", "block");
     });
