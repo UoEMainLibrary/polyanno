@@ -73,6 +73,14 @@ var polyanno_top_bar_HTML = `
 
     <div class="row">
 
+      <div >
+        <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
+      </div>
+
+      <div >
+        <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button>
+      </div>
+
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
 
         <button class="btn btn-default polyanno-add-keyboard" type="button">
@@ -1853,7 +1861,7 @@ var polyanno_setup = function(opts) {
   $("#polyanno-page-body").addClass("atu-keyboard-parent");
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
-  //$(".polyanno-image-box").find("") find handlebar and remove close button
+  $(image_viewer_id).find(".dragondrop-close-pop-btn").css("display", "none");
   $(image_viewer_id).attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
