@@ -726,11 +726,10 @@ var setNewTextVariables = function(selection, classCheck) {
     newNodeInsertID = Math.random().toString().substring(2);
 
     var newSpan = "<a class='" + newSpanClass(startParentClass) + " ' id='" + newNodeInsertID + "' >" + selection + "</a>";
-    alert("the new span is "+newSpan);
-    var outerElementHTML = $(outerElementTextIDstring).html().toString(); //includes any spans that are contained within this selection 
+    var outerElementHTML = $(outerElementTextIDstring).html().toString(); 
 
     ///CONTENT BEFORE HIGHLIGHT IN THE TEXT TYPE NODE
-    var previousSpanContent = startNodeText.slice(0, nodeLocationStart); 
+    var previousSpanContent = startNodeText.slice(0, nodeLocationEnd); 
     /////this including to the end of the selected text???
 
     //CONTENT BEFORE HIGHLIGHT IN THE ELEMENT TYPE NODE
@@ -740,8 +739,8 @@ var setNewTextVariables = function(selection, classCheck) {
     ///CONTENT AFTER HIGHLIGHT IN THE TEXT TYPE NODE
     var nextSpanContent;
     ////this is starting before the start of the selected text???
-    if (endNode == startNode) { nextSpanContent = startNodeText.slice(nodeLocationEnd, startNodeTextEndIndex)}
-    else {nextSpanContent = endNodeText.slice(0, nodeLocationEnd)};
+    if (endNode == startNode) { nextSpanContent = startNodeText.slice(nodeLocationStart, startNodeTextEndIndex)}
+    else {nextSpanContent = endNodeText.slice(0, nodeLocationStart)};
 
     ///CONTENT AFTER HIGHLIGHT IN ELEMENT TYPE NODE
     var nextSpan = endNode.nextElementSibling; //returns null if none i.e. this text node is the last in the element node
