@@ -457,7 +457,7 @@ var updateVectorSelection = function(the_vector_url) {
 
   ///this is the process for linking vectors
 
-  var textData = {target: [{id: the_vector_url, format: "SVG"}]};
+  var textData = {target: [{id: the_vector_url, format: "image/SVG"}]};
   selectingVector.forEach(function(child){
     ////check selectingVector is not anno
     updateAnno(child[0].body.id, textData);
@@ -1134,6 +1134,7 @@ var polyanno_set_and_open = function(fromType, callback_function) {
 };
 
 var checkEditorsOpen = function(fromType, textType) {
+  alert("checking the editors open from the type "+fromType);
   polyanno_text_type_selected = textType;
   if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType);  }
   else {
@@ -1437,8 +1438,7 @@ var polyanno_creating_vec = function() {
       var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
 
       if (selectingVector != false) { 
-        alert("the variable selectingvector is "+selectingVector);
-        //var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+        var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
         annoData[polyanno_text_type_selected] = theTopText;  
       }
       else {
