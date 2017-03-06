@@ -385,11 +385,16 @@ var findClassID = function(classString, IDstring) {
 
 var checkForVectorTarget = function(theText, the_target_type) {
 
+  ///this is not working because that polyanno_storage function was never built yet...
   var findByBodyURL = polyanno_urls.annotation + "body/"+encodeURIComponent(theText);
-  var the_regex = '/.*'+the_target_type+'.*/';
+  alert("searching for vector target by searching the url of "+findByBodyURL);
+  //var the_regex = '/.*'+the_target_type+'.*/';
   var theChecking = checkFor(findByBodyURL, "target");
   if (  isUseless(theChecking[0])  ) { return false } 
-  else {   return fieldMatching(theChecking, "format", 'image/SVG').body.id;  };
+  else {   
+    alert("have found the transcription targets to be "+JSON.stringify(theChecking));
+    return fieldMatching(theChecking, "format", 'image/SVG').body.id;  
+  };
 
 };
 
@@ -1041,13 +1046,10 @@ var polyanno_setting_global_variables = function(fromType) {
     var does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
     if (does_vector_have_text != false) {
       polyanno_text_selected = does_vector_have_text;
-
       var does_text_have_parent = checkFor(does_vector_have_text, "parent");
       if (does_text_have_parent != false) {
-
         polyanno_text_selectedParent = does_text_have_parent;
         var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
-
         targetType = "vector " + polyanno_text_type_selected;
         return targetSelected = [theHashHere, vectorSelected];
       }
@@ -1063,9 +1065,9 @@ var polyanno_setting_global_variables = function(fromType) {
     
   }
   else if (fromType == "text") {
+    ///
     var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
     polyanno_text_selected = what_is_topvoted_here;
-
     var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here);
     if (does_have_vector_target != false) {
       vectorSelected =  does_have_vector_target;
@@ -1081,7 +1083,7 @@ var polyanno_setting_global_variables = function(fromType) {
   else if (fromType == "refresh") {
     var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
     var does_have_vector_target = checkForVectorTarget(polyanno_text_selected);
-    alert("from refresh and text type is"+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
+    alert("from refresh and text type is "+polyanno_text_type_selected+" and text parent is "+does_text_have_parent+" and vector target "+does_have_vector_target);
     if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
       polyanno_text_selectedParent = does_text_have_parent;
