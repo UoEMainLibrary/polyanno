@@ -240,6 +240,10 @@ var polyannoEditorHTML_partfinal = `
         </button> 
       </div>
 
+      <div class="row polyanno-list-alternatives-row">
+
+      </div>
+
       <div class="row polyanno-add-new-toggle-row">
         <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
           Add New Annotation
@@ -258,10 +262,6 @@ var polyannoEditorHTML_partfinal = `
         <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationCancel'>
           Cancel 
         </button> 
-      </div>
-
-      <div class="row polyanno-list-alternatives-row">
-
       </div>
 
       <div class="row polyanno-metadata-tags-row">
