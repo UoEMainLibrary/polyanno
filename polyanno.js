@@ -1048,6 +1048,7 @@ var addAnnotation = function(thisEditor){
           "target": theData.target
         };
 
+        closeEditorMenu(thisEditor);
         polyanno_add_annotationdata(thisAnnoData, thisEditor);
       }
   });
