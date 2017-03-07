@@ -73,15 +73,11 @@ var polyanno_top_bar_HTML = `
 
     <div class="row">
 
-      <div >
-        <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
-      </div>
-
-      <div >
-        <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button>
-      </div>
-
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
+
+        <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
+
+        <!-- <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button> -->
 
         <button class="btn btn-default polyanno-add-keyboard" type="button">
           <span class="glyphicon glyphicon-plus"></span>
