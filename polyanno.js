@@ -559,7 +559,7 @@ var findBaseURL = function() {
   else if (polyanno_text_type_selected == "translation") {  return polyanno_urls.translation;  };
 };
 
-var polyanno_new_child_anno_created = function(baseURL) {
+var polyanno_new_anno_via_selection = function(baseURL) {
   //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
   polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID); 
   targetSelected = [polyanno_text_selectedHash];
@@ -632,7 +632,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
     $(theTextIDstring).popover('hide'); 
-    polyanno_new_child_anno_created(polyanno_urls.transcription);   
+    polyanno_new_anno_via_selection(polyanno_urls.transcription);   
   });
 
   $('.openTranslationMenuNew').on("click", function(event) {
@@ -641,7 +641,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
     polyanno_text_type_selected = "translation";
     targetType = "translation";
     $(theTextIDstring).popover('hide'); 
-    polyanno_new_child_anno_created(polyanno_urls.translation);  
+    polyanno_new_anno_via_selection(polyanno_urls.translation);  
   });
 
   $('.closeThePopover').on("click", function(event){
@@ -1032,7 +1032,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
 
 };
 
-var polyanno_new_anno_of_vector_created = function(thisEditor){
+var polyanno_new_anno_via_text_box = function(thisEditor){
 
   var editorString = "#" + thisEditor;
   var theData = findNewTextData(editorString);
@@ -1736,7 +1736,7 @@ var polyanno_setup_editor_events = function() {
   $('#polyanno-page-body').on("click", '.addAnnotationSubmit', function(event) {
     var thisEditor = $(event.target).closest(".annoPopup").attr("id"); 
     settingEditorVars(thisEditor);
-    polyanno_new_anno_of_vector_created(thisEditor);
+    polyanno_new_anno_via_text_box(thisEditor);
   });
 
   $('#polyanno-page-body').on("click", ".closePopoverMenuBtn", function(){
