@@ -50,6 +50,7 @@ var $imeSelector = false;
 var polyanno_map;
 var baseLayer;
 var allDrawnItems = new L.FeatureGroup();
+var temp_merge_shape = new L.FeatureGroup();
 var controlOptions = {
     draw: {
         polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
@@ -65,6 +66,11 @@ var popupVectorMenu;
 //to track when editing
 var currentlyEditing = false;
 var currentlyDeleting = false;
+
+//merging variables
+var polyanno_merging_vectors = false;
+var polyanno_temp_merge_shape = false; ///Leaflet layer not just GeoJSON
+var polyanno_merging_array = [];
 
 ////HTML VARIABLES
 
@@ -579,7 +585,7 @@ var polyanno_new_anno_via_selection = function(baseURL) {
           {id: polyanno_text_selectedHash, format: "text/html"}, 
           {id: polyanno_text_selectedParent, format: "application/json"}, 
           {id: imageSelected,  format: "application/json"  } ] };
-        polyanno_add_annotationdata(annoData, thisEditorString);
+        polyanno_add_annotationdata(annoData, false, thisEditorString);
       }
   });
 
@@ -987,7 +993,7 @@ var findNewTextData = function(editorString) {
   
 };
 
-var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
+var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor) {
 
   $.ajax({
     type: "POST",
@@ -1000,6 +1006,11 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
       }
   });
 
+  //refresh parent editor setup
+  var closingTheParentMenu = function() {
+    $(parentEditor).find(".content-area").html(newHTML);
+  };
+
   //if the annotation is a child then it is targeting its own type, so update parent
   if ((!isUseless(polyanno_text_type_selected)) && targetType.includes(polyanno_text_type_selected)) {
 
@@ -1007,14 +1018,6 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor) {
     var polyanno_new_target_data = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.body.id}] }]};
     var polyanno_the_parent = polyanno_text_selectedParent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
-
-    //refresh parent editor setup
-    var parentEditor = thisEditor;
-    thisEditor = false; //prevent repeat opening later
-    var closingTheParentMenu = function() {
-      //closeEditorMenu(parentEditor, thisAnnoData.body.id); 
-      $(thisEditor).find(".content-area").html(newHTML);
-    };
 
     //open new editor for child text then as callback refresh the parent editor
     polyanno_set_and_open("text", closingTheParentMenu);
@@ -1052,7 +1055,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
           "target": theData.target
         };
 
-        //closeEditorMenu(thisEditor);
+        closeEditorMenu(thisEditor);
         polyanno_add_annotationdata(thisAnnoData, thisEditor);
       }
   });
@@ -1147,28 +1150,6 @@ var checkEditorsOpen = function(fromType, textType) {
   };
 };
 
-var findVectorParent = function(coordinatesArray, parentCoordsArray) {
-  var xBounds = [ parentCoordsArray[0][0], parentCoordsArray[2][0] ];
-  var yBounds = [ parentCoordsArray[0][1], parentCoordsArray[2][1] ];
-  var counter = 0;
-  coordinatesArray.forEach(function(pair){
-    if (  (xBounds[0] <= pair[0]) && ( pair[0]<= xBounds[1]) && (yBounds[0] <= pair[1]) && (pair[1] <= yBounds[1])  ) {  counter += 1;  };
-  });
-  if (counter >= 3) {  return true;  }
-  else {  return false;  };
-};
-
-var searchForVectorParents = function(theDrawnItems, theCoordinates) {
-  var overlapping = false;
-  theDrawnItems.eachLayer(function(layer){
-    var drawnItem = layer.toGeoJSON();
-    if (findVectorParent(theCoordinates, drawnItem.geometry.coordinates[0])) {  
-      overlapping = layer._leaflet_id ;  
-    };
-  });
-  return overlapping;
-};
-
 var settingEditorVars = function(thisEditor) {
   if(!thisEditor.includes("#")) { thisEditor = "#" + thisEditor; };
   editorsOpen.forEach(function(target){
@@ -1183,6 +1164,7 @@ var settingEditorVars = function(thisEditor) {
     };
   });
 };
+
 
 ////USERS HANDLING
 
@@ -1253,6 +1235,364 @@ var resetVectorHighlight = function(thisEditor) {
 };
 
 ///////LEAFLET 
+
+///////////
+
+var polyanno_check_coords_within_bounds = function(coordinatesArray, xBounds, yBounds) {
+  var counter = [];
+  coordinatesArray.forEach(function(pair){
+    if (  (xBounds[0] <= pair[0]) && ( pair[0]<= xBounds[1]) && (yBounds[0] <= pair[1]) && (pair[1] <= yBounds[1])  ) {  
+      counter.push(pair);  
+    };
+  });
+  return counter;
+};
+
+var findVectorParent = function(coordinatesArray, parentCoordsArray) {
+  ///this only works for rectangular shapes!
+  var xBounds = [ parentCoordsArray[0][0], parentCoordsArray[2][0] ];
+  var yBounds = [ parentCoordsArray[0][1], parentCoordsArray[2][1] ];
+  var overlappingCoords = polyanno_check_coords_within_bounds(coordinatesArray, xBounds, yBounds);
+  if (overlappingCoords.length >= 3) {
+    return true;
+  };
+};
+
+
+/////find anticlockwise angle from edge one to edge two for each vertex in clockwise order
+
+var angle_from_zero = function(x,y) {
+  var angle_radians = Math.atan2(y,x); //atan2 takes y first and deals with segments
+  return angle_radians * (180/Math.PI);
+};
+
+var recentre_coordinates = function(vertex_to_change, new_centre) {
+  var new_x = vertex_to_change[0] - new_centre[0];
+  var new_y = vertex_to_change[1] - new_centre[1];
+  return [new_x, new_y];
+};
+
+//vertex = [x,y]
+var anticlockwise_vertex_angle = function(vertex1, vertex2, vertex3) {
+  //reset the centre to be the second vertex (the actual vertex in question)
+  var new_vertex1 = recentre_coordinates(vertex1, vertex2);
+  var new_vertex3 = recentre_coordinates(vertex3, vertex2);
+  var anticlockwise_angle_v1 = angle_from_zero(new_vertex1);
+  var anticlockwise_angle_v3 = angle_from_zero(new_vertex3);
+  return anticlockwise_angle_v2 - anticlockwise_angle_v1;
+};
+
+var find_concavity_angles = function(coordinates) {
+  /////if angle is between 180 degrees and 360 degrees then add it to the notches array
+  var notches_array = [];
+  for (var i=0; i< coordinates.length; i++) {
+    var the_angle;
+    if (i == (coordinates.length - 2)) {
+      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[0]);
+    }
+    else if (i == (coordinates.length - 1)) {
+      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[0],coordinates[1]);
+    }
+    else {
+      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
+    };
+    if ((the_angle > 180) && (the_angle < 360)) {
+      ///[x,y, coordinates_array_position]
+      notches_array.push([the_angle[0],the_angle[1],i]);
+    };
+  };
+  return notches_array;
+};
+
+//(Chazelle and Dobkin, 1985) Optimal Decomposition Algorithm
+var chazelle_and_dobkin_polynomial_ocd = function(coordinates, notches_array) {
+  var the_OCD_array = [];
+
+  var this_geometry = [];
+  var this_id = Math.random().toString().substring(2);
+  the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
+
+};
+
+//if concave then apply optimal convex decomposition algorithm to vector and store corresponding convex geometry in arrays in notFeatures
+var check_for_concavity = function(coordinates) {
+  var the_notches_array = find_concavity_angles(coordinates);
+  if (the_notches_array.length > 0) {
+    return chazelle_and_dobkin_polynomial_ocd(coordinates, the_notches_array);
+  }
+  else {
+    return false;
+  };
+};
+
+/////properties: [
+///// OCD: [
+///////   { _id: unique_id,
+///////     coordinates: []
+///////   }
+///// ], ....
+
+//////Separating Axis Theorem
+
+//anticlockwise between edges 1 and 2 is always the inside of the shape for all the convex polygons
+//so 180 degrees clockwise of an edge is always the side of the edge overlapping inside the shape
+//so if a vector axis is created along the edge then the perpendicular measurement taken from each vertex of the other shape to that axis
+//if it is on the 180 degrees side interior to the shape then it is overlapping
+
+var rotate_axes_coordinates = function(vertex, rotating_vertex) {
+  var axes_rotation_angle = Math.atan2(rotating_vertex[1],rotating_vertex[0]); //atan2 takes (y,x), deals with segments, and output in radians
+  var old_v_angle = Math.atan2(vertex[1],vertex[0]); 
+  var new_angle = old_v_angle - axes_rotation_angle;
+  var the_radius = Math.sqrt((vertex[0]*vertex[0])+(vertex[1]*vertex[1]));
+  var new_y = the_radius * (Math.sin(new_angle));
+  return new_y;
+};
+
+var find_y_dash_value = function(vertex, first_point, second_point) {
+  var new_vertex2 = recentre_coordinates(second_point, first_point);
+  var new_test_vertex = recentre_coordinates(vertex, first_point);
+  if (rotate_axes_coordinates(new_test_vertex, new_vertex2) > 0) {
+    return true;
+  }
+  else {
+    return false;
+  };
+};
+
+var check_if_overlapping = function(vertex, coordinates) {
+  var overlapping = true;
+  for (var i = 0; i < coordinates.length; i++) {
+    var is_y_positive;
+    if (i == (coordinates.length - 1)) {
+      is_y_positive = find_y_dash_value(vertex, coordinates[i], coordinates[0]);
+    }
+    else {
+      is_y_positive = find_y_dash_value(vertex, coordinates[i], coordinates[i+1]);
+    };
+    if (is_y_positive) { overlapping = false; };
+  };
+  return overlapping;
+};
+
+var check_this_geoJSON = function(vertex, drawnItem) {
+  if (!isUseless(drawnItem.feature.OCD)) {
+      for (var a = 0; a < drawnItem.feature.OCD.length; a++) {
+        var convex_shape = drawnItem.feature.OCD[a];
+        return check_if_overlapping(vertex, convex_shape.coordinates);
+      };
+    }
+    else {
+      return check_if_overlapping(vertex, drawnItem.geometry.coordinates[0]);
+    };
+};
+
+var check_this_vertex = function(vertex, theItems) {
+  var overlapping = [];
+  theItems.eachLayer(function(layer){
+      var drawnItem = layer.toGeoJSON();
+      if (check_this_geoJSON(vertex, drawnItem)) {
+        overlapping.push(drawnItem);
+      };
+  });
+  return overlapping;
+};
+
+var check_new_shape_for_overlap = function(the_shape_coords, theItems) {
+  var overlapping_sets = [];
+  for (var b=0; b < the_shape_coords.length; b++) {
+    var pair = the_shape_coords[b];
+    var overlapping = check_this_vertex(pair, theItems);
+    if (overlapping.length > 0) {
+      overlapping_sets.push({"the_vertex_number": b, "the_shapes": overlapping});
+    };
+  };
+  return overlapping_sets;
+};
+
+////old version should retire soon
+var searchForVectorParents = function(theDrawnItems, theCoordinates) {
+  var overlapping = false;
+  theDrawnItems.eachLayer(function(layer){
+    var drawnItem = layer.toGeoJSON();
+    if (findVectorParent(theCoordinates, drawnItem.geometry.coordinates[0])) {  
+      overlapping = layer._leaflet_id ;  
+    };
+  });
+  return overlapping;
+};
+
+/////Calculating Merge Shape
+
+var polyanno_calculate_gap_length = function(vertex1, vertex2) {
+  var x_gap = vertex1[0] - vertex2[0];
+  var y_gap = vertex1[1] - vertex2[1];
+  return Math.sqrt((x_gap * x_gap)+(y_gap * y_gap));
+};
+
+var polyanno_find_nearest_vectors = function(current_shortest_array, vertex, shape) {
+  var shortest_gap = current_shortest_array;
+  for (var a=0; a < shape.length; a++) {
+    var the_gap = polyanno_calculate_gap_length(vertex, shape[a]);
+    if (the_gap < shortest_gap[0]) {  shortest_gap = [the_gap, a];  };
+  };
+  return shortest_gap;
+};
+
+var polyanno_find_shortest_branch = function(shape1, shape2) {
+  ///[gap_length_value, shape1_index, shape2_index]
+  var shortest_gap_array = [polyanno_calculate_gap_length(shape1[0],shape2[0]), 0, 0];
+  for (var a=0; a < shape1.length; a++) {
+    var gap_array = polyanno_find_nearest_vectors([shortest_gap_array[0]], shape1[a], shape2);
+    if (gap_array[0] < shortest_gap_array[0]) { shortest_gap_array = [gap_array[0], a, gap_array[1]]; };
+  };  
+  return shortest_gap_array;
+};
+
+var sort_out_edge_direction = function(shortest, neighbour_value) {
+  //the bridge shape needs to run in the opposite direction to the shape it has come from to be clockwise
+  if (neighbour_value == 0) {   return [shortest, (shortest - 1)];    }
+  else {    return [(shortest + 1), shortest];    };  
+};
+
+var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
+  var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
+  var shape1_shortest_neighbours = [shape1[the_shortest_branch_array[1]-1], shape1[the_shortest_branch_array[1]+1]];
+  var shape2_shortest_neighbours = [shape2[the_shortest_branch_array[2]-1], shape2[the_shortest_branch_array[2]+1]];
+  var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
+  var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
+  var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
+  return [shape1_edge[0], shape1_edge[1], shape2_edge[0], shape2_edge[1]];
+};
+
+var find_edge_intersection = function(edge1_v1, edge1_v2, edge2_v1, edge2_v2) {
+
+  var edge1_slope = (edge1_v2[1]-edge1_v1[1])/(edge1_v2[0]-edge1_v1[0]);
+  var edge2_slope = (edge2_v2[1]-edge2_v1[1])/(edge2_v2[0]-edge2_v1[0]);
+  var edge1_x_offset = edge1_v1[1] - (edge1_v1[0] * edge1_slope);
+  var edge2_x_offset = edge2_v1[1] - (edge2_v1[0] * edge2_slope);
+  var x_intersect = (edge2_x_offset - edge1_x_offset) / (edge1_slope - edge2_slope);
+
+  //edge1 is assumed to be the "real" shape edge and so needs to be within shape boundary
+  if ( ( (x_intersect <= edge1_v1[0]) && (x_intersect >= edge1_v2[0]) ) || (  (x_intersect >= edge1_v1[0]) && (x_intersect <= edge1_v2[0])  ) ) {
+    var y_intersect = (edge1_slope * x_intersect) + edge1_x_offset;
+    return [x_intersect, y_intersect];
+  }
+  else {  return false; };
+};
+
+var polyanno_redirect_shape_boundary = function(initial_geometry, convex_shape, conflict_vertex_index) {
+  ///find where the conflict edge intersects with the initial_geometry_edge
+  var vertex1_index = conflict_vertex_index - 1;
+  var new_geometry = [];
+  if (conflict_vertex_index == 0) { vertex1_index = convex_shape.length - 1;  };
+  for (var i=0; i < initial_geometry.length; i++) {
+    var second_v = i + 1;
+    if (i == (initial_geometry.length - 1)) { second_v = 0  };
+    var intersects = find_edge_intersection(initial_geometry[i], initial_geometry[second_v], convex_shape[vertex1_index], convex_shape[conflict_vertex_index]);
+    if (intersects != false) {  new_geometry = initial_geometry.splice(second_v, 0, intersects);  };
+  };
+  return new_geometry;
+};
+
+var polyanno_overlap_looping = function(initial_geometry, convex_shape) {
+  var new_geometry = false;
+  for (var a=0; a < convex_shape.length; a++) {
+    var this_vertex = convex_shape[a];
+    var is_overlapping = check_if_overlapping(this_vertex, initial_geometry);
+    if (is_overlapping) {
+      return polyanno_redirect_shape_boundary(initial_geometry, convex_shape, a);
+    };
+  };
+  return new_geometry;
+};
+
+var polyanno_find_and_fix_overlap = function(initial_geometry, convex_shape) {
+  var the_geometry = initial_geometry;
+  var reiterate = true;
+  while (reiterate) {
+    var new_geometry = polyanno_overlap_looping(the_geometry, convex_shape);
+    if (new_geometry == false) {
+      return the_geometry;
+    }
+    else {
+      the_geometry = new_geometry;
+    };
+  };
+};
+
+var polyanno_merge_overlap_iteration = function(initial_geometry, drawnItem) {
+  var geometry_array = initial_geometry;
+  if (!isUseless(drawnItem.feature.OCD)) {
+      for (var a = 0; a < drawnItem.feature.OCD.length; a++) {
+        var convex_shape = drawnItem.feature.OCD[a];
+        geometry_array = polyanno_find_and_fix_overlap(geometry_array, convex_shape);
+      };
+      return geometry_array;
+    }
+    else {
+      var convex_shape = drawnItem.geometry.coordinates[0];
+      return polyanno_find_and_fix_overlap(geometry_array, convex_shape);
+    };
+
+};
+
+var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array) {
+  var geometry_array = initial_geometry;
+  allDrawnItems.eachLayer(function(layer){
+      if (merge_array.includes(layer)) {    } //unsure if this will work with the file types involved?
+      else {
+        var drawnItem = layer.toGeoJSON();
+        geometry_array = polyanno_merge_overlap_iteration(geometry_array, drawnItem);
+      };
+  });
+};
+
+var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
+  //[shape1_1, shape1_2, shape2_1, shape2_2]
+  var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
+  var bridge_initial_geometry = [shape1[bridge_index_array[0]], shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]]];
+  //[ ...v1, v2 .... shape1_1, shape1_2, ... v1, v2 .... , shape2_1, shape2_2]
+  var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
+  var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]);
+
+  //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
+  var shape1_start = shape1.slice(0, bridge_index_array[1]); // start up to v2
+  var shape1_end = shape1.slice(bridge_index_array[0]+1); // from v1 to end
+  var shape2_start = shape2.slice(bridge_index_array[2]+1); // from v3 to end
+  var shape2_end = shape2.slice(0, bridge_index_array[3]); // start up to v4
+  var bridge_shape_start = bridge_final_geometry.slice(index_shape1_1+1, bridge_final_geometry.length - 1); // v2 to v3
+  var bridge_shape_end = bridge_final_geometry.slice(0, index_shape1_1+1); // v4 to v1
+
+  var final_merge_shape_coords = shape1_start + bridge_shape_start + shape2_start + shape2_end + bridge_shape_end + shape1_end;
+  return final_merge_shape_coords;
+};
+
+var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer) {
+  var old_shape_JSON = temp_shape_layer.toGeoJSON();
+  var old_shape_coords = old_shape_JSON.geometry.coordinates[0];
+  var new_vec_JSON = new_vec_layer.toGeoJSON();
+  var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
+  var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
+  var concavity_check = check_for_concavity(new_merge_coords);
+
+  var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{"type": "Polygon", "coordinates": [new_merge_coords]}  };
+  if (!isUseless(concavity_check)) {
+    tempGeoJSON.properties.OCD = concavity_check;
+  };
+
+  temp_merge_shape.removeLayer(temp_shape_layer);
+
+  L.geoJson(tempGeoJSON, 
+        { onEachFeature: function (feature, layer) {
+            temp_merge_shape.addLayer(layer),
+            polyanno_temp_merge_shape = layer
+          }
+        }).addTo(polyanno_map);
+
+  ///need to set colour to distinguish
+};
+
+//////IIIF
 
 var generateIIIFregion = function(coordinates) {
 
@@ -1380,7 +1720,7 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
 
 
-/////////LEAFLET
+/////////LEAFLET SETUP
 
 var polyanno_leaflet_basic_setup = function() {
   popupVectorMenu = L.popup()
@@ -1398,7 +1738,10 @@ var polyanno_leaflet_basic_setup = function() {
 
   polyanno_map.addLayer(baseLayer);
 
+  polyanno_map.addLayer(temp_merge_shape);
+
   polyanno_map.addLayer(allDrawnItems);
+
   new L.Control.Draw(controlOptions).addTo(polyanno_map); //
 
   polyanno_map.whenReady(function(){
@@ -1439,6 +1782,51 @@ var polyanno_load_existing_vectors = function(existingVectors) {
   };
 };
 
+var polyanno_new_vector_made = function(shape, vectorOverlapping) {
+  var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
+
+  if (selectingVector != false) { 
+    var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+    annoData[polyanno_text_type_selected] = theTopText;  
+  }
+  else {
+    ///not sure entirely about synchronicity of this but meh
+    polyanno_reset_global_variables();
+  };
+
+  var targetData = {target: [], body: {}};
+  var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
+  targetData.target.push({
+      "id": imageSelected,
+      "format": "application/json"
+  });
+  targetData.target.push({
+      "id": IIIFsection,
+      "format": "image/jpg" 
+  });
+
+  $.ajax({
+    type: "POST",
+    url: polyanno_urls.vector,
+    async: false,
+    data: annoData,
+    success: 
+      function (data) {
+        //setting global variables
+        vectorSelected = data.url;
+        targetType = "vector";
+        targetSelected = [vectorSelected];
+
+        targetData.body.id = data.url;
+        polyanno_add_annotationdata(targetData);
+        layer._leaflet_id = data.url;
+        if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
+        else {  updateVectorSelection(data.url); };
+      }
+  });
+
+};
+
 var polyanno_creating_vec = function() {
   polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
 
@@ -1453,48 +1841,7 @@ var polyanno_creating_vec = function() {
       $("#map").popover('show');
     }
     else {
-      var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
-
-      if (selectingVector != false) { 
-        var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
-        annoData[polyanno_text_type_selected] = theTopText;  
-      }
-      else {
-        ///not sure entirely about synchronicity of this but meh
-        polyanno_reset_global_variables();
-      }
-
-      var targetData = {target: [], body: {}};
-      var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
-      targetData.target.push({
-          "id": imageSelected,
-          "format": "application/json"
-      });
-      targetData.target.push({
-          "id": IIIFsection,
-          "format": "image/jpg" 
-      });
-
-      $.ajax({
-        type: "POST",
-        url: polyanno_urls.vector,
-        async: false,
-        data: annoData,
-        success: 
-          function (data) {
-            //setting global variables
-            vectorSelected = data.url;
-            targetType = "vector";
-            targetSelected = [vectorSelected];
-
-            targetData.body.id = data.url;
-            polyanno_add_annotationdata(targetData);
-            layer._leaflet_id = data.url;
-            if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
-            else {  updateVectorSelection(data.url); };
-          }
-      });
-
+      polyanno_new_vector_made(shape, vectorOverlapping);
     };
 
   });
@@ -1503,7 +1850,27 @@ var polyanno_creating_vec = function() {
 var polyanno_vec_select = function() {
 
   polyanno_map.on('draw:deletestart', function(){
+
     currentlyDeleting = true;
+    ///check if vector has any annotations
+    ///if it does then prevent deleting and alert that it has annotations and admin privileges needed to do that
+    var theURL = polyanno_urls.annotation +"/target/" + vector_url;
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: theURL,
+        async: false,
+        success: 
+          function (data) {
+            if (data) {
+              alert("Sorry you need admin rights to delete vectors with annotations. Please discuss the deletion of this in the commentary box for further information.");
+              ///prevent deleting
+            }
+            else {
+              ///enable delete completion
+            };
+          }
+      });
   });
   polyanno_map.on('draw:deletestop', function(){
     currentlyDeleting = false;
@@ -1519,6 +1886,17 @@ var polyanno_vec_select = function() {
     vectorSelected = vec.layer._leaflet_id;
     if (currentlyEditing || currentlyDeleting) {}
     else if (selectingVector != false) {  alert("make a new vector!");  }
+    else if (polyanno_merging_vectors) {
+      highlightVectorChosen(vectorSelected, "yellow");
+      polyanno_merging_array.push(vec.layer);
+      if (polyanno_temp_merge_shape != false) {
+        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer);
+      }
+      else {
+        temp_merge_shape.addLayer(vec.layer);
+        polyanno_temp_merge_shape = vec.layer;
+      };
+    }
     else {  vec.layer.openPopup();  };
 
   });
@@ -1532,14 +1910,6 @@ var polyanno_vector_edit_setup = function() {
     /////
     updateAnno(vectorSelected, shape); ////////////
     /////
-  });
-
-  //////update DB whenever vector is deleted
-  allDrawnItems.on('remove', function(vec){
-    //////******
-    var shape = vec.layer.toGeoJSON();
-    alert("are you sure you want to delete that? I'm probably keeping it anyway whilst this project is in development.");
-
   });
 };
 
@@ -1569,6 +1939,116 @@ var polyanno_image_popovers_setup = function() {
       $('#map').popover("hide");
     });
   });
+};
+
+///creating the new Leaflet Merging Toolbar
+
+var polyanno_leaflet_merge_toolbar_setup = function() {
+
+  ///also setup drawing tools under submenu??
+  var tempGeoJSON = {  
+    "type": "Feature",  
+    "properties":{
+      //transcription
+      //translation
+    },  
+    "geometry":{
+      "type": "Polygon",
+      ///needs to become the merger of the two linked shapes??
+      "coordinates": []
+    }  
+  };
+
+    /* A sub-action which completes as soon as it is activated.
+   * Sub-actions receive their parent action as an argument to
+   * their `initialize` function. We save a reference to this
+   * parent action so we can disable it as soon as the sub-action
+   * completes.
+   */
+
+  var polyanno_merge_leaflet_subaction = L.ToolbarAction.extend({
+      options: {
+          toolbarIcon: {
+              html: '<a href="#">Merge</a>',
+              tooltip: 'Merge'
+          }   
+      },
+      initialize: function(this_map, merging_action) {
+          this.map = this_map;
+          this.merging_action = merging_action;
+          L.ToolbarAction.prototype.initialize.call(this);                
+      },
+      addHooks: function() {
+          //function enacted once it has been clicked
+          polyanno_merging_vectors = true;
+          ////blackout window view around the leaflet pop??
+          this.merging_action.disable();
+      }
+  });
+
+  var polyanno_merge_submit = polyanno_merge_leaflet_subaction.extend({
+            options: {
+                toolbarIcon: {
+                    html: '<a href="#">Submit</a>',
+                    tooltip: 'Complete'
+                }   
+            }
+            addHooks: function () {
+              if (polyanno_merging_array.length > 1) {
+                var shape = polyanno_temp_merge_shape.toGeoJSON();
+                allDrawnItems.addLayer(polyanno_temp_merge_shape);
+                temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+                polyanno_new_vector_made(shape, false);
+                polyanno_temp_merge_shape = false;
+                polyanno_merge_leaflet_subaction.prototype.addHooks.call(this);
+              }
+              else {
+                temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+                polyanno_temp_merge_shape = false;
+                polyanno_merge_leaflet_subaction.prototype.addHooks.call(this);                
+              };
+            }
+        });
+
+  var polyanno_merge_cancel = polyanno_merge_leaflet_subaction.extend({
+            options: {
+                toolbarIcon: {
+                    html: '<a href="#">Cancel</a>',
+                    tooltip: 'Cancel'
+                }   
+            }
+            addHooks: function () {
+                polyanno_merging_vectors = false;
+            }
+        });
+
+  /* Use L.Toolbar for sub-toolbars. A sub-toolbar is,
+   * by definition, contained inside another toolbar, so it
+   * doesn't need the additional styling and behavior of a
+   * L.Toolbar.Control or L.Toolbar.Popup.
+   */
+
+  var polyanno_merge_action = L.ToolbarAction.extend({
+            options: {
+                toolbarIcon: {
+                    className: '',
+                },
+                subToolbar: new L.Toolbar({ 
+                    actions: [polyanno_merge_submit, polyanno_merge_cancel]
+                })
+            }
+        });
+
+  L.MergeToolbar = L.Toolbar.Control.extend({
+      options: {
+          position: 'topleft',
+          actions: [  polyanno_merge_action  ],
+          className: 'polyanno-leaflet-merge-toolbar' // Style the toolbar with 
+      }
+  });
+
+  new L.MergeToolbar().addTo(polyanno_map);
+
 };
 
 ////alltheunicode
