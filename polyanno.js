@@ -1887,6 +1887,7 @@ var polyanno_vec_select = function() {
     if (currentlyEditing || currentlyDeleting) {}
     else if (selectingVector != false) {  alert("make a new vector!");  }
     else if (polyanno_merging_vectors) {
+      ///need to introduce annotation checks and the ordered merging functions as well
       highlightVectorChosen(vectorSelected, "yellow");
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
@@ -1946,18 +1947,6 @@ var polyanno_image_popovers_setup = function() {
 var polyanno_leaflet_merge_toolbar_setup = function() {
 
   ///also setup drawing tools under submenu??
-  var tempGeoJSON = {  
-    "type": "Feature",  
-    "properties":{
-      //transcription
-      //translation
-    },  
-    "geometry":{
-      "type": "Polygon",
-      ///needs to become the merger of the two linked shapes??
-      "coordinates": []
-    }  
-  };
 
     /* A sub-action which completes as soon as it is activated.
    * Sub-actions receive their parent action as an argument to
