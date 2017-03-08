@@ -1981,7 +1981,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
                     html: '<a href="#">Submit</a>',
                     tooltip: 'Complete'
                 }   
-            }
+            },
             addHooks: function () {
               if (polyanno_merging_array.length > 1) {
                 var shape = polyanno_temp_merge_shape.toGeoJSON();
@@ -2005,7 +2005,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
                     html: '<a href="#">Cancel</a>',
                     tooltip: 'Cancel'
                 }   
-            }
+            },
             addHooks: function () {
                 polyanno_merging_vectors = false;
             }
