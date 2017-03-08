@@ -1751,6 +1751,7 @@ var polyanno_leaflet_basic_setup = function() {
     polyanno_vec_select();
     polyanno_vector_edit_setup();
     polyanno_image_popovers_setup();
+    polyanno_leaflet_merge_toolbar_setup();
   });
 };
 
