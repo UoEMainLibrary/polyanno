@@ -2029,15 +2029,13 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
             }
         });
 
-  L.MergeToolbar = L.Toolbar.Control.extend({
+  new L.Toolbar.Control({
       options: {
           position: 'topleft',
           actions: [  polyanno_merge_action  ],
           className: 'polyanno-leaflet-merge-toolbar' // Style the toolbar with 
       }
-  });
-
-  new L.MergeToolbar().addTo(polyanno_map);
+  }).addTo(polyanno_map);
 
 };
 
