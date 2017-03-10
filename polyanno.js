@@ -1068,7 +1068,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
         };
 
         closeEditorMenu(thisEditor);
-        polyanno_add_annotationdata(thisAnnoData, thisEditor, false, [data.url], false, this_parent);
+        polyanno_add_annotationdata(thisAnnoData, thisEditor, false, [data.url], this_vec, this_parent);
       }
   });
 
@@ -1828,8 +1828,8 @@ var polyanno_load_existing_vectors = function(existingVectors) {
   };
 };
 
-var polyanno_new_vector_made = function(layer, shape, vectorOverlapping) {
-  var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
+var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children) {
+  var annoData = {geometry: shape.geometry, OCD: shape.properties.OCD, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
 
   if (selectingVector != false) { 
     var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
@@ -1864,7 +1864,7 @@ var polyanno_new_vector_made = function(layer, shape, vectorOverlapping) {
         targetSelected = [vectorSelected];
 
         targetData.body.id = data.url;
-        polyanno_add_annotationdata(targetData);
+        polyanno_add_annotationdata(targetData, false, false, [false], [data.url], []);
         layer._leaflet_id = data.url;
         if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
         else {  updateVectorSelection(data.url); };
@@ -1882,6 +1882,8 @@ var polyanno_creating_vec = function() {
     var vector_is_child = false;
     var vector_is_parent = false;
 
+    ////put in allowances for selectingVector and checking overlapping properly
+
     allDrawnItems.addLayer(layer);
     if (  (vector_is_child != false) && (selectingVector == false)  ) { 
       allDrawnItems.removeLayer(layer);
@@ -1895,7 +1897,7 @@ var polyanno_creating_vec = function() {
       //make #polyanno-merge-shapes-enable glow
     }
     else {
-      polyanno_new_vector_made(layer, shape, vectorOverlapping);
+      polyanno_new_vector_made(layer, shape);
     };
 
   });
@@ -1968,7 +1970,7 @@ var polyanno_vector_edit_setup = function() {
   });
 };
 
-var polyanno_leaflet_to_json = function(layer){
+var polyanno_leaflet_vector_to_json = function(layer){
 
   var vector = {  "type": "Feature",  "properties":{},  "geometry":{}  };
 
