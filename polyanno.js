@@ -1541,9 +1541,9 @@ var polyanno_find_and_fix_overlap = function(initial_geometry, convex_shape) {
 
 var polyanno_merge_overlap_iteration = function(initial_geometry, drawnItem) {
   var geometry_array = initial_geometry;
-  if (!isUseless(drawnItem.feature.OCD)) {
-      for (var a = 0; a < drawnItem.feature.OCD.length; a++) {
-        var convex_shape = drawnItem.feature.OCD[a];
+  if (!isUseless(drawnItem.properties.OCD)) {
+      for (var a = 0; a < drawnItem.properties.OCD.length; a++) {
+        var convex_shape = drawnItem.properties.OCD[a];
         geometry_array = polyanno_find_and_fix_overlap(geometry_array, convex_shape);
       };
       return geometry_array;
