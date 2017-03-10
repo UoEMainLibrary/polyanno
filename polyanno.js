@@ -597,7 +597,7 @@ var polyanno_new_anno_via_selection = function(baseURL) {
           {id: polyanno_text_selectedHash, format: "text/html"}, 
           {id: polyanno_text_selectedParent, format: "application/json"}, 
           {id: imageSelected,  format: "application/json"  } ] };
-        polyanno_add_annotationdata(annoData, false, thisEditorString);
+        polyanno_add_annotationdata(annoData, false, thisEditorString, [data.url], [false], [polyanno_text_selectedParent]);
       }
   });
 
@@ -966,7 +966,7 @@ var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, t
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
     polyanno_text_selected = reopen;
-    polyanno_set_and_open("refresh", text_selected, this_vector, text_parent);
+    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent);
     return the_editor_gone;
   }
   else {
@@ -984,28 +984,11 @@ var preBtnClosing = function(thisEditor) {
 var findNewTextData = function(editorString) {
 
   var newText = $(editorString).find(".newAnnotation").val();
-  var textData = {text: newText, metadata: imageSelectedMetadata, target: [{  "id": imageSelected,  "format": "application/json"  }]};
-
-  if (targetType.includes("vector")) {
-    ///get vectorSelected JSON
-    //var theCoords = notFeature.notGeometry.notCoordinates;
-    //var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
-    //textData.target.push({id: IIIFsection, format: "image/jpg"});
-    textData.target.push({id: vectorSelected, format: "image/SVG"});
-  };
-
-  if (targetType.includes(polyanno_text_type_selected)) {
-    textData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
-    textData.parent = polyanno_text_selectedParent;
-  };
-
-  if (textData.target[0] != 'undefined') { 
-    return textData;
-  };
+  return {text: newText, metadata: imageSelectedMetadata, target: [{  "id": imageSelected,  "format": "application/json"  }]};
   
 };
 
-var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor) {
+var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor, this_text, this_vec, this_parent) {
 
   $.ajax({
     type: "POST",
@@ -1041,9 +1024,10 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
     polyanno_new_target_data[polyanno_text_type_selected] = thisAnnoData.body.id;
     var polyanno_this_vector = vectorSelected;
     updateAnno(polyanno_this_vector, polyanno_new_target_data);
+
   };
   
-  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, thisAnnoData.body.id);  };
+  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, false, this_text, this_vec, this_parent);  };
 
 };
 
@@ -1051,6 +1035,22 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
 
   var editorString = "#" + thisEditor;
   var theData = findNewTextData(editorString);
+  var this_parent = false;
+  var this_vec = false;
+  if (targetType.includes("vector")) {
+    var vector_layer = polyanno_map.getLayer(vectorSelected);
+    var theCoords = vector_layer.geometry.coordinates[0];
+    var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
+    textData.target.push({id: IIIFsection, format: "image/jpg"});
+    textData.target.push({id: vectorSelected, format: "image/SVG"});
+    this_vec = vectorSelected;
+  };
+
+  if (targetType.includes(polyanno_text_type_selected)) {
+    textData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
+    textData.parent = polyanno_text_selectedParent;
+    this_parent = polyanno_text_selectedParent;
+  };
 
   $.ajax({
     type: "POST",
@@ -1068,7 +1068,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
         };
 
         closeEditorMenu(thisEditor);
-        polyanno_add_annotationdata(thisAnnoData, thisEditor);
+        polyanno_add_annotationdata(thisAnnoData, thisEditor, false, [data.url], false, this_parent);
       }
   });
 
@@ -1236,6 +1236,7 @@ var highlightVectorChosen = function(chosenVector, colourChange) {
       layer.setStyle({color: colourChange});
     };
   });
+  //polyanno_map.getLayer(chosenVector).setStyle({color: colourChange});
 };
 
 var highlightEditorsChosen = function(chosenEditor, colourChange) {
