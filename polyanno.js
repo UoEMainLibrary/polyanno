@@ -1074,13 +1074,19 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
 
 };
 
-var polyanno_setting_global_variables = function(fromType) {
+var polyanno_setting_global_variables = function(fromType, text_selected, this_vector_selected, text_parent) {
 
   if (fromType == "vector") {
-    var does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); //return the api url NOT json file
+    var does_vector_have_text;
+    if (isUseless(text_selected)) { does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); } //return the api url NOT json file 
+    else { does_vector_have_text = text_selected; };
+
     if (does_vector_have_text != false) {
       polyanno_text_selected = does_vector_have_text;
-      var does_text_have_parent = checkFor(does_vector_have_text, "parent");
+      var does_text_have_parent;
+      if (isUseless(text_parent)) { does_text_have_parent = checkFor(does_vector_have_text, "parent"); }
+      else { does_text_have_parent = text_parent; };
+      
       if (does_text_have_parent != false) {
         polyanno_text_selectedParent = does_text_have_parent;
         var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
@@ -1099,7 +1105,9 @@ var polyanno_setting_global_variables = function(fromType) {
     
   }
   else if (fromType == "text") {
-    var what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+    var what_is_topvoted_here;
+    if (isUseless(text_selected)) { what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID); }
+    else { what_is_topvoted_here = text_selected; };
     polyanno_text_selected = what_is_topvoted_here;
     var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); ///returning URL alone, NOT JSON
     if (does_have_vector_target != false) {
@@ -1125,7 +1133,6 @@ var polyanno_setting_global_variables = function(fromType) {
       return targetSelected = [theHashHere, does_have_vector_target];
     }
     else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
-      alert("from refresh and has text but no vector and the text type selected is "+polyanno_text_type_selected);
       polyanno_text_selectedParent = does_text_have_parent;
       var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
       targetType = polyanno_text_type_selected;
@@ -1579,7 +1586,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   return final_merge_shape_coords;
 };
 
-var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer) {
+var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merge_array) {
   var old_shape_JSON = temp_shape_layer.toGeoJSON();
   var old_shape_coords = old_shape_JSON.geometry.coordinates[0];
   var new_vec_JSON = new_vec_layer.toGeoJSON();
@@ -1905,7 +1912,7 @@ var polyanno_vec_select = function() {
       highlightVectorChosen(vectorSelected, "yellow");
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
-        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer);
+        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
       }
       else {
         temp_merge_shape.addLayer(vec.layer);
