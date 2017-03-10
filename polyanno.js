@@ -2029,7 +2029,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
             }
         });
 
-  new L.Toolbar.Control({
+  new L.Control.Toolbar({
       options: {
           position: 'topleft',
           actions: [  polyanno_merge_action  ],
