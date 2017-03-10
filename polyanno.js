@@ -1608,7 +1608,19 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
           }
         }).addTo(polyanno_map);
 
-  ///need to set colour to distinguish
+  temp_merge_shape.setStyle({color: "yellow"});
+
+};
+
+var polyanno_add_merge_numbers = function(new_vec, merge_array) {
+  ///////need to include numbering order markers?
+  var the_number_label = "<span> "+merge_array.length+"</span>";
+  var the_number_label_options = {
+    direction: "center",
+    permanent: true
+  };
+
+  new_vec.bindTooltip(the_order_number, the_number_label_options);
 };
 
 //////IIIF
@@ -1909,10 +1921,10 @@ var polyanno_vec_select = function() {
     else if (selectingVector != false) {  alert("make a new vector!");  }
     else if (polyanno_merging_vectors) {
       ///need to introduce annotation checks and the ordered merging functions as well
-      highlightVectorChosen(vectorSelected, "yellow");
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
+        polyanno_add_merge_numbers(vec, polyanno_merging_array);
       }
       else {
         temp_merge_shape.addLayer(vec.layer);
