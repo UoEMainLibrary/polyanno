@@ -1783,7 +1783,7 @@ var polyanno_load_existing_vectors = function(existingVectors) {
   };
 };
 
-var polyanno_new_vector_made = function(shape, vectorOverlapping) {
+var polyanno_new_vector_made = function(layer, shape, vectorOverlapping) {
   var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vectorOverlapping };
 
   if (selectingVector != false) { 
@@ -1842,7 +1842,7 @@ var polyanno_creating_vec = function() {
       $("#map").popover('show');
     }
     else {
-      polyanno_new_vector_made(shape, vectorOverlapping);
+      polyanno_new_vector_made(layer, shape, vectorOverlapping);
     };
 
   });
@@ -1988,7 +1988,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
                 var shape = polyanno_temp_merge_shape.toGeoJSON();
                 allDrawnItems.addLayer(polyanno_temp_merge_shape);
                 temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
-                polyanno_new_vector_made(shape, false);
+                polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false);
                 polyanno_temp_merge_shape = false;
                 polyanno_merge_leaflet_subaction.prototype.addHooks.call(this);
               }
