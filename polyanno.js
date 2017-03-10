@@ -961,12 +961,12 @@ var removeEditorsOpen = function(popupIDstring) {
   editorsOpen.splice(currentIndex,1);
 };
 
-var closeEditorMenu = function(thisEditor, reopen) {
+var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, text_parent) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
     polyanno_text_selected = reopen;
-    polyanno_set_and_open("refresh");
+    polyanno_set_and_open("refresh", text_selected, this_vector, text_parent);
     return the_editor_gone;
   }
   else {
@@ -1032,7 +1032,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
 
     //open new editor for child text then as callback refresh the parent editor
-    polyanno_set_and_open("text", closingTheParentMenu);
+    polyanno_set_and_open("text", closingTheParentMenu, [thisAnnoData.body.id], false, [polyanno_the_parent]);
 
   };
 
@@ -1079,13 +1079,13 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
   if (fromType == "vector") {
     var does_vector_have_text;
     if (isUseless(text_selected)) { does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); } //return the api url NOT json file 
-    else { does_vector_have_text = text_selected; };
+    else { does_vector_have_text = text_selected[0]; };
 
     if (does_vector_have_text != false) {
       polyanno_text_selected = does_vector_have_text;
       var does_text_have_parent;
       if (isUseless(text_parent)) { does_text_have_parent = checkFor(does_vector_have_text, "parent"); }
-      else { does_text_have_parent = text_parent; };
+      else { does_text_have_parent = text_parent[0]; };
       
       if (does_text_have_parent != false) {
         polyanno_text_selectedParent = does_text_have_parent;
@@ -1107,9 +1107,14 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
   else if (fromType == "text") {
     var what_is_topvoted_here;
     if (isUseless(text_selected)) { what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID); }
-    else { what_is_topvoted_here = text_selected; };
+    else { what_is_topvoted_here = text_selected[0]; };
+
     polyanno_text_selected = what_is_topvoted_here;
-    var does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); ///returning URL alone, NOT JSON
+
+    var does_have_vector_target;
+    if (isUseless(this_vector_selected)) { does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); } ///returning URL alone, NOT JSON
+    else { does_have_vector_target = this_vector_selected[0]; };
+
     if (does_have_vector_target != false) {
       vectorSelected =  does_have_vector_target;
 
@@ -1122,8 +1127,14 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
     };   
   }
   else if (fromType == "refresh") {
-    var does_text_have_parent = checkFor(polyanno_text_selected, "parent");
-    var does_have_vector_target = checkForVectorTarget(polyanno_text_selected); ///returning URL alone, NOT JSON
+    var does_text_have_parent;
+    if (isUseless(text_parent)) { does_text_have_parent = checkFor(polyanno_text_selected, "parent"); }
+    else { does_text_have_parent = text_parent[0]; };
+
+    var does_have_vector_target;
+    if (isUseless(this_vector_selected)) { does_have_vector_target = checkForVectorTarget(polyanno_text_selected); } ///returning URL alone, NOT JSON
+    else { does_have_vector_target = this_vector_selected[0]; };
+
    if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
       polyanno_text_selectedParent = does_text_have_parent;
@@ -1146,8 +1157,8 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
 
 };
 
-var polyanno_set_and_open = function(fromType, callback_function) {
-  var the_targets = polyanno_setting_global_variables(fromType);
+var polyanno_set_and_open = function(fromType, callback_function, text_selected, this_vector, text_parent) {
+  var the_targets = polyanno_setting_global_variables(fromType, text_selected, this_vector, text_parent);
   if (!isUseless(the_targets)) {
     polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
     if (!isUseless(callback_function)) { callback_function()  };
@@ -1807,7 +1818,8 @@ var polyanno_load_existing_vectors = function(existingVectors) {
         { onEachFeature: function (feature, layer) {
             layer._leaflet_id = vector.id,
             allDrawnItems.addLayer(layer),
-            layer.bindPopup(popupVectorMenu)
+            layer.bindPopup(popupVectorMenu),
+            layer.setStyle({color: polyanno_default_colours_array[1]})
           }
         }).addTo(polyanno_map);
 
@@ -1865,13 +1877,21 @@ var polyanno_creating_vec = function() {
 
     var layer = evt.layer;
     var shape = layer.toGeoJSON();
-    var vectorOverlapping = searchForVectorParents(allDrawnItems, shape.geometry.coordinates[0]); 
+    //var vectorOverlapping = searchForVectorParents(allDrawnItems, shape.geometry.coordinates[0]); 
+    var vector_is_child = false;
+    var vector_is_parent = false;
+
     allDrawnItems.addLayer(layer);
-    if (  (vectorOverlapping != false) && (selectingVector == false)  ) { 
+    if (  (vector_is_child != false) && (selectingVector == false)  ) { 
       allDrawnItems.removeLayer(layer);
-      vectorSelected = vectorOverlapping;
-      $("#map").popover();
-      $("#map").popover('show');
+      vectorSelected = vector_is_child;
+      alert("Highlight the text first and then draw a smaller shape for it.");
+      //open the relevant parent editor and make it glow
+    }
+    else if (  (vector_is_parent != false) && (selectingVector == false)  ) { 
+      allDrawnItems.removeLayer(layer);
+      alert("Link these shapes in order please!");
+      //make #polyanno-merge-shapes-enable glow
     }
     else {
       polyanno_new_vector_made(layer, shape, vectorOverlapping);
@@ -1947,6 +1967,21 @@ var polyanno_vector_edit_setup = function() {
   });
 };
 
+var polyanno_leaflet_to_json = function(layer){
+
+  var vector = {  "type": "Feature",  "properties":{},  "geometry":{}  };
+
+  vector.id = layer._leaflet_id;
+  vector.notFeature.notGeometry.notType = layer.geometry.type;
+  vector.notFeature.notGeometry.notCoordinates = layer.geometry.coordinates[0];
+  vector.transcription = findField("layer.properties", "transcription");
+  vector.translation = findField("layer.properties", "translation");
+  vector.parent = findField("layer.properties", "parent");
+  vector.OCD = findField("layer.properties", "OCD");
+
+  return vector;
+
+};
 
 var polyanno_image_popovers_setup = function() {
 
