@@ -83,6 +83,18 @@ var polyanno_top_bar_HTML = `
 
         <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
 
+        <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span class="glyphicon glyphicon-link"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="polyanno-merge-shapes-enable">
+            <li >
+              <button class="btn btn-default polyanno-merge-shapes-submit-btn">"Submit"</button>
+            </li>
+            <li>
+              <button class="btn btn-default polyanno-merge-shapes-cancel-btn">"Cancel"</button>
+            </li>
+        </ul>
+
         <!-- <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button> -->
 
         <button class="btn btn-default polyanno-add-keyboard" type="button">
@@ -1751,7 +1763,8 @@ var polyanno_leaflet_basic_setup = function() {
     polyanno_vec_select();
     polyanno_vector_edit_setup();
     polyanno_image_popovers_setup();
-    polyanno_leaflet_merge_toolbar_setup();
+    //polyanno_leaflet_merge_toolbar_setup(); - until debugged properly this functionality is loading through a the polyanno toolbar instead
+    polyanno_leaflet_merge_polyanno_button_setup();
   });
 };
 
@@ -2038,6 +2051,39 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
   }).addTo(polyanno_map);
 
 };
+
+var polyanno_leaflet_merge_polyanno_button_setup = function() {
+
+  $("#polyanno-merge-shapes-enable").on("click", function(event){
+      polyanno_merging_vectors = true;
+  ////blackout window view around the leaflet pop??
+  });
+
+
+  $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
+    if (polyanno_merging_array.length > 1) {
+      var shape = polyanno_temp_merge_shape.toGeoJSON();
+      allDrawnItems.addLayer(polyanno_temp_merge_shape);
+      temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+      polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false);
+      polyanno_temp_merge_shape = false;
+      ///close menu
+    }
+    else {
+      temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+      polyanno_temp_merge_shape = false;
+      //close menu  
+    };
+  }); 
+
+  $("#polyanno-merge-shapes-cancel-btn").on("click", function(event){
+      polyanno_merging_vectors = false;
+      //close menu??
+  ////return from blackout window view around the leaflet pop??
+  });
+
+};
+
 
 ////alltheunicode
 
