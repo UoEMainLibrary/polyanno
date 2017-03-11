@@ -797,7 +797,7 @@ var createEditorPopupBox = function() {
   };
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
-  $(popupIDstring).effect("drop",default,default,polyanno_shake_the_popups);
+  $(popupIDstring).effect("drop", null, null,polyanno_shake_the_popups);
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
   $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
   $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
