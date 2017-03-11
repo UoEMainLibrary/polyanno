@@ -1593,25 +1593,38 @@ var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array)
   return geometry_array;
 };
 
+var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_index) {
+  if (point_a_index == 0) {
+    return [the_shape.slice(1, point_b_index)];
+  }
+  else if (point_b_index == 0) {
+    return [the_shape.slice(2)]; //b is 0, a is 1
+  }
+  else {
+    var shape_start = [the_shape.slice(0, point_b_index)]; // start up to, but not including, b
+    var shape_end = [the_shape.slice(point_a_index+1)]; // from (a + 1) to end
+    return shape_end.concat(shape_start);
+  };
+};
+
 var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
-  //[shape1_2, shape2_1, shape2_2, shape1_1]
+  //[shape1_1, shape1_2, shape2_1, shape2_2]
   var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
+  //[v2, v3, v4, v4]
   var bridge_initial_geometry = [shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]], shape1[bridge_index_array[0]]];
   alert("the bridge index array is "+JSON.stringify(bridge_index_array)+" which makes the initial geometry "+JSON.stringify(bridge_initial_geometry));
   //[shape1_2, ... v1, v2 .... , shape2_1, shape2_2, ...v1, v2 .... shape1_1]
   var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
   alert("the final geometry is therefore "+JSON.stringify(bridge_final_geometry));
-  var index_of_v4 = bridge_final_geometry.indexOf(bridge_initial_geometry[2]); 
 
   //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
-  var shape1_start = [shape1.slice(0, bridge_index_array[1])]; // start up to v2
-  var shape1_end = [shape1.slice(bridge_index_array[0]+1)]; // from v1 to end
-  var shape2_start = [shape2.slice(bridge_index_array[2]+1)]; // from v3 to end
-  var shape2_end = [shape2.slice(0, bridge_index_array[3])]; // start up to v4
+  var shape1_segment = polyanno_find_shape_between(shape1, bridge_index_array[0], bridge_index_array[1]); //shape1 between v1 to v2
+  var shape2_segment = polyanno_find_shape_between(shape2, bridge_index_array[2], bridge_index_array[3]); //shape2 between v3 and v4
+  var index_of_v4 = bridge_final_geometry.indexOf(bridge_initial_geometry[2]); 
   var bridge_shape_start = [bridge_final_geometry.slice(0, index_of_v4)]; // v2 to v3
   var bridge_shape_end = [bridge_final_geometry.slice(index_of_v4)]; // v4 to v1
 
-  var final_merge_shape_coords = [shape1_start, bridge_shape_start, shape2_start, shape2_end, bridge_shape_end, shape1_end];
+  var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end);
 
   alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
