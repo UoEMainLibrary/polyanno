@@ -1600,6 +1600,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   alert("the bridge index array is "+JSON.stringify(bridge_index_array)+" which makes the initial geometry "+JSON.stringify(bridge_initial_geometry));
   //[ ...v1, v2 .... shape1_1, shape1_2, ... v1, v2 .... , shape2_1, shape2_2]
   var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
+  alert("the final geometry is therefore "+JSON.stringify(bridge_final_geometry));
   var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]); 
 
   //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
