@@ -1590,12 +1590,14 @@ var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array)
         geometry_array = polyanno_merge_overlap_iteration(geometry_array, drawnItem);
       };
   });
+  return geometry_array;
 };
 
 var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   //[shape1_1, shape1_2, shape2_1, shape2_2]
   var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
   var bridge_initial_geometry = [shape1[bridge_index_array[0]], shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]]];
+  alert("the bridge index array is "+JSON.stringify(bridge_index_array)+" which makes the initial geometry "+JSON.stringify(bridge_initial_geometry));
   //[ ...v1, v2 .... shape1_1, shape1_2, ... v1, v2 .... , shape2_1, shape2_2]
   var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
   var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]); 
