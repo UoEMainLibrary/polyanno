@@ -1652,7 +1652,7 @@ var polyanno_add_merge_numbers = function(new_vec, merge_array) {
     permanent: true
   };
 
-  new_vec.bindTooltip(the_order_number, the_number_label_options);
+  new_vec.bindTooltip(the_number_label, the_number_label_options);
 };
 
 //////IIIF
