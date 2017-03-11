@@ -1598,7 +1598,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_initial_geometry = [shape1[bridge_index_array[0]], shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]]];
   //[ ...v1, v2 .... shape1_1, shape1_2, ... v1, v2 .... , shape2_1, shape2_2]
   var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
-  var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]);
+  var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]); 
 
   //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
   var shape1_start = shape1.slice(0, bridge_index_array[1]); // start up to v2
