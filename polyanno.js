@@ -40,6 +40,11 @@ var polyanno_default_colours_array = ["buttonface","#03f","transparent"];
 
 var editorsOpen = []; //those targets currently open in editors
 var selectingVector = false; //used to indicate if the user is currently searching for a vector to link or not
+/*
+{     siblings: polyanno_siblingArray,
+      parent_anno : polyanno_siblingArray[0].parent,
+      parent_vector : checkForVectorTarget(parent_anno)
+}*/
 var findingcookies = document.cookie;
 
 var $langSelector = false;
@@ -473,19 +478,17 @@ var polyanno_search_annos_by_ids = function(childTexts, baseURL, target, callbac
 };
 
 var updateVectorSelection = function(the_vector_url) {
-
-  ///this is the process for linking vectors
-
+  ///this is the process for linking vectors to text segments
   var textData = {target: [{id: the_vector_url, format: "image/SVG"}]};
-  selectingVector.forEach(function(child){
-    ////check selectingVector is not anno
+  selectingVector.siblings.forEach(function(child){
     updateAnno(child[0].body.id, textData);
   });
 
-  var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector[0][0].parent).editor;
+  var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector.parent_anno).editor;
   //need to ensure asynchronicity here
   selectingVector = false;
   $(editorID).find(".polyanno-vector-link-row").css("display", "none");
+  ///update editorsOpen to activate highlighting
 
 };
 
@@ -541,12 +544,14 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
 
 };
 
-
-var findHighestRankingChild = function(parent, locationID) {
-  var the_parent_json = getTargetJSON(parent);
-  var theLocation = fieldMatching(the_parent_json.children, "id", locationID);
-  var the_child = fieldMatching(theLocation.fragments, "rank", 0); 
+var polyanno_find_highest_ranking_frag_child = function(location_json) {
+  var the_child = fieldMatching(location_json.fragments, "rank", 0); 
   return findField(the_child, "id");
+};
+
+var findHighestRankingChild = function(the_parent_json_children, locationID) {
+  var theLocation = fieldMatching(the_parent_json_children, "id", locationID);
+  return polyanno_find_highest_ranking_frag_child(theLocation);
 };
 
 ///// TEXT SELECTION
@@ -961,12 +966,12 @@ var removeEditorsOpen = function(popupIDstring) {
   editorsOpen.splice(currentIndex,1);
 };
 
-var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, text_parent) {
+var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
     polyanno_text_selected = reopen;
-    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent);
+    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
     return the_editor_gone;
   }
   else {
@@ -988,7 +993,7 @@ var findNewTextData = function(editorString) {
   
 };
 
-var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor, this_text, this_vec, this_parent) {
+var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor, this_text, this_vec, this_parent, text_siblings) {
 
   $.ajax({
     type: "POST",
@@ -1015,7 +1020,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
 
     //open new editor for child text then as callback refresh the parent editor
-    polyanno_set_and_open("text", closingTheParentMenu, [thisAnnoData.body.id], false, [polyanno_the_parent]);
+    polyanno_set_and_open("text", closingTheParentMenu, [thisAnnoData.body.id], false, [polyanno_the_parent], text_siblings);
 
   };
 
@@ -1027,7 +1032,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
 
   };
   
-  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, false, this_text, this_vec, this_parent);  };
+  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, false, this_text, this_vec, this_parent, text_siblings);  };
 
 };
 
@@ -1106,7 +1111,10 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
   }
   else if (fromType == "text") {
     var what_is_topvoted_here;
-    if (isUseless(text_selected)) { what_is_topvoted_here = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID); }
+    if (isUseless(text_selected)) { 
+      var the_parent_json = getTargetJSON(polyanno_text_selectedParent);
+      what_is_topvoted_here = findHighestRankingChild(the_parent_json.children, polyanno_text_selectedID); 
+    }
     else { what_is_topvoted_here = text_selected[0]; };
 
     polyanno_text_selected = what_is_topvoted_here;
@@ -1157,17 +1165,20 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
 
 };
 
-var polyanno_set_and_open = function(fromType, callback_function, text_selected, this_vector, text_parent) {
+var polyanno_set_and_open = function(fromType, callback_function, text_selected, this_vector, text_parent, text_siblings) {
   var the_targets = polyanno_setting_global_variables(fromType, text_selected, this_vector, text_parent);
-  if (!isUseless(the_targets)) {
+  if (!isUseless(the_targets) && (isUseless(text_siblings))) {
     polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
     if (!isUseless(callback_function)) { callback_function()  };
+  }
+  else {
+    openEditorMenu(text_siblings);
   };
 };
 
 var checkEditorsOpen = function(fromType, textType) {
   polyanno_text_type_selected = textType;
-  if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType);  }
+  if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType, false, polyanno_text_selected, vectorSelected, polyanno_text_selectedParent, polyanno_siblingArray);  }
   else {
     var canOpen = true;
     editorsOpen.forEach(function(editorOpen){
@@ -1176,7 +1187,7 @@ var checkEditorsOpen = function(fromType, textType) {
         canOpen = false;
       };
     });
-    if (canOpen == true) {  polyanno_set_and_open(fromType) };
+    if (canOpen == true) {  polyanno_set_and_open(fromType, false, polyanno_text_selected, vectorSelected, polyanno_text_selectedParent, polyanno_siblingArray) };
   };
 };
 
@@ -1700,7 +1711,6 @@ var polyanno_open_existing_text_transcription_menu = function() {
   polyanno_reset_global_variables();
 
   var selection = getSelected(); 
-  alert("running the function for old text annos and the outer element id is "+outerElementTextIDstring);
 
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
@@ -1832,7 +1842,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
   var annoData = {geometry: shape.geometry, OCD: shape.properties.OCD, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
 
   if (selectingVector != false) { 
-    var theTopText = findHighestRankingChild(polyanno_text_selectedParent, polyanno_text_selectedID);
+    var theTopText = findHighestRankingChild(selectingVector.parent_anno, polyanno_text_selectedID);
     annoData[polyanno_text_type_selected] = theTopText;  
   }
   else {
@@ -1879,22 +1889,27 @@ var polyanno_creating_vec = function() {
     var layer = evt.layer;
     var shape = layer.toGeoJSON();
     //var vectorOverlapping = searchForVectorParents(allDrawnItems, shape.geometry.coordinates[0]); 
-    var vector_is_child = false;
-    var vector_is_parent = false;
+    var vector_is_child_of = false;
+    var vector_is_parent_of = false;
 
     ////put in allowances for selectingVector and checking overlapping properly
 
     allDrawnItems.addLayer(layer);
-    if (  (vector_is_child != false) && (selectingVector == false)  ) { 
+    if (  (vector_is_child_of != false) && (selectingVector == false)  ) { 
       allDrawnItems.removeLayer(layer);
-      vectorSelected = vector_is_child;
+      vectorSelected = vector_is_child_of;
       alert("Highlight the text first and then draw a smaller shape for it.");
       //open the relevant parent editor and make it glow
     }
-    else if (  (vector_is_parent != false) && (selectingVector == false)  ) { 
+    else if (vector_is_parent_of != false) { 
       allDrawnItems.removeLayer(layer);
       alert("Link these shapes in order please!");
       //make #polyanno-merge-shapes-enable glow
+      $("#polyanno-merge-shapes-enable").effect("highlight");
+    }
+    else if (  (vector_is_child_of != false) && (selectingVector != false)  )  {
+      ///the parent vector needs to be the same
+      //polyanno_new_vector_made(layer, shape, vector_is_child_of);
     }
     else {
       polyanno_new_vector_made(layer, shape);
@@ -2337,9 +2352,17 @@ var polyanno_setup_editor_events = function() {
   $('#polyanno-page-body').on("click", ".polyannoLinkVectorBtn", function(){
     var thisEditor = $(event.target).closest(".textEditorPopup").attr("id"); 
     settingEditorVars(thisEditor);
-    selectingVector = polyanno_siblingArray;
-    $("#imageViewer").effect("bounce");
-    $("#map").popover( "show");
+    selectingVector = {
+      siblings: polyanno_siblingArray,
+      parent_anno : polyanno_siblingArray[0].parent,
+      parent_vector : checkForVectorTarget(parent_anno)
+    };
+    ////"#"+thisEditor ---> .leaflet-draw-toolbar-top
+    var highlight_drawing_tools = $(".leaflet-draw-toolbar-top").effect("highlight");
+    $("#"+thisEditor).transfer({
+      to: $(".leaflet-draw-toolbar-top")
+    }, highlight_drawing_tools);
+
   });
 
   $("#polyanno-page-body").on("click", ".polyanno-options-dropdown-toggle", function(event){
