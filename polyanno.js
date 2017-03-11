@@ -1609,6 +1609,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_shape_end = bridge_final_geometry.slice(0, index_shape1_1+1); // v4 to v1
 
   var final_merge_shape_coords = shape1_start + bridge_shape_start + shape2_start + shape2_end + bridge_shape_end + shape1_end;
+  alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
 };
 
