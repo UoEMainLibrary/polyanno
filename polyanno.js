@@ -80,16 +80,16 @@ var polyanno_merging_array = [];
 
 ////HTML VARIABLES
 
-var polyanno_transcribe_symbol = "<span class='glyphicon glyphicon-pencil'></span><span class='glyphicon glyphicon-list-alt'></span>";
-var polyanno_translate_symbol = "<span class='glyphicon glyphicon-pencil'></span><span class='glyphicon glyphicon-globe'></span>";
-var polyanno_select_fragment_symbol = "<span class='glyphicon glyphicon-scissors'></span><span class='glyphicon glyphicon-text-background'></span>";
+var polyanno_transcribe_symbol = "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-list-alt'></span>";
+var polyanno_translate_symbol = "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-globe'></span>";
+var polyanno_select_fragment_symbol = "<span class='glyphicon glyphicon-scissors'></span> <span class='glyphicon glyphicon-text-background'></span>";
 var polyanno_discuss_symbol = "<span class='glyphicon glyphicon-comment'></span>";
-var polyanno_new_transcription_symbol = "<span class='glyphicon glyphicon-plus'></span><span class='glyphicon glyphicon-list-alt'></span>";
-var polyanno_new_translation_symbol = "<span class='glyphicon glyphicon-plus'></span><span class='glyphicon glyphicon-globe'></span>";
-var polyanno_fragment_alternatives_symbol = "<span class='glyphicon glyphicon-text-background'></span><span class='glyphicon glyphicon-align-left'></span>";
-var polyanno_merging_vectors_symbol = "<span class='glyphicon glyphicon-stop'></span><span class='glyphicon glyphicon-object-align-horizontal'></span>";
-var polyanno_linking_transcription_to_vectors_symbol = "<span class='glyphicon glyphicon-list-alt'></span><span class='glyphicon glyphicon-link'></span><span class='glyphicon glyphicon-stop'></span>";
-var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon glyphicon-globe'></span><span class='glyphicon glyphicon-link'></span><span class='glyphicon glyphicon-stop'></span>";
+var polyanno_new_anno_symbol = "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-plus'></span>";
+var polyanno_fragment_alternatives_symbol = "<span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>";
+var polyanno_merging_vectors_symbol = "<span class='glyphicon glyphicon-map-marker'></span> <span class='glyphicon glyphicon-stop'></span> <span class='glyphicon glyphicon-object-align-horizontal'></span>";
+var polyanno_linking_transcription_to_vectors_symbol = "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-list-alt'></span> <span class='glyphicon glyphicon-stop'></span>";
+var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-globe'></span></span> <span class='glyphicon glyphicon-stop'></span>";
+var polyanno_show_alternatives_symbol = "<span class='glyphicon glyphicon-chevron-down'></span> <span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>";
 
 var polyanno_top_bar_HTML = `
   <div class="col-md-6 polyanno-bar-buttons">
@@ -101,7 +101,7 @@ var polyanno_top_bar_HTML = `
         <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
 
         <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-          <span class="glyphicon glyphicon-link"></span>
+          `+polyanno_merging_vectors_symbol+`
         </button>
         <ul class="dropdown-menu" aria-labelledby="polyanno-merge-shapes-enable">
             <li >
@@ -199,7 +199,7 @@ var popupTranscriptionChildrenMenuHTML = `
   <!-- Children Transcription Text Select Popup Menu-->
   <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_transcription_menu();">VIEW OTHER TRANSCRIPTIONS</a>
+        <a class="openTranscriptionMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_transcription_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
@@ -208,7 +208,7 @@ var popupTranslationChildrenMenuHTML = `
   <!-- Children Translation Text Select Popup Menu -->
   <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_translation_menu();">VIEW OTHER TRANSLATIONS</a>
+        <a class="openTranslationMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_translation_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
@@ -233,6 +233,7 @@ var polyannoEditorHTML_partone = `
 
 `;
 
+////need to change to discussion and put tags into Polyglot alone
 var polyannoEditorHTML_options_partone = `<div class="row polyanno-options-row">
                                             <div class="col-md-2 polyanno-options-buttons">
                                               <button class="btn btn-default polyanno-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
@@ -262,7 +263,7 @@ var polyannoEditorHTML_partfinal = `
 
       <div class="row polyanno-alternatives-toggle-row">
         <button type='button' class='btn polyannoEditorDropdownBtn polyannoToggleAlternatives'>
-          Show Alternatives
+          `+polyanno_show_alternatives_symbol+`
         </button> 
       </div>
 
@@ -272,14 +273,14 @@ var polyannoEditorHTML_partfinal = `
 
       <div class="row polyanno-add-new-toggle-row">
         <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
-          Add New Annotation
+          `+polyanno_new_anno_symbol+`
         </button> 
       </div>
 
       <div class="row polyanno-add-new-row">
         <div class='polyannoAddNewContainer col-md-12'> 
           <textarea id='testingKeys' class='newAnnotation row' placeholder='Add new annotation text here'></textarea><br>
-          <button type='button' class='btn addAnnotationSubmit polyannoEditorDropdownBtn row'>Submit <span class='glyphicon glyphicon-ok'></span></button>  
+          <button type='button' class='btn addAnnotationSubmit polyannoEditorDropdownBtn row'><span class='glyphicon glyphicon-ok-circle'></span></button>  
         </div> 
 
       </div>
@@ -1937,7 +1938,13 @@ var polyanno_creating_vec = function() {
     }
     else if (  (vector_is_child_of != false) && (selectingVector != false)  )  {
       ///the parent vector needs to be the same
-      //polyanno_new_vector_made(layer, shape, vector_is_child_of);
+      if ( vector_is_child_of == selectingVector.vector_parent) {
+        polyanno_new_vector_made(layer, shape, vector_is_child_of);
+      }
+      else {
+        alert("Please draw the shape inside its parent!");
+        polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+      };
     }
     else {
       polyanno_new_vector_made(layer, shape);
@@ -1984,7 +1991,11 @@ var polyanno_vec_select = function() {
   allDrawnItems.on('click', function(vec) {
     vectorSelected = vec.layer._leaflet_id;
     if (currentlyEditing || currentlyDeleting) {}
-    else if (selectingVector != false) {  alert("make a new vector!");  }
+    else if (selectingVector != false) {  
+      alert("Draw a new shape around the text on the image!");
+      polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+      $(".leaflet-draw-toolbar-top").effect("highlight");
+    }
     else if (polyanno_merging_vectors) {
       ///need to introduce annotation checks and the ordered merging functions as well
       polyanno_merging_array.push(vec.layer);
@@ -2354,16 +2365,21 @@ var polyanno_setup_editor_events = function() {
   $('#polyanno-page-body').on("click", ".polyannoLinkVectorBtn", function(){
     var thisEditor = $(event.target).closest(".textEditorPopup").attr("id"); 
     settingEditorVars(thisEditor);
+    var parent_vector_id = checkForVectorTarget(parent_anno);
+    var the_parent_vector = allDrawnItems.getLayer(parent_vector_id);
     selectingVector = {
       siblings: polyanno_siblingArray,
       parent_anno : polyanno_siblingArray[0].parent,
-      parent_vector : checkForVectorTarget(parent_anno)
+      parent_vector : the_parent_vector
     };
-    ////"#"+thisEditor ---> .leaflet-draw-toolbar-top
+    polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+    highlightVectorChosen(parent_vector_id, "yellow");
     var highlight_drawing_tools = $(".leaflet-draw-toolbar-top").effect("highlight");
     $("#"+thisEditor).transfer({
       to: $(".leaflet-draw-toolbar-top")
     }, highlight_drawing_tools);
+
+    ///need to enable some kind of cancelling option, preferably within Leaflet itself
 
   });
 
