@@ -1604,14 +1604,15 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var index_shape1_1 = bridge_final_geometry.indexOf(bridge_index_array[0]); 
 
   //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
-  var shape1_start = shape1.slice(0, bridge_index_array[1]); // start up to v2
-  var shape1_end = shape1.slice(bridge_index_array[0]+1); // from v1 to end
-  var shape2_start = shape2.slice(bridge_index_array[2]+1); // from v3 to end
-  var shape2_end = shape2.slice(0, bridge_index_array[3]); // start up to v4
-  var bridge_shape_start = bridge_final_geometry.slice(index_shape1_1+1, bridge_final_geometry.length - 1); // v2 to v3
-  var bridge_shape_end = bridge_final_geometry.slice(0, index_shape1_1+1); // v4 to v1
+  var shape1_start = [shape1.slice(0, bridge_index_array[1])]; // start up to v2
+  var shape1_end = [shape1.slice(bridge_index_array[0]+1)]; // from v1 to end
+  var shape2_start = [shape2.slice(bridge_index_array[2]+1)]; // from v3 to end
+  var shape2_end = [shape2.slice(0, bridge_index_array[3])]; // start up to v4
+  var bridge_shape_start = [bridge_final_geometry.slice(index_shape1_1+1, bridge_final_geometry.length - 1)]; // v2 to v3
+  var bridge_shape_end = [bridge_final_geometry.slice(0, index_shape1_1+1)]; // v4 to v1
 
-  var final_merge_shape_coords = shape1_start + bridge_shape_start + shape2_start + shape2_end + bridge_shape_end + shape1_end;
+  var final_merge_shape_coords = [shape1_start, bridge_shape_start, shape2_start, shape2_end, bridge_shape_end, shape1_end];
+
   alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
 };
