@@ -80,6 +80,17 @@ var polyanno_merging_array = [];
 
 ////HTML VARIABLES
 
+var polyanno_transcribe_symbol = "<span class='glyphicon glyphicon-pencil'></span><span class='glyphicon glyphicon-list-alt'></span>";
+var polyanno_translate_symbol = "<span class='glyphicon glyphicon-pencil'></span><span class='glyphicon glyphicon-globe'></span>";
+var polyanno_select_fragment_symbol = "<span class='glyphicon glyphicon-scissors'></span><span class='glyphicon glyphicon-text-background'></span>";
+var polyanno_discuss_symbol = "<span class='glyphicon glyphicon-comment'></span>";
+var polyanno_new_transcription_symbol = "<span class='glyphicon glyphicon-plus'></span><span class='glyphicon glyphicon-list-alt'></span>";
+var polyanno_new_translation_symbol = "<span class='glyphicon glyphicon-plus'></span><span class='glyphicon glyphicon-globe'></span>";
+var polyanno_fragment_alternatives_symbol = "<span class='glyphicon glyphicon-text-background'></span><span class='glyphicon glyphicon-align-left'></span>";
+var polyanno_merging_vectors_symbol = "<span class='glyphicon glyphicon-stop'></span><span class='glyphicon glyphicon-object-align-horizontal'></span>";
+var polyanno_linking_transcription_to_vectors_symbol = "<span class='glyphicon glyphicon-list-alt'></span><span class='glyphicon glyphicon-link'></span><span class='glyphicon glyphicon-stop'></span>";
+var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon glyphicon-globe'></span><span class='glyphicon glyphicon-link'></span><span class='glyphicon glyphicon-stop'></span>";
+
 var polyanno_top_bar_HTML = `
   <div class="col-md-6 polyanno-bar-buttons">
 
@@ -132,11 +143,9 @@ var polyanno_top_bar_HTML = `
 
 var openHTML = "<div class='popupAnnoMenu'>";
 var transcriptionOpenHTML = `<a class="openTranscriptionMenu btn btn-default" onclick="checkEditorsOpen('vector', 'transcription');
-      polyanno_map.closePopup();">
-      TRANSCRIPTION
-      </a><br>`;
+      polyanno_map.closePopup();">`+polyanno_transcribe_symbol+`</a><br>`;
 var translationOpenHTML = `<a class="openTranslationMenu btn btn-default" onclick="checkEditorsOpen('vector', 'translation');
-      polyanno_map.closePopup();">TRANSLATION</a>`;
+      polyanno_map.closePopup();">`+polyanno_translate_symbol+`</a>`;
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
 
@@ -153,7 +162,7 @@ var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
                       </div>`;
 var closeButtonHTML = `<span class='closePopoverMenuBtn glyphicon glyphicon-remove'></span>`;
 
-var transcriptionIconHTML = `<span class='glyphicon glyphicon-edit'></span>
+var transcriptionIconHTML = `<span class='glyphicon glyphicon-list-alt'></span>
                             <span>Transcription</span>`;
 var translationIconHTML = `<span class='glyphicon glyphicon-globe'></span>
                             <span>Translation</span>`;
@@ -166,22 +175,11 @@ var popupLinkVectorMenuHTML = `
   </div>
 `;
 
-var popupVectorParentMenuHTML = `
-  <!-- Vector Has a Parent Popup Menu -->
-  <div id="popupVectorParentMenu" class="popupAnnoMenu">
-    <div data-role="main" class="ui-content">
-      <p>Please find that area in the relevant parent text</p>
-      <a class="openTranscriptionMenuParent editorPopover btn btn-default">PARENT TRANSCRIPTION</a><br>
-      <a class="openTranslationMenuParent editorPopover btn btn-default">PARENT TRANSLATION</a>
-    </div>
-  </div>
-`;
-
 var popupTranscriptionNewMenuHTML = `
   <!-- New Transcription Text Select Popup Menu -->
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
      <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">ALTERNATIVE TRANSCRIPTION</a></br>
+        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">`+polyanno_select_fragment_symbol+`</a></br>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
      </div>
   </div>
@@ -191,7 +189,7 @@ var popupTranslationNewMenuHTML = `
   <!-- New Translation Text Select Popup Menu -->
   <div id="popupTranslationNewMenu" class="popupAnnoMenu" >
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">ALTERNATIVE TRANSLATION</a>
+        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">`+polyanno_select_fragment_symbol+`</a></br>
         <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>  
@@ -1834,7 +1832,6 @@ var polyanno_leaflet_basic_setup = function() {
     polyanno_creating_vec();
     polyanno_vec_select();
     polyanno_vector_edit_setup();
-    polyanno_image_popovers_setup();
     //polyanno_leaflet_merge_toolbar_setup(); - until debugged properly this functionality is loading through a the polyanno toolbar instead
     polyanno_leaflet_merge_polyanno_button_setup();
   });
@@ -2031,33 +2028,6 @@ var polyanno_leaflet_vector_to_json = function(layer){
 
   return vector;
 
-};
-
-var polyanno_image_popovers_setup = function() {
-
-  $('#map').popover({ 
-    trigger: 'manual',
-    placement: 'top',
-    html : true,
-    title: closeButtonHTML,
-    content: popupVectorParentMenuHTML
-  });
-
-  $('#map').on("shown.bs.popover", function(event) {
-
-    $('#polyanno-page-body').on("click", '.openTranscriptionMenuParent', function(event) {
-      checkEditorsOpen("vector", "transcription");
-      $('#map').popover('hide');
-    });
-    $('#polyanno-page-body').on("click", '.openTranslationMenuParent', function(event) {
-      checkEditorsOpen("vector", "translation");
-      $('#map').popover('hide');
-    });
-
-    $('.closeThePopover').on("click", function(event){
-      $('#map').popover("hide");
-    });
-  });
 };
 
 ///creating the new Leaflet Merging Toolbar
@@ -2483,7 +2453,7 @@ var polyanno_setup = function(opts) {
   $("#polyanno-page-body").addClass("atu-keyboard-parent");
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
-  $(image_viewer_id).find(".dragondrop-close-pop-btn").css("display", "none");
+  $(image_viewer_id).find(".dragondrop-close-pop-btn").parent().html("<span class='glyphicon glyphicon-picture'></span>");
   $(image_viewer_id).effect("fold");
   $(image_viewer_id).attr("id", "imageViewer");
 
