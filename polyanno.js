@@ -1971,12 +1971,12 @@ var polyanno_vec_select = function() {
       if (polyanno_temp_merge_shape != false) {
         alert(JSON.stringify(polyanno_temp_merge_shape.toGeoJSON()));
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
-        polyanno_add_merge_numbers(vec, polyanno_merging_array);
       }
       else {
         temp_merge_shape.addLayer(vec.layer);
         polyanno_temp_merge_shape = vec.layer;
       };
+      polyanno_add_merge_numbers(vec, polyanno_merging_array);
     }
     else {  vec.layer.openPopup();  };
 
