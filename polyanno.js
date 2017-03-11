@@ -39,6 +39,7 @@ var polyanno_highlight_colours_array = ["#EC0028","#EC0028","#EC0028"];
 var polyanno_default_colours_array = ["buttonface","#03f","transparent"]; 
 
 var editorsOpen = []; //those targets currently open in editors
+
 var selectingVector = false; //used to indicate if the user is currently searching for a vector to link or not
 /*
 {     siblings: polyanno_siblingArray,
@@ -891,6 +892,7 @@ var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 };
 
 var addEditorsOpen = function(popupIDstring) {
+
   return editorsOpen.push({
     "editor": popupIDstring,
     "typesFor": targetType,
@@ -1500,6 +1502,7 @@ var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
   var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
   var shape1_shortest_neighbours = [shape1[the_shortest_branch_array[1]-1], shape1[the_shortest_branch_array[1]+1]];
   var shape2_shortest_neighbours = [shape2[the_shortest_branch_array[2]-1], shape2[the_shortest_branch_array[2]+1]];
+  alert("The shape1 shortest neighbours array is "+JSON.stringify(shape1_shortest_neighbours)+" and the shape2's is "+JSON.stringify(shape2_shortest_neighbours));
   var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
   var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
   var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
@@ -1614,6 +1617,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   var old_shape_coords = old_shape_JSON.geometry.coordinates[0];
   var new_vec_JSON = new_vec_layer.toGeoJSON();
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
+  alert("the old shape coords are "+JSON.stringify(old_shape_coords)+" and the new coords are "+JSON.stringify(new_vec_coords));
   var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
   var concavity_check = check_for_concavity(new_merge_coords);
 
@@ -1961,6 +1965,7 @@ var polyanno_vec_select = function() {
       ///need to introduce annotation checks and the ordered merging functions as well
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
+        alert(JSON.stringify(polyanno_temp_merge_shape.toGeoJSON()));
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
         polyanno_add_merge_numbers(vec, polyanno_merging_array);
       }
