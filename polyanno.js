@@ -781,6 +781,14 @@ var setNewTextVariables = function(selection, classCheck) {
 
 ///// VIEWER WINDOWS
 
+var polyanno_shake_the_popups = function() {
+  $(".annoPopup").effect("shake", {
+    direction: "right",
+    distance: 10,
+    times: 2
+  });
+};
+
 var createEditorPopupBox = function() {
 
   var dragon_opts = {
@@ -790,6 +798,7 @@ var createEditorPopupBox = function() {
   };
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
+  $(popupIDstring).effect("drop",,,polyanno_shake_the_popups);
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
   $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
   $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
@@ -2475,6 +2484,7 @@ var polyanno_setup = function(opts) {
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
   $(image_viewer_id).find(".dragondrop-close-pop-btn").css("display", "none");
+  $(image_viewer_id).effect("fold");
   $(image_viewer_id).attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
