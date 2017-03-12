@@ -1602,23 +1602,25 @@ var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array)
 };
 
 var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_index) {
-  if (point_a_index == 0) {
-    return the_shape.slice(1, point_b_index);
+  ///a is start of clockwise loop around shape, b is the end
+  //need to account for the fact that the first and last coordinate have to be identical
+  if (point_a_index == 0) { 
+    return the_shape.slice(1, point_b_index); ///a is 0 AND last point, b is the penultimate point
   }
   else if (point_b_index == 0) {
-    return the_shape.slice(2); //b is 0, a is 1
+    return the_shape.slice(2, (the_shape.length - 1)); //b is 0 AND last point, a is 1
   }
   else {
-    var shape_start = the_shape.slice(0, point_b_index); // start up to, but not including, b
+    var shape_start = the_shape.slice(1, point_b_index); // start not inlcuding ending, then up to, but not including, b
     var shape_end = the_shape.slice(point_a_index+1); // from (a + 1) to end
     return shape_end.concat(shape_start);
   };
 };
 
 var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
-  //[shape1_1, shape1_2, shape2_1, shape2_2]
+  //[v1_index_shape1, v2_index_shape1, v3_index_shape2, v4_index_shape2]
   var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
-  //[v2, v3, v4, v4]
+  //[v2, v3, v4, v1]
   var bridge_initial_geometry = [shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]], shape1[bridge_index_array[0]]];
   alert("the bridge index array is "+JSON.stringify(bridge_index_array)+" which makes the initial geometry "+JSON.stringify(bridge_initial_geometry));
   //[shape1_2, ... v1, v2 .... , shape2_1, shape2_2, ...v1, v2 .... shape1_1]
@@ -1632,17 +1634,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_shape_start = bridge_final_geometry.slice(0, index_of_v4); // v2 to v3
   var bridge_shape_end = bridge_final_geometry.slice(index_of_v4); // v4 to v1
 
-  var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end);
-
-  /*
-  [
-    [[57,-110]],
-    [[57,-110],[57,-65]],
-    [[85,-65],[101,-65]],
-    [[123,-65],[123,-110],[101,-110]],
-    [[101,-110],[85,-110]]
-  ]
-  */
+  var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, shape1_segment[0]); //the first and last coordinates need to be identical
 
   alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
