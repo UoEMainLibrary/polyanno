@@ -1392,7 +1392,9 @@ var find_concavity_angles = function(coordinates) {
     };
     if ((the_angle > 180) && (the_angle < 360)) {
       ///[x,y, coordinates_array_position]
-      notches_array.push([the_angle[0],the_angle[1],i]);
+      var the_vertex_array = [coordinates[0],coordinates[1],i];
+      alert("the angle that currently represents a notch is "+JSON.stringify(the_vertex_array)+" with an angle of "+the_angle);
+      notches_array.push(the_vertex_array);
     };
   };
   alert("so the final notches array is "+JSON.stringify(notches_array));
@@ -1402,7 +1404,7 @@ var find_concavity_angles = function(coordinates) {
 //(Chazelle and Dobkin, 1985) Optimal Decomposition Algorithm
 var chazelle_and_dobkin_polynomial_ocd = function(coordinates, notches_array) {
   var the_OCD_array = [];
-
+  ////algorithm here!!
   var this_geometry = [];
   var this_id = Math.random().toString().substring(2);
   the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
