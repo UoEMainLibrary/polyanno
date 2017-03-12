@@ -2312,6 +2312,21 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
 
 };
 
+var polyanno_closing_merging = function() {
+  polyanno_temp_merge_shape = false;
+  polyanno_merging_transcription = [];
+  polyanno_merging_translation = [];
+  polyanno_merging_array = [];
+  $(".leaflet-draw-toolbar-top").css("color", "#333");
+  $(".annoPopup").css("opacity", 1.0);
+  $(".polyanno-merging-buttons").toggle("swing");
+  var transcription_id = $("#polyanno_merging_transcription").closest("annoPopup").attr("id");
+  var translation_id = $("#polyanno_merging_translation").closest("annoPopup").attr("id");
+  dragondrop_remove_pop(transcription_id);
+  dragondrop_remove_pop(translation_id);
+
+};
+
 var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
@@ -2333,32 +2348,16 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       allDrawnItems.addLayer(polyanno_temp_merge_shape);
       temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
       polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false, polyanno_merging_array, polyanno_new_annos_via_linking); //layer, shape, parent, children, callback
-      polyanno_temp_merge_shape = false;
-      polyanno_merging_transcription = [];
-      polyanno_merging_translation = [];
-      polyanno_merging_array = [];
-      $(".polyanno-merging-buttons").toggle("swing");
+      polyanno_closing_merging();
     }
     else {
       temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
-      polyanno_temp_merge_shape = false;
-      polyanno_merging_transcription = [];
-      polyanno_merging_translation = [];
-      polyanno_merging_array = [];
-      $(".leaflet-draw-toolbar-top").css("color", "#333");
-      $(".annoPopup").css("opacity", 1.0);
-      $(".polyanno-merging-buttons").toggle("swing");
+      polyanno_closing_merging();
     };
   }); 
 
   $(".polyanno-merge-shapes-cancel-btn").on("click", function(event){
-      polyanno_merging_vectors = false;
-      polyanno_merging_transcription = [];
-      polyanno_merging_translation = [];
-      polyanno_merging_array = [];
-      $(".leaflet-draw-toolbar-top").css("color", "#333");
-      $(".annoPopup").css("opacity", 1.0);
-      $(".polyanno-merging-buttons").toggle("swing");
+      polyanno_closing_merging();
   });
 
 };
