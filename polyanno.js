@@ -142,9 +142,9 @@ var polyanno_top_bar_HTML = `
 
 
 var openHTML = "<div class='popupAnnoMenu'>";
-var transcriptionOpenHTML = `<a class="openTranscriptionMenu btn btn-default" onclick="checkEditorsOpen('vector', 'transcription');
+var transcriptionOpenHTML = `<a class="openTranscriptionMenu polyanno-standard-btn btn btn-default" onclick="checkEditorsOpen('vector', 'transcription');
       polyanno_map.closePopup();">`+polyanno_transcribe_symbol+`</a><br>`;
-var translationOpenHTML = `<a class="openTranslationMenu btn btn-default" onclick="checkEditorsOpen('vector', 'translation');
+var translationOpenHTML = `<a class="openTranslationMenu polyanno-standard-btn btn btn-default" onclick="checkEditorsOpen('vector', 'translation');
       polyanno_map.closePopup();">`+polyanno_translate_symbol+`</a>`;
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
@@ -153,10 +153,10 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
 var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
-                        <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
+                        <button type='button' class='btn btn-default polyanno-standard-btn voteBtn polyannoVotingUpButton'>
                           <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
                         </button>
-                        <button type='button' class='btn btn-default polyannoVotesUpBadge'>
+                        <button type='button' class='btn btn-default polyanno-standard-btn polyannoVotesUpBadge'>
                           <span class='badge'></span>
                         </button>
                       </div>`;
@@ -179,8 +179,8 @@ var popupTranscriptionNewMenuHTML = `
   <!-- New Transcription Text Select Popup Menu -->
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
      <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default">`+polyanno_select_fragment_symbol+`</a></br>
-        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
+        <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default polyanno-standard-btn">`+polyanno_select_fragment_symbol+`</a></br>
+        <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
      </div>
   </div>
 `;
@@ -189,8 +189,8 @@ var popupTranslationNewMenuHTML = `
   <!-- New Translation Text Select Popup Menu -->
   <div id="popupTranslationNewMenu" class="popupAnnoMenu" >
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all ui-shadow ui-btn-inline">`+polyanno_select_fragment_symbol+`</a></br>
-        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
+        <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all polyanno-standard-btn">`+polyanno_select_fragment_symbol+`</a></br>
+        <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>  
 `;
@@ -199,8 +199,8 @@ var popupTranscriptionChildrenMenuHTML = `
   <!-- Children Transcription Text Select Popup Menu-->
   <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranscriptionMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_transcription_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
-        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
+        <a class="openTranscriptionMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="polyanno_open_existing_text_transcription_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
+        <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
 `;
@@ -208,8 +208,8 @@ var popupTranslationChildrenMenuHTML = `
   <!-- Children Translation Text Select Popup Menu -->
   <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
       <div data-role="main" class="ui-content">
-        <a class="openTranslationMenuOld editorPopover btn btn-default" onclick="polyanno_open_existing_text_translation_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
-        <a class="polyanno-add-discuss btn btn-default"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
+        <a class="openTranslationMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="polyanno_open_existing_text_translation_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
+        <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
 `;
@@ -262,7 +262,7 @@ var polyannoEditorHTML_partfinal = `
       </div>
 
       <div class="row polyanno-alternatives-toggle-row">
-        <button type='button' class='btn polyannoEditorDropdownBtn polyannoToggleAlternatives'>
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoToggleAlternatives '>
           `+polyanno_show_alternatives_symbol+`
         </button> 
       </div>
@@ -1673,7 +1673,7 @@ var polyanno_add_merge_numbers = function(new_vec, merge_array) {
     permanent: true
   };
 
-  new_vec.bindTooltip(the_number_label, the_number_label_options);
+  new_vec.bindTooltip(the_number_label, the_number_label_options); ///is producing error of is not a function and undefined
 };
 
 //////IIIF
