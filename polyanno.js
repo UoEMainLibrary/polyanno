@@ -1603,14 +1603,14 @@ var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array)
 
 var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_index) {
   if (point_a_index == 0) {
-    return [the_shape.slice(1, point_b_index)];
+    return the_shape.slice(1, point_b_index);
   }
   else if (point_b_index == 0) {
-    return [the_shape.slice(2)]; //b is 0, a is 1
+    return the_shape.slice(2); //b is 0, a is 1
   }
   else {
-    var shape_start = [the_shape.slice(0, point_b_index)]; // start up to, but not including, b
-    var shape_end = [the_shape.slice(point_a_index+1)]; // from (a + 1) to end
+    var shape_start = the_shape.slice(0, point_b_index); // start up to, but not including, b
+    var shape_end = the_shape.slice(point_a_index+1); // from (a + 1) to end
     return shape_end.concat(shape_start);
   };
 };
@@ -1633,6 +1633,16 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_shape_end = [bridge_final_geometry.slice(index_of_v4)]; // v4 to v1
 
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end);
+
+  /*
+  [
+    [[57,-110]],
+    [[57,-110],[57,-65]],
+    [[85,-65],[101,-65]],
+    [[123,-65],[123,-110],[101,-110]],
+    [[101,-110],[85,-110]]
+  ]
+  */
 
   alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
