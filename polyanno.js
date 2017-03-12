@@ -1796,12 +1796,13 @@ var polyanno_load_merging_anno = function(new_vec, text_type) {
   return new_fragment;
 };
 
-var polyanno_add_merge_annos = function(new_vec) {
-  if (!isUseless(new_vec.properties.transcription)) { 
+var polyanno_add_merge_annos = function(new_vec_layer) {
+  var new_vec = new_vec_layer.toGeoJSON();
+  if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.transcription))) { 
     var new_frag = polyanno_load_merging_anno(new_vec, "transcription");
     polyanno_merging_transcription.push(new_frag);
   };
-  if (!isUseless(new_vec.properties.translation)) { 
+  if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.translation))) { 
     var new_frag = polyanno_load_merging_anno(new_vec, "translation");
     polyanno_merging_translation.push(new_frag);
   };
@@ -1822,12 +1823,13 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, this_i
   return the_array_index;
 };
 
-var polyanno_remove_merge_annos = function(vec_removed) {
-  if (!isUseless(vec_removed.properties.transcription)) { 
+var polyanno_remove_merge_annos = function(vec_removed_layer) {
+  var vec_removed = vec_removed_layer.toGeoJSON();
+  if ((!isUseless(new_vec.properties))&&(!isUseless(vec_removed.properties.transcription))) { 
     var the_index = polyanno_extracting_merged_anno("transcription", polyanno_merging_transcription, vec_removed.properties.transcription);
     polyanno_merging_transcription.slice(the_index, 1);
   };
-  if (!isUseless(vec_removed.properties.translation)) { 
+  if ((!isUseless(new_vec.properties))&&(!isUseless(vec_removed.properties.translation))) { 
     var the_index = polyanno_extracting_merged_anno("translation", polyanno_merging_translation, vec_removed.properties.translation);
     polyanno_merging_translation.slice(the_index, 1);
   };
