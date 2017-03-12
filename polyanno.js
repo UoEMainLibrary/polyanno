@@ -1677,7 +1677,7 @@ var polyanno_add_merge_numbers = function(new_vec, merge_array) {
     permanent: true
   };
 
-  new_vec.bindTooltip(the_number_label, the_number_label_options); ///is producing error of is not a function and undefined
+  new_vec.bindTooltip(the_number_label, the_number_label_options);
 };
 
 //////IIIF
@@ -1996,12 +1996,14 @@ var polyanno_vec_select = function() {
     vectorSelected = vec.layer._leaflet_id;
     if (currentlyEditing || currentlyDeleting) {}
     else if (selectingVector != false) {  
+      vec.layer.closePopup();
       alert("Draw a new shape around the text on the image!");
       polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
       $(".leaflet-draw-toolbar-top").effect("highlight");
     }
     else if (polyanno_merging_vectors) {
-      ///need to introduce annotation checks and the ordered merging functions as well
+      ///need to introduce annotation checks 
+      vec.layer.closePopup();
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
         alert(JSON.stringify(polyanno_temp_merge_shape.toGeoJSON()));
