@@ -1378,14 +1378,15 @@ var anticlockwise_vertex_angle = function(vertex1, vertex2, vertex3) {
 
 var find_concavity_angles = function(coordinates) {
   /////if angle is between 180 degrees and 360 degrees then add it to the notches array
+  ////need to account for repeat coordinates at beginning and end of array
   var notches_array = [];
   for (var i=0; i< coordinates.length; i++) {
     var the_angle;
     if (i == (coordinates.length - 2)) {
-      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[0]);
+      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[1]);
     }
     else if (i == (coordinates.length - 1)) {
-      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[0],coordinates[1]);
+      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[1],coordinates[2]);
     }
     else {
       the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
@@ -1545,6 +1546,16 @@ var polyanno_find_shortest_branch = function(shape1, shape2) {
   return shortest_gap_array;
 };
 
+var polyanno_form_neighbour_index_array = function(shape, main_index){
+  var prev;
+  var next;
+  if (main_index==0) {  prev = main_index.length -2; }
+  else {  prev = main_index - 1 };
+  if (main_index==(main_index.length -1)){  next = 1 }
+  else {  next = main_index +1 };
+  return [shape[prev], shape[next]];
+};
+
 var sort_out_edge_direction = function(shortest, neighbour_value) {
   //the bridge shape needs to run in the opposite direction to the shape it has come from to be clockwise
   if (neighbour_value == 0) {   return [shortest, (shortest - 1)];    }
@@ -1553,8 +1564,8 @@ var sort_out_edge_direction = function(shortest, neighbour_value) {
 
 var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
   var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
-  var shape1_shortest_neighbours = [shape1[the_shortest_branch_array[1]-1], shape1[the_shortest_branch_array[1]+1]];
-  var shape2_shortest_neighbours = [shape2[the_shortest_branch_array[2]-1], shape2[the_shortest_branch_array[2]+1]];
+  var shape1_shortest_neighbours = polyanno_form_neighbour_index_array(shape1, the_shortest_branch_array[1]);
+  var shape2_shortest_neighbours = polyanno_form_neighbour_index_array(shape2, the_shortest_branch_array[2]);
   var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
   var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
   var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
