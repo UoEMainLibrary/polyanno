@@ -1701,13 +1701,13 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   L.geoJson(tempGeoJSON, 
         { onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
+            layer.bringToBack(),
             polyanno_temp_merge_shape = layer
           }
         }).addTo(polyanno_map);
-
+  temp_merge_shape.setStyle({color: "yellow"});
+  temp_merge_shape.bringToBack();
 };
-
-temp_merge_shape.setStyle({color: "yellow"});
 
 var polyanno_add_first_merge_shape = function(shape_to_copy) {
 
@@ -1716,11 +1716,13 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
   L.geoJson(tempGeoJSON, 
         { onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
+            layer.bringToBack(),
             polyanno_temp_merge_shape = layer
           }
         }).addTo(polyanno_map);
 
   temp_merge_shape.setStyle({color: "yellow"});
+  temp_merge_shape.bringToBack();
 };
 
 var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
@@ -1749,10 +1751,12 @@ var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
   L.geoJson(new_shape, 
         { onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
+            layer.bringToBack(),
             polyanno_temp_merge_shape = layer
           }
         }).addTo(polyanno_map);
   temp_merge_shape.setStyle({color: "yellow"});
+  temp_merge_shape.bringToBack();
 
 };
 
