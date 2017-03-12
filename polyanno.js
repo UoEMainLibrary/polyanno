@@ -1372,9 +1372,9 @@ var anticlockwise_vertex_angle = function(vertex1, vertex2, vertex3) {
   var new_vertex1 = recentre_coordinates(vertex1, vertex2);
   var new_vertex3 = recentre_coordinates(vertex3, vertex2);
   alert("for the corner made from "+JSON.stringify(vertex1)+JSON.stringify(vertex2)+JSON.stringify(vertex3)+" the adjusted coordinates are now "+JSON.stringify(new_vertex1)+JSON.stringify(new_vertex3));
-  var anticlockwise_angle_v1 = angle_from_zero(new_vertex1);
-  var anticlockwise_angle_v3 = angle_from_zero(new_vertex3);
-  alert("and so the anticlockwise angles are "+anticlockwise_angle_v3+" and "+anticlockwise_angle_v1);
+  var anticlockwise_angle_v1 = angle_from_zero(new_vertex1[0],new_vertex1[1]);
+  var anticlockwise_angle_v3 = angle_from_zero(new_vertex3[0],new_vertex3[1]);
+  alert("and so the anticlockwise angles are "+anticlockwise_angle_v3+" and "+anticlockwise_angle_v1); 
   return anticlockwise_angle_v3 - anticlockwise_angle_v1;
 };
 
