@@ -1629,8 +1629,8 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var shape1_segment = polyanno_find_shape_between(shape1, bridge_index_array[0], bridge_index_array[1]); //shape1 between v1 to v2
   var shape2_segment = polyanno_find_shape_between(shape2, bridge_index_array[2], bridge_index_array[3]); //shape2 between v3 and v4
   var index_of_v4 = bridge_final_geometry.indexOf(bridge_initial_geometry[2]); 
-  var bridge_shape_start = [bridge_final_geometry.slice(0, index_of_v4)]; // v2 to v3
-  var bridge_shape_end = [bridge_final_geometry.slice(index_of_v4)]; // v4 to v1
+  var bridge_shape_start = bridge_final_geometry.slice(0, index_of_v4); // v2 to v3
+  var bridge_shape_end = bridge_final_geometry.slice(index_of_v4); // v4 to v1
 
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end);
 
