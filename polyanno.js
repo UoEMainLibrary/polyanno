@@ -166,12 +166,11 @@ var transcriptionIconHTML = `<span class='glyphicon glyphicon-list-alt'></span>
                             <span>Transcription</span>`;
 var translationIconHTML = `<span class='glyphicon glyphicon-globe'></span>
                             <span>Translation</span>`;
-var popupLinkVectorMenuHTML = `
-  <!-- Link Vector Popup Menu -->
-  <div id="popupLinkVectorMenu" class="popupAnnoMenu">
-    <div data-role="main" class="ui-content">
-      <p>Create a new one on the image for this text selection</p>
-    </div>
+
+var popupTranscriptionNewMenuHTML = `
+  <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
+    <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_setting_selecting_vector(); polyanno_map.closePopup();">Submit</a>
+    <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_reset_selecting_vector(); polyanno_map.closePopup();">Cancel</a>
   </div>
 `;
 
@@ -1742,6 +1741,14 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
     var the_number_label = "<span> "+(i-1)+"</span>";
     this_vec.setTooltipContent(the_number_label);
   };
+};
+
+///////
+var polyanno_setting_selecting_vector = function() {
+
+};
+var polyanno_reset_selecting_vector = function() {
+
 };
 
 //////IIIF
