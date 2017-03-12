@@ -2233,7 +2233,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
     };
   }); 
 
-  $("#polyanno-merge-shapes-cancel-btn").on("click", function(event){
+  $(".polyanno-merge-shapes-cancel-btn").on("click", function(event){
       polyanno_merging_vectors = false;
       $(".annoPopup").css("opacity", 1.0);
       $(".polyanno-merging-buttons").toggle("swing");
