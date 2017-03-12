@@ -2150,8 +2150,11 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
+      ///add class "active" to button to stay pressed??
       $(".polyanno-merging-buttons").toggle("swing");
   ////blackout window view around the leaflet pop??
+      $(".annoPopup").css("opacity", 0.3);
+      $("#imageViewer").css("opacity", 1.0);
   });
 
 
