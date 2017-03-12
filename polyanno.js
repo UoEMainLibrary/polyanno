@@ -1807,6 +1807,32 @@ var polyanno_add_merge_annos = function(new_vec) {
   };
 };
 
+var polyanno_extracting_merged_anno = function(text_type, children_array, this_id) {
+  var this_child_array = $.grep(children_array, function(item, index){
+    var this_fragment_obj = $.grep(item.fragments, function(this_frag, this_index){
+      return this_frag.id == this_id;
+    });
+    return item.fragments == this_fragment_obj[0];
+  });
+  var this_child = this_child_array[0];
+  var this_frag_dom = document.getElementById(this_child.id);
+  var the_display_dom = document.getElementById("polyanno_merging_"+text_type);
+  the_display_dom.removeChild(this_frag_dom);
+  var the_array_index = children_array.indexOf(this_child);
+  return the_array_index;
+};
+
+var polyanno_remove_merge_annos = function(vec_removed) {
+  if (!isUseless(vec_removed.properties.transcription)) { 
+    var the_index = polyanno_extracting_merged_anno("transcription", polyanno_merging_transcription, vec_removed.properties.transcription);
+    polyanno_merging_transcription.slice(the_index, 1);
+  };
+  if (!isUseless(vec_removed.properties.translation)) { 
+    var the_index = polyanno_extracting_merged_anno("translation", polyanno_merging_translation, vec_removed.properties.translation);
+    polyanno_merging_translation.slice(the_index, 1);
+  };
+};
+
 ///////
 var polyanno_setting_selecting_vector = function() {
   var this_layer = allDrawnItems.getLayer(vectorSelected);
