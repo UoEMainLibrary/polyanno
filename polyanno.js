@@ -78,6 +78,9 @@ var polyanno_merging_vectors = false;
 var polyanno_temp_merge_shape = false; ///Leaflet layer not just GeoJSON
 var polyanno_merging_array = [];
 
+var polyanno_merging_transcription = []; ///equal to the children array of parent anno
+var polyanno_merging_translation = []; ///equal to the children array of parent anno
+
 ////HTML VARIABLES
 
 var polyanno_transcribe_symbol = "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-list-alt'></span>";
@@ -151,6 +154,19 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
+
+var polyanno_merging_transcription_HTML = `
+                                    <div class="row">
+                                      <h1>The New Transcription:</h1>
+                                    </div>
+                                    <div id="polyanno_merging_transcription" class="row">
+                                    </div>`;
+var polyanno_merging_translation_HTML = `
+                                    <div class="row">
+                                      <h1>The New Translation:</h1>
+                                    </div>
+                                    <div id="polyanno_merging_translation" class="row">
+                                    </div>`;
 
 var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
                         <button type='button' class='btn btn-default polyanno-standard-btn voteBtn polyannoVotingUpButton'>
@@ -607,6 +623,29 @@ var polyanno_new_anno_via_selection = function(baseURL) {
 
 };
 
+var polyanno_new_translation_via_linking = function(merged_vector) {
+
+};
+
+var polyanno_new_transcription_via_linking = function(merged_vector) {
+
+};
+
+var polyanno_new_annos_via_linking = function(merged_vector) {
+  var linked_transcriptions = $("#polyanno_merging_transcription").html();
+  var linked_translations = $("#polyanno_merging_translation").html();
+
+  var transcription_data = {text: linked_transcriptions, children: polyanno_merging_transcription, metadata: imageSelectedMetadata};
+  var translation_data = {text: linked_translations, children: polyanno_merging_translation, metadata: imageSelectedMetadata};
+
+  ///dealing sequentially to address global variables problems??
+
+  /*
+  var annoData = { body: { id: data.url }, target: [
+          {id: merged_vector, format: "image/SVG" },
+          {id: imageSelected,  format: "application/json"  } ] };
+  */    
+};
 
 var setpolyanno_text_selectedID = function(theText) {
 
@@ -1743,6 +1782,31 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
   };
 };
 
+var polyanno_load_merging_anno = function(new_vec, text_type) {
+  var this_id = new_vec.properties[text_type]; 
+  var this_json = getTargetJSON();
+  var this_display_id = "#polyanno_merging_"+text_type;
+  var old_text = $(this_display_id).html();
+  var new_frag_id = Math.random().toString().substring(2);
+  var this_class = text_type.concat("-text");
+  var the_new_span = "<a class='" + newSpanClass(this_class) + " ' id='" + new_frag_id + "' >" + this_json.text + "</a>";
+  var new_text = old_text.concat(the_new_span);
+  $(this_display_id).html(new_text);
+  var new_fragment = {id: new_frag_id, fragments: [{id: this_id}]};
+  return new_fragment;
+};
+
+var polyanno_add_merge_annos = function(new_vec) {
+  if (!isUseless(new_vec.properties.transcription)) { 
+    var new_frag = polyanno_load_merging_anno(new_vec, "transcription");
+    polyanno_merging_transcription.push(new_frag);
+  };
+  if (!isUseless(new_vec.properties.translation)) { 
+    var new_frag = polyanno_load_merging_anno(new_vec, "translation");
+    polyanno_merging_translation.push(new_frag);
+  };
+};
+
 ///////
 var polyanno_setting_selecting_vector = function() {
   var this_layer = allDrawnItems.getLayer(vectorSelected);
@@ -1945,7 +2009,7 @@ var polyanno_load_existing_vectors = function(existingVectors) {
   };
 };
 
-var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children) {
+var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children, callback_function) {
   var annoData = {geometry: shape.geometry, OCD: shape.properties.OCD, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
 
   if (selectingVector != false) { 
@@ -1982,9 +2046,12 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
         targetData.body.id = data.url;
         polyanno_add_annotationdata(targetData, false, false, [false], [data.url], []);
+
         layer._leaflet_id = data.url;
         if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
         else {  updateVectorSelection(data.url); };
+
+        if (!isUseless(callback_function)) {  callback_function(data.url);  };
       }
   });
 
@@ -2084,22 +2151,26 @@ var polyanno_vec_select = function() {
       ///need to introduce parents checks??
       vec.layer.closePopup();
       if (polyanno_merging_array.includes(vec.layer)) {
+        //unclick and remove this vector
         var the_index = polyanno_merging_array.indexOf(vec.layer);
         polyanno_remove_merge_number(vec.layer, polyanno_merging_array, the_index);
         polyanno_merging_array.splice(the_index, 1);
         polyanno_remove_merge_shape(vec.layer, polyanno_temp_merge_shape);
+        ///////remove transcription and translations too
       }
       else if (polyanno_temp_merge_shape != false) {
+        //click and merge this vector
         polyanno_merging_array.push(vec.layer);
-        alert(JSON.stringify(polyanno_temp_merge_shape.toGeoJSON()));
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
         polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
+        ///////add transcription and translation too
       }
       else {
+        //click and start the new merge shape
         polyanno_merging_array.push(vec.layer);
-        ////need to create new layer as otherwise the larger merge shape is completely replacing the original first shape....
         polyanno_add_first_merge_shape(vec.layer);
         polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
+        ///////add transcription and translation too
       };
     }
     else {  vec.layer.openPopup();  };
@@ -2221,6 +2292,9 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_transcription_HTML, "polyanno-page-body", true);
+      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true);
+      ///need to set highlighted display??
       $(".polyanno-merging-buttons").toggle("swing");
       $(".leaflet-draw-toolbar-top").css("color", "yellow");
       $(".annoPopup").css("opacity", 0.3);
@@ -2233,13 +2307,19 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       var shape = polyanno_temp_merge_shape.toGeoJSON();
       allDrawnItems.addLayer(polyanno_temp_merge_shape);
       temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
-      polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false);
+      polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false, polyanno_merging_array, polyanno_new_annos_via_linking); //layer, shape, parent, children, callback
       polyanno_temp_merge_shape = false;
+      polyanno_merging_transcription = [];
+      polyanno_merging_translation = [];
+      polyanno_merging_array = [];
       $(".polyanno-merging-buttons").toggle("swing");
     }
     else {
       temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
       polyanno_temp_merge_shape = false;
+      polyanno_merging_transcription = [];
+      polyanno_merging_translation = [];
+      polyanno_merging_array = [];
       $(".leaflet-draw-toolbar-top").css("color", "#333");
       $(".annoPopup").css("opacity", 1.0);
       $(".polyanno-merging-buttons").toggle("swing");
@@ -2248,6 +2328,9 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $(".polyanno-merge-shapes-cancel-btn").on("click", function(event){
       polyanno_merging_vectors = false;
+      polyanno_merging_transcription = [];
+      polyanno_merging_translation = [];
+      polyanno_merging_array = [];
       $(".leaflet-draw-toolbar-top").css("color", "#333");
       $(".annoPopup").css("opacity", 1.0);
       $(".polyanno-merging-buttons").toggle("swing");
