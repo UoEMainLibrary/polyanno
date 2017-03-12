@@ -2009,7 +2009,7 @@ var polyanno_vec_select = function() {
         temp_merge_shape.addLayer(vec.layer);
         polyanno_temp_merge_shape = vec.layer;
       };
-      polyanno_add_merge_numbers(vec, polyanno_merging_array);
+      polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
     }
     else {  vec.layer.openPopup();  };
 
