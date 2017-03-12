@@ -1740,7 +1740,7 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
   for (var i=0; i < affected_array.length; i++) {
     var this_vec = merge_array[i];
     var the_number_label = "<span> "+(i-1)+"</span>";
-    this_vec..setTooltipContent(the_number_label);
+    this_vec.setTooltipContent(the_number_label);
   };
 };
 
