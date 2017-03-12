@@ -1249,6 +1249,9 @@ var polyannoRemoveFavourites = function(the_favourited_type, the_favourited_id) 
 
 /////update activities of users functions here 
 
+var polyannoUpdateUsersActivities = function() {
+
+};
 
 ////HIGHLIGHTING 
 
@@ -2152,7 +2155,6 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
       $(".polyanno-merging-buttons").toggle("swing");
-  ////blackout window view around the leaflet pop??
       $(".annoPopup").css("opacity", 0.3);
       $("#imageViewer").css("opacity", 1.0);
   });
@@ -2165,19 +2167,20 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
       polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false);
       polyanno_temp_merge_shape = false;
-      ///close menu
+      $(".polyanno-merging-buttons").toggle("swing");
     }
     else {
       temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
       polyanno_temp_merge_shape = false;
-      //close menu  
+      $(".annoPopup").css("opacity", 1.0);
+      $(".polyanno-merging-buttons").toggle("swing");
     };
   }); 
 
   $("#polyanno-merge-shapes-cancel-btn").on("click", function(event){
       polyanno_merging_vectors = false;
-      //close menu??
-  ////return from blackout window view around the leaflet pop??
+      $(".annoPopup").css("opacity", 1.0);
+      $(".polyanno-merging-buttons").toggle("swing");
   });
 
 };
