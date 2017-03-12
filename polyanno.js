@@ -797,9 +797,9 @@ var createEditorPopupBox = function() {
   };
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
-  $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups);
+  $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups)
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
-  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
+  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change");
   $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
   $(popupIDstring).find(".dragondrop-title").html(returnTextIcon(polyanno_text_type_selected));
   $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text");
@@ -2195,10 +2195,6 @@ $("#polyanno-top-bar").on("click", ".polyanno-add-keyboard", function(event){
 ////HIGHLIGHTING
 var polyanno_setup_highlighting = function() {
 
-  /////////
-  ////check for default and highlighted colour array
-  /////////
-
   $('#polyanno-page-body').on("mouseover", ".textEditorBox", function(event){
 
     var thisEditor = "#" + $(event.target).closest(".textEditorPopup").attr("id");
@@ -2335,6 +2331,21 @@ var polyanno_setup_voting = function() {
 };
 
 var polyanno_setup_editor_events = function() {
+  var the_tags_html = "";
+  $('.polyanno-image-metadata-tags-btn').on("click", function(event){
+    var tagHTML1 = "<a class='polyanno-tag' >";
+    var tagHTML2 = "</a>";
+    if (!isUseless(imageSelectedMetadata)) {
+      var polyanno_searching = $.grep(imageSelectedMetadata, function(e){ 
+          if (!isUseless(e.label)) {  return e.label == "Tag";   };
+      });
+      polyanno_searching.forEach(function(theTagSpan){
+        var polyannoTagHTML = tagHTML1 + theTagSpan + tagHTML2;
+        the_tags_html.concat(polyannoTagHTML);
+      });
+    };
+    add_dragondrop_pop("polyanno-image-tags-pop", the_tags_html, "polyanno-page-body", true);
+  });
 
   $('#polyanno-page-body').on("click", '.addAnnotationSubmit', function(event) {
     var thisEditor = $(event.target).closest(".annoPopup").attr("id"); 
