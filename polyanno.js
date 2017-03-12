@@ -1371,10 +1371,8 @@ var anticlockwise_vertex_angle = function(vertex1, vertex2, vertex3) {
   //reset the centre to be the second vertex (the actual vertex in question)
   var new_vertex1 = recentre_coordinates(vertex1, vertex2);
   var new_vertex3 = recentre_coordinates(vertex3, vertex2);
-  alert("for the corner made from "+JSON.stringify(vertex1)+JSON.stringify(vertex2)+JSON.stringify(vertex3)+" the adjusted coordinates are now "+JSON.stringify(new_vertex1)+JSON.stringify(new_vertex3));
   var anticlockwise_angle_v1 = angle_from_zero(new_vertex1[0],new_vertex1[1]);
   var anticlockwise_angle_v3 = angle_from_zero(new_vertex3[0],new_vertex3[1]);
-  alert("and so the anticlockwise angles are "+anticlockwise_angle_v3+" and "+anticlockwise_angle_v1); 
   return anticlockwise_angle_v3 - anticlockwise_angle_v1;
 };
 
@@ -1397,6 +1395,7 @@ var find_concavity_angles = function(coordinates) {
       notches_array.push([the_angle[0],the_angle[1],i]);
     };
   };
+  alert("so the final notches array is "+JSON.stringify(notches_array));
   return notches_array;
 };
 
@@ -1690,12 +1689,13 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
   var concavity_check = check_for_concavity(new_merge_coords);
 
+  var tempGeoJSON = old_shape_JSON;
   if (!isUseless(concavity_check)) {
+    if (isUseless(tempGeoJSON.properties)) {  tempGeoJSON.properties = {};  };
     tempGeoJSON.properties.OCD = concavity_check;
   };
 
   ///replace with setLatLngs method??
-  var tempGeoJSON = old_shape_JSON;
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
 
   temp_merge_shape.removeLayer(temp_shape_layer);
