@@ -2181,22 +2181,22 @@ var polyanno_vec_select = function() {
         var the_index = polyanno_merging_array.indexOf(vec.layer);
         polyanno_remove_merge_number(vec.layer, polyanno_merging_array, the_index);
         polyanno_merging_array.splice(the_index, 1);
+        polyanno_remove_merge_annos(vec.layer);
         polyanno_remove_merge_shape(vec.layer, polyanno_temp_merge_shape);
-        ///////remove transcription and translations too
       }
       else if (polyanno_temp_merge_shape != false) {
         //click and merge this vector
         polyanno_merging_array.push(vec.layer);
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
         polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
-        ///////add transcription and translation too
+        polyanno_add_merge_annos(vec.layer);
       }
       else {
         //click and start the new merge shape
         polyanno_merging_array.push(vec.layer);
         polyanno_add_first_merge_shape(vec.layer);
         polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
-        ///////add transcription and translation too
+        polyanno_add_merge_annos(vec.layer);
       };
     }
     else {  vec.layer.openPopup();  };
