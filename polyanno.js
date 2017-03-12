@@ -1404,7 +1404,7 @@ var rotate_axes_coordinates = function(vertex, rotating_vertex) {
 var find_y_dash_value = function(vertex, first_point, second_point) {
   var new_vertex2 = recentre_coordinates(second_point, first_point);
   var new_test_vertex = recentre_coordinates(vertex, first_point);
-  if (rotate_axes_coordinates(new_test_vertex, new_vertex2) > 0) {
+  if (rotate_axes_coordinates(new_test_vertex, new_vertex2) >= 0) {
     return true;
   }
   else {
@@ -1561,6 +1561,7 @@ var polyanno_overlap_looping = function(initial_geometry, convex_shape) {
 };
 
 var polyanno_find_and_fix_overlap = function(initial_geometry, convex_shape) {
+  ///need to find fix if 
   var the_geometry = initial_geometry;
   var reiterate = true;
   while (reiterate) {
@@ -1740,10 +1741,10 @@ var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 
 var polyanno_open_existing_text_transcription_menu = function() {
 
+  var selection = getSelected(); 
+
   ///not sure entirely about synchronicity of this but meh
   polyanno_reset_global_variables();
-
-  var selection = getSelected(); 
 
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
