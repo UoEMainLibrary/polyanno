@@ -157,13 +157,13 @@ var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
 var polyanno_merging_transcription_HTML = `
                                     <div class="row">
-                                      <h1>The New Transcription:</h1>
+                                      <h2>The New Transcription:</h2>
                                     </div>
                                     <div id="polyanno_merging_transcription" class="row">
                                     </div>`;
 var polyanno_merging_translation_HTML = `
                                     <div class="row">
-                                      <h1>The New Translation:</h1>
+                                      <h2>The New Translation:</h2>
                                     </div>
                                     <div id="polyanno_merging_translation" class="row">
                                     </div>`;
@@ -1552,7 +1552,6 @@ var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
   var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
   var shape1_shortest_neighbours = [shape1[the_shortest_branch_array[1]-1], shape1[the_shortest_branch_array[1]+1]];
   var shape2_shortest_neighbours = [shape2[the_shortest_branch_array[2]-1], shape2[the_shortest_branch_array[2]+1]];
-  alert("The shape1 shortest neighbours array is "+JSON.stringify(shape1_shortest_neighbours)+" and the shape2's is "+JSON.stringify(shape2_shortest_neighbours));
   var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
   var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
   var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
@@ -1665,10 +1664,8 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
   //[v2, v3, v4, v1]
   var bridge_initial_geometry = [shape1[bridge_index_array[1]], shape2[bridge_index_array[2]], shape2[bridge_index_array[3]], shape1[bridge_index_array[0]]];
-  alert("the bridge index array is "+JSON.stringify(bridge_index_array)+" which makes the initial geometry "+JSON.stringify(bridge_initial_geometry));
   //[shape1_2, ... v1, v2 .... , shape2_1, shape2_2, ...v1, v2 .... shape1_1]
   var bridge_final_geometry = polyanno_merge_shape_avoid_overlap(bridge_initial_geometry, merge_array);
-  alert("the final geometry is therefore "+JSON.stringify(bridge_final_geometry));
 
   //the bridge shape is running clockwise too so the adjacent edges are in the reverse order
   var shape1_segment = polyanno_find_shape_between(shape1, bridge_index_array[0], bridge_index_array[1]); //shape1 between v1 to v2
@@ -1680,7 +1677,6 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
 
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, final_coords); //the first and last coordinates need to be identical
 
-  alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
 };
 
@@ -1689,7 +1685,6 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   var old_shape_coords = old_shape_JSON.geometry.coordinates[0];
   var new_vec_JSON = new_vec_layer.toGeoJSON();
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
-  alert("the old shape coords are "+JSON.stringify(old_shape_coords)+" and the new coords are "+JSON.stringify(new_vec_coords));
   var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
   var concavity_check = false; //check_for_concavity(new_merge_coords);
 
@@ -1762,7 +1757,6 @@ var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
 };
 
 var polyanno_add_merge_numbers = function(new_vec, merge_array) {
-  ///////need to include numbering order markers?
   var the_number_label = "<span> "+merge_array.length+"</span>";
   var the_number_label_options = {
     direction: "center",
@@ -2110,7 +2104,6 @@ var polyanno_creating_vec = function() {
       $("#polyanno-merge-shapes-enable").effect("highlight");
     }
     else if (  (vector_is_child_of != false) && (selectingVector != false)  )  {
-      ///the parent vector needs to be the same
       if ( vector_is_child_of == selectingVector.vector_parent) {
         layer.bindPopup(popupSelectingVectorHTML).openPopup();
       }
@@ -2334,7 +2327,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
     if (polyanno_merging_array.length > 1) {
       var shape = polyanno_temp_merge_shape.toGeoJSON();
       allDrawnItems.addLayer(polyanno_temp_merge_shape);
-      temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+      temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
       polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false, polyanno_merging_array, polyanno_new_annos_via_linking); //layer, shape, parent, children, callback
       polyanno_temp_merge_shape = false;
       polyanno_merging_transcription = [];
@@ -2343,7 +2336,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       $(".polyanno-merging-buttons").toggle("swing");
     }
     else {
-      temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
+      temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
       polyanno_temp_merge_shape = false;
       polyanno_merging_transcription = [];
       polyanno_merging_translation = [];
