@@ -821,11 +821,13 @@ var polyanno_can_vote_add = function(popupIDstring) {
 
     //enable listening event for voting display   
     ////improve to hover because otherwise flickering for small text displays!!
-    $(popupIDstring).on("mouseover", ".polyanno-text-display", function(event){
-      $(event.target).find(".polyanno-voting-overlay").css("display", "block");
+    $(popupIDstring).on("mouseenter", ".polyanno-text-display", function(event){
+      //$(event.target).find(".polyanno-voting-overlay").css("display", "block");
+      $(event.target).find(".polyanno-voting-overlay").show("swing");
     });
-    $(popupIDstring).on("mouseout", ".polyanno-text-display", function(event){
-      $(event.target).find(".polyanno-voting-overlay").css("display", "none");
+    $(popupIDstring).on("mouseleave", ".polyanno-text-display", function(event){
+      //$(event.target).find(".polyanno-voting-overlay").css("display", "none");
+      $(event.target).find(".polyanno-voting-overlay").hide("swing");
     });
 
   };
