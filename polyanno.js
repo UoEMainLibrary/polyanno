@@ -167,7 +167,7 @@ var transcriptionIconHTML = `<span class='glyphicon glyphicon-list-alt'></span>
 var translationIconHTML = `<span class='glyphicon glyphicon-globe'></span>
                             <span>Translation</span>`;
 
-var popupTranscriptionNewMenuHTML = `
+var popupSelectingVectorHTML = `
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
     <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_setting_selecting_vector(); polyanno_map.closePopup();">Submit</a>
     <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_reset_selecting_vector(); polyanno_map.closePopup();">Cancel</a>
@@ -1745,10 +1745,12 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
 
 ///////
 var polyanno_setting_selecting_vector = function() {
-
+  var this_layer = allDrawnItems.getLayer(vectorSelected);
+  polyanno_new_vector_made(this_layer, this_layer.shape, vector_is_child_of);
 };
 var polyanno_reset_selecting_vector = function() {
-
+  var this_layer = allDrawnItems.getLayer(vectorSelected);
+  allDrawnItems.removeLayer(this_layer);
 };
 
 //////IIIF
@@ -2015,7 +2017,7 @@ var polyanno_creating_vec = function() {
     else if (  (vector_is_child_of != false) && (selectingVector != false)  )  {
       ///the parent vector needs to be the same
       if ( vector_is_child_of == selectingVector.vector_parent) {
-        polyanno_new_vector_made(layer, shape, vector_is_child_of);
+        layer.bindPopup(popupSelectingVectorHTML).openPopup();
       }
       else {
         alert("Please draw the shape inside its parent!");
@@ -2220,6 +2222,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
       $(".polyanno-merging-buttons").toggle("swing");
+      $(".leaflet-draw-toolbar-top").css("color", "yellow");
       $(".annoPopup").css("opacity", 0.3);
       $("#imageViewer").css("opacity", 1.0);
   });
@@ -2237,6 +2240,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
     else {
       temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
       polyanno_temp_merge_shape = false;
+      $(".leaflet-draw-toolbar-top").css("color", "#333");
       $(".annoPopup").css("opacity", 1.0);
       $(".polyanno-merging-buttons").toggle("swing");
     };
@@ -2244,6 +2248,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $(".polyanno-merge-shapes-cancel-btn").on("click", function(event){
       polyanno_merging_vectors = false;
+      $(".leaflet-draw-toolbar-top").css("color", "#333");
       $(".annoPopup").css("opacity", 1.0);
       $(".polyanno-merging-buttons").toggle("swing");
   });
