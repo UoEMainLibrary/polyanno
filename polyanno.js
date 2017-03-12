@@ -797,7 +797,7 @@ var createEditorPopupBox = function() {
   };
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
   var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
-  $(popupIDstring).effect("drop", null, null,polyanno_shake_the_popups);
+  $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups);
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
   $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change"); 
   $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
@@ -2470,7 +2470,7 @@ var polyanno_setup = function(opts) {
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
   $(image_viewer_id).find(".dragondrop-close-pop-btn").parent().html("<span class='glyphicon glyphicon-picture'></span>");
-  $(image_viewer_id).effect("fold");
+  $(image_viewer_id).show("fold");
   $(image_viewer_id).attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
