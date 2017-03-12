@@ -2060,7 +2060,9 @@ var polyanno_vec_select = function() {
   allDrawnItems.on('click', function(vec) {
 
     vectorSelected = vec.layer._leaflet_id;
-    vectorSelectedParent = vec.layer.properties.parent;
+    if((!isUseless(vec.layer.properties)) && (!isUseless(vec.layer.properties.parent))){
+      vectorSelectedParent = vec.layer.properties.parent;
+    };
 
     if (currentlyEditing || currentlyDeleting) {}
     else if (selectingVector != false) {  
