@@ -106,9 +106,9 @@ var polyanno_top_bar_HTML = `
 
         <div class="btn-group polyanno-merging-buttons" role="group" aria-label="polyanno-merging-buttons">
 
-              <button class="btn btn-default polyanno-merge-shapes-submit-btn">"Submit"</button>
+              <button class="btn btn-primary polyanno-merge-shapes-submit-btn">Submit</button>
 
-              <button class="btn btn-default polyanno-merge-shapes-cancel-btn">"Cancel"</button>
+              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn">Cancel</button>
 
         </div>
 
@@ -1650,7 +1650,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
   alert("the old shape coords are "+JSON.stringify(old_shape_coords)+" and the new coords are "+JSON.stringify(new_vec_coords));
   var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
-  var concavity_check = check_for_concavity(new_merge_coords);
+  var concavity_check = new_merge_coords; //check_for_concavity(new_merge_coords);
 
   var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{"type": "Polygon", "coordinates": [new_merge_coords]}  };
   if (!isUseless(concavity_check)) {
