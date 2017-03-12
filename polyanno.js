@@ -1653,12 +1653,15 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
   alert("the old shape coords are "+JSON.stringify(old_shape_coords)+" and the new coords are "+JSON.stringify(new_vec_coords));
   var new_merge_coords = polyanno_calculate_new_merge_shape(old_shape_coords, new_vec_coords, merge_array);
-  var concavity_check = new_merge_coords; //check_for_concavity(new_merge_coords);
+  var concavity_check = false; //check_for_concavity(new_merge_coords);
 
-  var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{"type": "Polygon", "coordinates": [new_merge_coords]}  };
   if (!isUseless(concavity_check)) {
     tempGeoJSON.properties.OCD = concavity_check;
   };
+
+  ///replace with setLatLngs method??
+  var tempGeoJSON = temp_shape_layer;
+  tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
 
   temp_merge_shape.removeLayer(temp_shape_layer);
 
@@ -1669,6 +1672,53 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
           }
         }).addTo(polyanno_map);
 
+};
+
+temp_merge_shape.setStyle({color: "yellow"});
+
+var polyanno_add_first_merge_shape = function(shape_to_copy) {
+
+  var shapeGeoJSON = shape_to_copy.toGeoJSON();
+  var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{"type": "Polygon", "coordinates": shapeGeoJSON.geometry.coordinates}  };
+  L.geoJson(tempGeoJSON, 
+        { onEachFeature: function (feature, layer) {
+            temp_merge_shape.addLayer(layer),
+            polyanno_temp_merge_shape = layer
+          }
+        }).addTo(polyanno_map);
+
+  temp_merge_shape.setStyle({color: "yellow"});
+};
+
+var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
+  var old_shape_JSON = merge_shape.toGeoJSON();
+  var removing_shape_JSON = vec_removed.toGeoJSON();
+  var old_coords = old_shape_JSON.geometry.coordinates[0];
+  var removing_coords = removing_shape_JSON.geometry.coordinates[0];
+  var new_coords = [];
+  for (var i=0; i<old_coords.length; i++) {
+    var this_vertex = old_coords[i];
+    if (!removing_coords.includes(this_vertex)) {
+      new_coords.push(this_vertex);
+    };
+  };
+  if (removing_coords.includes(old_coords[0])) {
+    var new_start = new_coords.splice(0,1);
+    new_coords.push(new_start);
+  };
+  var new_shape = old_shape_JSON;
+  new_shape.geometry.coordinates[0] = new_coords;
+
+  ///replace with setLatLngs method??
+
+  temp_merge_shape.removeLayer(merge_shape);
+
+  L.geoJson(new_shape, 
+        { onEachFeature: function (feature, layer) {
+            temp_merge_shape.addLayer(layer),
+            polyanno_temp_merge_shape = layer
+          }
+        }).addTo(polyanno_map);
   temp_merge_shape.setStyle({color: "yellow"});
 
 };
@@ -1682,6 +1732,16 @@ var polyanno_add_merge_numbers = function(new_vec, merge_array) {
   };
 
   new_vec.bindTooltip(the_number_label, the_number_label_options);
+};
+
+var polyanno_remove_merge_number = function(vec_removed, merge_array, array_index) {
+  vec_removed.unbindTooltip();
+  var affected_array = merge_array.splice(array_index+1);
+  for (var i=0; i < affected_array.length; i++) {
+    var this_vec = merge_array[i];
+    var the_number_label = "<span> "+(i-1)+"</span>";
+    this_vec..setTooltipContent(the_number_label);
+  };
 };
 
 //////IIIF
@@ -1998,7 +2058,10 @@ var polyanno_vec_select = function() {
   });
 
   allDrawnItems.on('click', function(vec) {
+
     vectorSelected = vec.layer._leaflet_id;
+    vectorSelectedParent = vec.layer.properties.parent;
+
     if (currentlyEditing || currentlyDeleting) {}
     else if (selectingVector != false) {  
       vec.layer.closePopup();
@@ -2007,19 +2070,26 @@ var polyanno_vec_select = function() {
       $(".leaflet-draw-toolbar-top").effect("highlight");
     }
     else if (polyanno_merging_vectors) {
-      ///need to introduce annotation checks 
-      //also to allow you to unclick a shape
+      ///need to introduce parents checks??
       vec.layer.closePopup();
-      polyanno_merging_array.push(vec.layer);
-      if (polyanno_temp_merge_shape != false) {
+      if (polyanno_merging_array.includes(vec.layer)) {
+        var the_index = polyanno_merging_array.indexOf(vec.layer);
+        polyanno_remove_merge_number(vec.layer, polyanno_merging_array, the_index);
+        polyanno_merging_array.splice(the_index, 1);
+        polyanno_remove_merge_shape(vec.layer, polyanno_temp_merge_shape);
+      }
+      else if (polyanno_temp_merge_shape != false) {
+        polyanno_merging_array.push(vec.layer);
         alert(JSON.stringify(polyanno_temp_merge_shape.toGeoJSON()));
         polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
+        polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
       }
       else {
-        temp_merge_shape.addLayer(vec.layer);
-        polyanno_temp_merge_shape = vec.layer;
+        polyanno_merging_array.push(vec.layer);
+        ////need to create new layer as otherwise the larger merge shape is completely replacing the original first shape....
+        polyanno_add_first_merge_shape(vec.layer);
+        polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
       };
-      polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
     }
     else {  vec.layer.openPopup();  };
 
@@ -2079,9 +2149,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
           L.ToolbarAction.prototype.initialize.call(this);                
       },
       addHooks: function() {
-          //function enacted once it has been clicked
-          polyanno_merging_vectors = true;
-          ////blackout window view around the leaflet pop??
+          ///
           this.merging_action.disable();
       }
   });
@@ -2094,19 +2162,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
                 }   
             },
             addHooks: function () {
-              if (polyanno_merging_array.length > 1) {
-                var shape = polyanno_temp_merge_shape.toGeoJSON();
-                allDrawnItems.addLayer(polyanno_temp_merge_shape);
-                temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
-                polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false);
-                polyanno_temp_merge_shape = false;
-                polyanno_merge_leaflet_subaction.prototype.addHooks.call(this);
-              }
-              else {
-                temp_merge_shape.removeLayer(polyanno_temp_shape_layer);
-                polyanno_temp_merge_shape = false;
-                polyanno_merge_leaflet_subaction.prototype.addHooks.call(this);                
-              };
+              ///
             }
         });
 
@@ -2118,7 +2174,7 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
                 }   
             },
             addHooks: function () {
-                polyanno_merging_vectors = false;
+                //
             }
         });
 
