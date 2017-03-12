@@ -630,7 +630,6 @@ var newSpanClass = function(startParentClass) {
     return "translation-text opentranslationChildrenPopup";
   }
   else {
-    //alert("Please select transcription translation text");
     return null;
   };
 };
@@ -743,7 +742,7 @@ var setNewTextVariables = function(selection, classCheck) {
     initialiseOldTextPopovers(outerElementTextIDstring);
   }    
   else if (startParentID != endParentID) {
-   // alert("you can't select across existing fragments' borders sorry");
+  
   }
   else {
 
@@ -1636,7 +1635,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_shape_start = bridge_final_geometry.slice(0, index_of_v4); // v2 to v3
   var bridge_shape_end = bridge_final_geometry.slice(index_of_v4); // v4 to v1
 
-  var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, shape1_segment[0]); //the first and last coordinates need to be identical
+  var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, [shape1_segment[0]]); //the first and last coordinates need to be identical
 
   alert("the final merge coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
@@ -1749,6 +1748,7 @@ var polyanno_open_existing_text_transcription_menu = function() {
   polyanno_text_selectedID = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
     polyanno_text_selectedParent = polyanno_urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
+    alert("so now the text selected parent is "+polyanno_text_selectedParent);
   };
   polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
   checkEditorsOpen("text", "transcription");
@@ -2003,6 +2003,7 @@ var polyanno_vec_select = function() {
     }
     else if (polyanno_merging_vectors) {
       ///need to introduce annotation checks 
+      //also to allow you to unclick a shape
       vec.layer.closePopup();
       polyanno_merging_array.push(vec.layer);
       if (polyanno_temp_merge_shape != false) {
@@ -2333,7 +2334,7 @@ var polyanno_setup_voting = function() {
 };
 
 var polyanno_setup_editor_events = function() {
-  var the_tags_html = "";
+  var the_tags_html = "<div class='row'>";
   $('.polyanno-image-metadata-tags-btn').on("click", function(event){
     var tagHTML1 = "<a class='polyanno-tag' >";
     var tagHTML2 = "</a>";
@@ -2346,6 +2347,7 @@ var polyanno_setup_editor_events = function() {
         the_tags_html.concat(polyannoTagHTML);
       });
     };
+    the_tags_html.concat("</div>");
     add_dragondrop_pop("polyanno-image-tags-pop", the_tags_html, "polyanno-page-body", true);
   });
 
