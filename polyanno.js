@@ -1660,7 +1660,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   };
 
   ///replace with setLatLngs method??
-  var tempGeoJSON = temp_shape_layer;
+  var tempGeoJSON = old_shape_JSON;
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
 
   temp_merge_shape.removeLayer(temp_shape_layer);
