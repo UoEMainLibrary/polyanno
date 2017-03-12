@@ -100,17 +100,17 @@ var polyanno_top_bar_HTML = `
 
         <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
 
-        <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn">
           `+polyanno_merging_vectors_symbol+`
         </button>
-        <ul class="dropdown-menu" aria-labelledby="polyanno-merge-shapes-enable">
-            <li >
+
+        <div class="btn-group polyanno-merging-buttons" role="group" aria-label="polyanno-merging-buttons">
+
               <button class="btn btn-default polyanno-merge-shapes-submit-btn">"Submit"</button>
-            </li>
-            <li>
+
               <button class="btn btn-default polyanno-merge-shapes-cancel-btn">"Cancel"</button>
-            </li>
-        </ul>
+
+        </div>
 
         <!-- <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button> -->
 
@@ -2150,6 +2150,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
+      $(".polyanno-merging-buttons").toggle("swing");
   ////blackout window view around the leaflet pop??
   });
 
