@@ -1117,7 +1117,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   var this_parent = false;
   var this_vec = false;
   if (targetType.includes("vector")) {
-    var vector_layer = polyanno_map.getLayer(vectorSelected);
+    var vector_layer = allDrawnItems.getLayer(vectorSelected);
     var theCoords = vector_layer.geometry.coordinates[0];
     var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
     textData.target.push({id: IIIFsection, format: "image/jpg"});
@@ -1283,12 +1283,7 @@ var settingEditorVars = function(thisEditor) {
 ////HIGHLIGHTING 
 
 var highlightVectorChosen = function(chosenVector, colourChange) {
-  allDrawnItems.eachLayer(function(layer){
-    if(layer._leaflet_id == chosenVector) {
-      layer.setStyle({color: colourChange});
-    };
-  });
-  //polyanno_map.getLayer(chosenVector).setStyle({color: colourChange});
+  allDrawnItems.getLayer(chosenVector).setStyle({color: colourChange});
 };
 
 var highlightEditorsChosen = function(chosenEditor, colourChange) {
@@ -2088,7 +2083,9 @@ var polyanno_load_existing_vectors = function(existingVectors) {
 };
 
 var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children, callback_function, fromMerge) {
-  var annoData = {geometry: shape.geometry, OCD: shape.properties.OCD, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
+  var annoData = {geometry: shape.geometry, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
+
+  if (!isUseless(shape.properties)&&(!isUseless(shape.properties.OCD))) {  annoData.OCD = shape.properties.OCD;  };
 
   if (selectingVector != false) { 
     var theTopText = findHighestRankingChild(selectingVector.parent_anno, polyanno_text_selectedID);
