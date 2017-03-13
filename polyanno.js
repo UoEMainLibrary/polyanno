@@ -2120,6 +2120,8 @@ var polyanno_creating_vec = function() {
       }
 
       else {
+        var concavity_check = check_for_concavity(shape.geometry.coordinates[0]);
+        if (concavity_check != false) {  layer.properties.OCD = concavity_check;  };
         polyanno_new_vector_made(layer, shape);
       };
     };
