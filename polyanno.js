@@ -1456,7 +1456,7 @@ var check_this_geoJSON = function(shape, drawnItem, justOverlap) {
     for (var a = 0; a < drawnItem.properties.OCD.length; a++) {
       var convex_shape = drawnItem.properties.OCD[a];
       var is_new_inside = check_inside_another_shape(shape.geometry.coordinates[0], convex_shape);
-      if (is_new_inside.length > 0) && (justOverlap) {
+      if ((is_new_inside.length > 0) && (justOverlap)) {
         return 1;
       }
       else if (is_new_inside.length > 0) {
