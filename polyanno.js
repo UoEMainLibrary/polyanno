@@ -2080,7 +2080,7 @@ var polyanno_load_existing_vectors = function(existingVectors) {
             layer._leaflet_id = vector.id,
             allDrawnItems.addLayer(layer),
             layer.bindPopup(popupVectorMenu)
-          })
+          }
         }).addTo(polyanno_map);
 
     });
