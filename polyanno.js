@@ -2310,8 +2310,8 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_transcription_HTML, "polyanno-page-body", true);
-      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true);
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_transcription_HTML, "polyanno-page-body", true, null, true);
+      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true, null, true);
       ///need to set highlighted display??
       $(".polyanno-merging-buttons").toggle("swing");
       $(".leaflet-draw-toolbar-top").css("color", "yellow");
@@ -2602,13 +2602,12 @@ var polyanno_setup = function(opts) {
   if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
   //var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
-  var polyanno_image_title_HTML = " ";//"<span>"+polyanno_image_title()+"</span>";
+  var polyanno_image_title_HTML = "<span class='glyphicon glyphicon-picture'></span>";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
   $("#polyanno-page-body").addClass("atu-keyboard-parent");
 
-  var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML );
-  $(image_viewer_id).find(".dragondrop-close-pop-btn").parent().html("<span class='glyphicon glyphicon-picture'></span>");
+  var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
   $(image_viewer_id).show("fold");
   $(image_viewer_id).attr("id", "imageViewer");
 
