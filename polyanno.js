@@ -1723,15 +1723,22 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
   temp_merge_shape.bringToBack();
 };
 
-var polyanno_submit_merge_shape = function(merge_shape) {
-  L.geoJson(merge_shape, 
+var polyanno_submit_merge_shape = function() {
+  var thisJSON = polyanno_temp_merge_shape.toGeoJSON();
+  var submitted_layer = L.geoJson(thisJSON, 
         { style: {color: polyanno_default_colours_array[1]},
           onEachFeature: function (feature, layer) {
-            layer._leaflet_id = vector.id,
-            allDrawnItems.addLayer(layer),
-            layer.bindPopup(popupVectorMenu)
+            allDrawnItems.addLayer(layer)
           }
-        }).addTo(polyanno_map);
+        });
+  submitted_layer.addTo(polyanno_map);
+  temp_merge_shape.removeLayer(polyanno_temp_merge_shape);  
+  return submitted_layer;    
+};
+
+var polyanno_posted_merge_shape = function(vector_id) {
+  polyanno_new_annos_via_linking(vector_id);
+  polyanno_closing_merging();
 };
 
 var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
@@ -2049,12 +2056,16 @@ var polyanno_load_existing_vectors = function(existingVectors) {
   };
 };
 
-var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children, callback_function) {
+var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_children, callback_function, fromMerge) {
   var annoData = {geometry: shape.geometry, OCD: shape.properties.OCD, metadata: imageSelectedMetadata, parent: vector_parent, children: vector_children };
 
   if (selectingVector != false) { 
     var theTopText = findHighestRankingChild(selectingVector.parent_anno, polyanno_text_selectedID);
     annoData[polyanno_text_type_selected] = theTopText;  
+  }
+  else if (fromMerge){
+    annoData.transcription = shape.properties.transcription;
+    annoData.translation = shape.properties.translation;
   }
   else {
     ///not sure entirely about synchronicity of this but meh
@@ -2085,7 +2096,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
         targetSelected = [vectorSelected];
 
         targetData.body.id = data.url;
-        polyanno_add_annotationdata(targetData, false, false, [false], [data.url], []);
+        polyanno_add_annotationdata(targetData, false, false, [false], [data.url], [false]);
 
         layer._leaflet_id = data.url;
         if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
@@ -2379,11 +2390,9 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
     if (polyanno_merging_array.length > 1) {
-      var shape = polyanno_temp_merge_shape.toGeoJSON();
-      polyanno_submit_merge_shape(shape);
-      temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
-      polyanno_new_vector_made(polyanno_temp_merge_shape, shape, false, polyanno_merging_array, polyanno_new_annos_via_linking); //layer, shape, parent, children, callback
-      polyanno_closing_merging();
+      var layer = polyanno_submit_merge_shape();
+      var shape = layer.toGeoJSON();
+      polyanno_new_vector_made(layer, shape, false, polyanno_merging_array, polyanno_posted_merge_shape); //layer, shape, parent, children, callback
     }
     else {
       temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
