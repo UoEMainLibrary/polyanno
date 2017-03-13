@@ -208,7 +208,6 @@ The function that takes one input, *opts*,  a JSON object of the following forma
 {
   "highlighting": Boolean,
   "minimising": Boolean,
-  "users": Object,
   "storage": Object
 }
 ```
@@ -238,63 +237,6 @@ Type: Boolean
 Default: True
 
 If false then the editor boxes displaying the annotations and the image cannot be minimised, only opened and closed.
-
-###users (Optional)
-
-Type: JSON object
-Default: no users implemented and therefore the **favourite** functionality of Polyanno is disabled.
-
-The **users** field of the setup options takes the following format:
-
-```
-{
-  "favourites": Boolean,
-  "users_url": String
-}
-```
-
-This assumes that if you GET the **users_url** URL with "/username/" and a specific username, or "/id/" and specific id number, then it will recieve the user info in a JSON format. 
-So for example, if **users_url** is "www.example.com/users" then Polyanno can send a GET request to "www.example.com/users/username/user_one" to recieve user_one's info as JSON.
-
-Similarly if you PUT the **users_url** URL with the specific username added to the end and the fields to be updated as body parameters then it can be updated. 
-So for example, if *users_url** is also "www.example.com/users" then Polyanno can send a PUT request to "www.example.com/users/user_one" to update user_one's info.
-
-It also requires that the user info has at least the following fields in the following format:
-```
-{
-
-  "username": String,
-
-  "docs_edited": {
-    "vectors" : {
-      "created" : [],
-      "edited" : [],
-      "deleted" : []
-    },
-    "transcriptions" : {
-      "created" : [],
-      "edited" : [],
-      "deleted" : []
-    },
-    "translations" : {
-      "created" : [],
-      "edited" : [],
-      "deleted" : []
-    }
-  },
-
-  "favourites" : [{
-    "image_id" : String,
-    "the_image" : {
-      "type": Boolean,
-      "default": false
-    },
-    "transcriptions" : [],
-    "translations" : [],
-    "vectors" : []
-  }]
-}
-```
 
 ###storage
 
@@ -326,13 +268,6 @@ If it is easier to use, then you can just copy the following code into your serv
 
 	var annoRouter = express.Router();
 	var editorRouter = express.Router();
-
-	/////////////////USER ROUTES
-
-	userRouter.get('/username/:username', polyanno.users.getByUsername);
-	userRouter.get('/id/:user_id', polyanno.users.getByID);
-	userRouter.post('/', polyanno.users.addNew);
-	userRouter.put('/:username', polyanno.users.updateOne);
 
 	/////////////////API ROUTES
 

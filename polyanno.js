@@ -101,7 +101,7 @@ var polyanno_top_bar_HTML = `
 
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
 
-        <button class="btn btn-default polyanno-image-metadata-tags-btn"><span class="glyphicon glyphicon-tags"></span></button>
+        <button class="btn btn-default polyanno-discussion-btn"><span class="glyphicon glyphicon-comment"></span></button>
 
         <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn">
           `+polyanno_merging_vectors_symbol+`
@@ -227,12 +227,6 @@ var popupTranslationChildrenMenuHTML = `
         <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn"><span class="glyphicon glyphicon glyphicon-comment"></span> Discuss</a>
       </div>
   </div>
-`;
-
-var polyannoFavouriteBtnHTML = `
-      <button class="btn col-md-1 polyanno-colour-change dragondrop-handlebar-obj polyanno-favourite">
-        <span class="glyphicon glyphicon-star-empty"></span>
-      </button>
 `;
 
 var polyannoEditorHandlebarHTML = `
@@ -1253,42 +1247,6 @@ var settingEditorVars = function(thisEditor) {
       polyanno_siblingArray = target.children;
     };
   });
-};
-
-
-////USERS HANDLING
-
-var polyannoAddFavourites = function(the_favourited_type, the_favourited_id) {
-  var targetData = {  "favourites": { "image_id" : imageSelected } };
-  targetData.favourites[the_favourited_type] = the_favourited_id;
-
-///////
-  $.ajax({
-    type: "PUT",
-    url: users_url + polyanno_current_username,
-    dataType: "json",
-    data: targetData
-  });
-
-};
-
-var polyannoRemoveFavourites = function(the_favourited_type, the_favourited_id) {
-  var targetData = {  "removefavourite": { "image_id" : imageSelected } };
-  targetData.favourites[the_favourited_type] = the_favourited_id;
-///////
-  $.ajax({
-    type: "PUT",
-    url: users_url + polyanno_current_username,
-    dataType: "json",
-    data: targetData
-  });
-
-};
-
-/////update activities of users functions here 
-
-var polyannoUpdateUsersActivities = function() {
-
 };
 
 ////HIGHLIGHTING 
@@ -2454,37 +2412,6 @@ var polyanno_setup_highlighting = function() {
 
 };
 
-/////USERS
-
-var polyanno_enable_favourites = function () {
-
-  polyannoEditorHandlebarHTML += polyannoFavouriteBtnHTML;
-
-  $("#polyanno-page-body").on("click", ".polyanno-favourite", function(event) {
-    var theSpan = $(this).find(".glyphicon");
-    if (theSpan.hasClass("glyphicon-star-empty")) {
-      if ( $(this).closest(".annoPopup").attr("id") == "imageViewer" ) {
-        polyannoAddFavourites("the_image", true);
-      }
-      else {
-        polyannoAddFavourites(textTypeSelected, textSelected);
-      };
-      theSpan.removeClass("glyphicon-star-empty").addClass("glyphicon-star");
-    }
-    else {
-      if ( $(this).closest(".annoPopup").attr("id") == "imageViewer" ) {
-        polyannoRemoveFavourites("the_image", false);
-      }
-      else {
-        polyannoRemoveFavourites(textTypeSelected, textSelected);
-      };
-      polyannoHandleFavourites("removefavourite", textSelected);
-      theSpan.removeClass("glyphicon-star").addClass("glyphicon-star-empty");
-    };
-  });
-
-};
-
 /////////////
 
 var polyanno_setup_storage_fields = function(opts) {
@@ -2511,19 +2438,6 @@ var polyanno_setup_storage = function(opts) {
   else {
     websiteAddress = "http://"+window.location.host;
     polyanno_setup_storage_fields(opts);
-  };
-
-};
-
-var polyanno_setup_users = function(opts) {
-  if (!isUseless(opts.favourites)) {
-    polyanno_enable_favourites();
-  };
-  if (!isUseless(opts.users_url)){
-    polyanno_urls.users = opts.users_url;
-  }
-  else {
-    polyanno_urls.users = websiteAddress + "/users/";
   };
 
 };
@@ -2701,8 +2615,6 @@ var polyanno_setup = function(opts) {
   polyanno_leaflet_basic_setup();
 
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
-
-  if (!isUseless(opts.users)) { polyanno_setup_users(opts.users); };
 
   polyanno_setup_editor_events();
 
