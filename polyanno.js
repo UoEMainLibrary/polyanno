@@ -1929,11 +1929,10 @@ var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 
     var imagewithoutinfo = imageJSON.split("/info.json",1);
     var imagewithoutinfoURL = imagewithoutinfo[0];
-    /*
-    var splitIndex = imagewithoutinfoURL.lastIndexOf("/");
-    var image_id = imagewithoutinfoURL.substring(splitIndex +1);
-    var baseImageURL = imagewithoutinfoURL.slice(0, splitIndex +1);
-    */
+
+    ///need to either find extreme coordinates and create rectangular URLs
+    //or use the IIIF Image Section API somehow??
+
     var regionParams = generateIIIFregion(coordinates);
     var theURL = imagewithoutinfoURL.concat(regionParams + "." + format);
 
@@ -2101,6 +2100,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
   };
 
   var targetData = {target: [], body: {}};
+  alert("the final shape geometry is "+JSON.stringify(shape.geometry));
   var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
   targetData.target.push({
       "id": imageSelected,
@@ -2386,7 +2386,6 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
 };
 
 var polyanno_closing_merging = function() {
-  ///need to remove the tooltips!!
   for (var i=0; i < polyanno_merging_array.length; i++) {
     polyanno_merging_array[i].unbindTooltip();
   };
