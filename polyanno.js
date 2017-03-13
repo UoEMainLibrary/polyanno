@@ -2386,6 +2386,10 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
 };
 
 var polyanno_closing_merging = function() {
+  ///need to remove the tooltips!!
+  for (var i=0; i < polyanno_merging_array.length; i++) {
+    polyanno_merging_array[i].unbindTooltip();
+  };
   polyanno_temp_merge_shape = false;
   polyanno_merging_transcription = [];
   polyanno_merging_translation = [];
