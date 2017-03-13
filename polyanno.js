@@ -1712,7 +1712,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   tempGeoJSON.properties.transcription = polyanno_merging_transcription;
   tempGeoJSON.properties.translation = polyanno_merging_translation;
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
-  tempGeoJSON.children.push(new_vec_layer._leaflet_id);
+  tempGeoJSON.properties.children.push(new_vec_layer._leaflet_id);
 
   temp_merge_shape.removeLayer(temp_shape_layer);
 
@@ -2398,7 +2398,6 @@ var polyanno_closing_merging = function() {
   $(".polyanno-merging-buttons").toggle("swing");
   var transcription_id = $("#polyanno_merging_transcription").closest(".annoPopup").attr("id");
   var translation_id = $("#polyanno_merging_translation").closest(".annoPopup").attr("id");
-  alert("the display ids are "+transcription_id+" and "+translation_id);
   dragondrop_remove_pop(transcription_id);
   dragondrop_remove_pop(translation_id);
 
