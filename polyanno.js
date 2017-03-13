@@ -1925,15 +1925,31 @@ var generateIIIFregion = function(coordinates) {
     return paramURL;
 };
 
+var polyanno_make_rectangular_outer = function(coordinates){
+  var left = coordinates[0][0];
+  var right = coordinates[0][0];
+  var top = coordinates[0][1];
+  var bottom = coordinates[0][1];
+  for (var i=0; i <coordinates.length; i++) {
+    var this_x = coordinates[i][0];
+    var this_y = coordinates[i][1];
+    if (this_x < left) {  left = this_x   }
+    else if (this_x > right) {  right = this_x   }
+    else if (this_y < bottom) {  bottom = this_y   }
+    else if (this_y > top) {  top = this_y   };
+  };
+  return [[left, bottom],[left, top],[right, top],[right, bottom],[left, bottom]];
+};
+
 var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 
     var imagewithoutinfo = imageJSON.split("/info.json",1);
     var imagewithoutinfoURL = imagewithoutinfo[0];
 
-    ///need to either find extreme coordinates and create rectangular URLs
-    //or use the IIIF Image Section API somehow??
+    //use the IIIF Image Section API somehow??
+    var rect = polyanno_make_rectangular_outer(coordinates);
 
-    var regionParams = generateIIIFregion(coordinates);
+    var regionParams = generateIIIFregion(rect);
     var theURL = imagewithoutinfoURL.concat(regionParams + "." + format);
 
     return theURL;
