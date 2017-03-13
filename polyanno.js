@@ -1842,11 +1842,11 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, this_i
 
 var polyanno_remove_merge_annos = function(vec_removed_layer) {
   var vec_removed = vec_removed_layer.toGeoJSON();
-  if ((!isUseless(new_vec.properties))&&(!isUseless(vec_removed.properties.transcription))) { 
+  if ((!isUseless(vec_removed.properties))&&(!isUseless(vec_removed.properties.transcription))) { 
     var the_index = polyanno_extracting_merged_anno("transcription", polyanno_merging_transcription, vec_removed.properties.transcription);
     polyanno_merging_transcription.slice(the_index, 1);
   };
-  if ((!isUseless(new_vec.properties))&&(!isUseless(vec_removed.properties.translation))) { 
+  if ((!isUseless(vec_removed.properties))&&(!isUseless(vec_removed.properties.translation))) { 
     var the_index = polyanno_extracting_merged_anno("translation", polyanno_merging_translation, vec_removed.properties.translation);
     polyanno_merging_translation.slice(the_index, 1);
   };
