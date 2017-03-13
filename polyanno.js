@@ -1528,6 +1528,7 @@ var polyanno_calculate_gap_length = function(vertex1, vertex2) {
 };
 
 var polyanno_find_nearest_vectors = function(current_shortest_array, vertex, shape) {
+  ///[gap_length_value, shape2_index]
   var shortest_gap = current_shortest_array;
   for (var a=0; a < shape.length; a++) {
     var the_gap = polyanno_calculate_gap_length(vertex, shape[a]);
@@ -1540,6 +1541,7 @@ var polyanno_find_shortest_branch = function(shape1, shape2) {
   ///[gap_length_value, shape1_index, shape2_index]
   var shortest_gap_array = [polyanno_calculate_gap_length(shape1[0],shape2[0]), 0, 0];
   for (var a=0; a < shape1.length; a++) {
+     ///[gap_length_value, shape2_index]
     var gap_array = polyanno_find_nearest_vectors([shortest_gap_array[0]], shape1[a], shape2);
     if (gap_array[0] < shortest_gap_array[0]) { shortest_gap_array = [gap_array[0], a, gap_array[1]]; };
   };  
@@ -1549,9 +1551,9 @@ var polyanno_find_shortest_branch = function(shape1, shape2) {
 var polyanno_form_neighbour_index_array = function(shape, main_index){
   var prev;
   var next;
-  if (main_index==0) {  prev = main_index.length -2; }
+  if (main_index==0) {  prev = shape.length -2; }
   else {  prev = main_index - 1 };
-  if (main_index==(main_index.length -1)){  next = 1 }
+  if (main_index==(shape.length -1)){  next = 1 }
   else {  next = main_index +1 };
   return [shape[prev], shape[next]];
 };
@@ -1563,9 +1565,11 @@ var sort_out_edge_direction = function(shortest, neighbour_value) {
 };
 
 var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
+  ///[gap_length_value, shape1_index, shape2_index]
   var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
   var shape1_shortest_neighbours = polyanno_form_neighbour_index_array(shape1, the_shortest_branch_array[1]);
   var shape2_shortest_neighbours = polyanno_form_neighbour_index_array(shape2, the_shortest_branch_array[2]);
+  ///[gap_length_value, shape1_index, shape2_index]
   var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
   var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
   var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
@@ -1690,7 +1694,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var final_coords = shape1_segment.slice(0,1);
 
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, final_coords); //the first and last coordinates need to be identical
-
+  alert("the final merged shape coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
 };
 
