@@ -1751,14 +1751,16 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
 
 var polyanno_submit_merge_shape = function() {
   var thisJSON = polyanno_temp_merge_shape.toGeoJSON();
-  var submitted_layer = L.geoJson(thisJSON, 
+  var submitted_layer_id;
+  L.geoJson(thisJSON, 
         { style: {color: polyanno_default_colours_array[1]},
           onEachFeature: function (feature, layer) {
-            allDrawnItems.addLayer(layer)
+            allDrawnItems.addLayer(layer),
+            submitted_layer_id = layer._leaflet_id
           }
-        });
-  submitted_layer.addTo(polyanno_map);
+        }).addTo(polyanno_map);
   temp_merge_shape.removeLayer(polyanno_temp_merge_shape);  
+  var submitted_layer = allDrawnItems.getLayer(submitted_layer_id);
   return submitted_layer;    
 };
 
@@ -2116,7 +2118,6 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
   };
 
   var targetData = {target: [], body: {}};
-  alert("the final shape geometry is "+JSON.stringify(shape.geometry));
   var IIIFsection = getIIIFsectionURL(imageSelected, shape.geometry.coordinates[0], "jpg");
   targetData.target.push({
       "id": imageSelected,
@@ -2437,7 +2438,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
     if (polyanno_merging_array.length > 1) {
       var layer = polyanno_submit_merge_shape();
-      var shape = layer.toGeoJSON();
+      var shape = layer.toGeoJSON(); ////geometry undefined???
       polyanno_new_vector_made(layer, shape, false, polyanno_merging_array, polyanno_posted_merge_shape); //layer, shape, parent, children, callback
     }
     else {
