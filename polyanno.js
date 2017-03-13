@@ -1288,29 +1288,6 @@ var resetVectorHighlight = function(thisEditor) {
 
 ///////LEAFLET 
 
-///////////
-
-var polyanno_check_coords_within_bounds = function(coordinatesArray, xBounds, yBounds) {
-  var counter = [];
-  coordinatesArray.forEach(function(pair){
-    if (  (xBounds[0] <= pair[0]) && ( pair[0]<= xBounds[1]) && (yBounds[0] <= pair[1]) && (pair[1] <= yBounds[1])  ) {  
-      counter.push(pair);  
-    };
-  });
-  return counter;
-};
-
-var findVectorParent = function(coordinatesArray, parentCoordsArray) {
-  ///this only works for rectangular shapes!
-  var xBounds = [ parentCoordsArray[0][0], parentCoordsArray[2][0] ];
-  var yBounds = [ parentCoordsArray[0][1], parentCoordsArray[2][1] ];
-  var overlappingCoords = polyanno_check_coords_within_bounds(coordinatesArray, xBounds, yBounds);
-  if (overlappingCoords.length >= 3) {
-    return true;
-  };
-};
-
-
 /////find anticlockwise angle from edge one to edge two for each vertex in clockwise order
 
 var angle_from_zero = function(x,y) {
@@ -1430,51 +1407,83 @@ var check_if_overlapping = function(vertex, coordinates) {
   return overlapping;
 };
 
-var check_this_geoJSON = function(vertex, drawnItem) {
-  if (!isUseless(drawnItem.feature.OCD)) {
-      for (var a = 0; a < drawnItem.feature.OCD.length; a++) {
-        var convex_shape = drawnItem.feature.OCD[a];
-        return check_if_overlapping(vertex, convex_shape.coordinates);
-      };
-    }
-    else {
-      return check_if_overlapping(vertex, drawnItem.geometry.coordinates[0]);
-    };
-};
-
-var check_this_vertex = function(vertex, theItems) {
-  var overlapping = [];
-  theItems.eachLayer(function(layer){
-      var drawnItem = layer.toGeoJSON();
-      if (check_this_geoJSON(vertex, drawnItem)) {
-        overlapping.push(drawnItem);
-      };
-  });
-  return overlapping;
-};
-
-var check_new_shape_for_overlap = function(the_shape_coords, theItems) {
-  var overlapping_sets = [];
-  for (var b=0; b < the_shape_coords.length; b++) {
-    var pair = the_shape_coords[b];
-    var overlapping = check_this_vertex(pair, theItems);
-    if (overlapping.length > 0) {
-      overlapping_sets.push({"the_vertex_number": b, "the_shapes": overlapping});
+var check_inside_another_shape = function(new_shape, old_shape) {
+  var overlapping_coords = [];
+  for (var a=0; a < new_shape.length; a++) {
+    var this_vertex = new_shape[a];
+    var is_overlapping = check_if_overlapping(this_vertex, old_shape);
+    if (is_overlapping) {
+      overlapping_coords.push(new_shape);
     };
   };
-  return overlapping_sets;
+  return overlapping_coords;
 };
 
-////old version should retire soon
-var searchForVectorParents = function(theDrawnItems, theCoordinates) {
-  var overlapping = false;
-  theDrawnItems.eachLayer(function(layer){
-    var drawnItem = layer.toGeoJSON();
-    if (findVectorParent(theCoordinates, drawnItem.geometry.coordinates[0])) {  
-      overlapping = layer._leaflet_id ;  
+var check_this_geoJSON = function(shape, drawnItem, justOverlap) {
+  var overlapping_coords = [];
+  if ((!isUseless(drawnItem.properties))&&(!isUseless(drawnItem.properties.OCD))) {
+    for (var a = 0; a < drawnItem.properties.OCD.length; a++) {
+      var convex_shape = drawnItem.properties.OCD[a];
+      var is_new_inside = check_inside_another_shape(shape.geometry.coordinates[0], convex_shape);
+      if (is_new_inside.length > 0) && (justOverlap) {
+        return 1;
+      }
+      else if (is_new_inside.length > 0) {
+        overlapping_coords.push(is_new_inside);
+      };
     };
+  }
+  else {
+    overlapping_coords = check_inside_another_shape(shape.geometry.coordinates[0], drawnItem.geometry.coordinates[0]);
+  };
+  if (overlapping_coords.length == shape.length) {
+    return 2; //new shape is entirely inside old one
+  }
+  else if (overlapping_coords.length > 0) {
+    return 1; //new shape overlaps with old one
+  }
+  else {
+    return 0; //no overlap
+  };
+};
+
+var check_this_shape_for_overlapping = function(shape, theItems, justOverlap, completeParent, completeChildren) {
+  //[number, children_array, parent_array]
+  //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
+  var children_vectors = [];
+  var parent_vectors = [];
+  theItems.eachLayer(function(layer){
+      var drawnItem = layer.toGeoJSON();
+      var checking_overlapping_inside = check_this_geoJSON(shape, drawnItem, justOverlap);
+      if (checking_overlapping_inside == 1) {
+        return [1, [layer]];
+      }
+      else if (completeParent && (checking_overlapping_inside == 2)) {
+        parent_vectors.push(layer);
+      }
+      else if (checking_overlapping_inside == 2) {
+        return [2, [layer]];
+      }
+      else {
+        var checking_enclosing = check_this_geoJSON(drawnItem, shape);
+        if (completeChildren && (checking_enclosing == 2)){
+          children_vectors.push(layer);
+        }
+        else if (checking_enclosing == 2){
+          return [3, [layer]];
+        };
+      };
   });
-  return overlapping;
+  if (children_vectors.length > 0) {
+    return [3, children_vectors, parent_vectors];
+  }
+  else if (parent_vectors.length > 0) {
+    return [2, children_vectors, parent_vectors];
+  }
+  else {
+    return [0];
+  };
+  
 };
 
 /////Calculating Merge Shape
@@ -2060,41 +2069,59 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
 };
 
+var polyanno_linking_annos_to_vector_checks = function(layer) {
+  var shape = layer.toGeoJSON();
+  var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, false); //don't complete children array, do complete parent array
+  allDrawnItems.addLayer(layer);
+  if ((checkingOverlapping[0] == 2) && (checkingOverlapping[1].includes(selectingVector.parent_vector))) {  ///inside the correct vector
+    layer.bindPopup(popupSelectingVectorHTML).openPopup();
+  }
+  else { 
+    alert("Please draw inside the correct larger shape!");
+    polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+  };
+};
+
 var polyanno_creating_vec = function() {
   polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
 
+    ////assuming not triggered event when the merge shape is added manually
+
     var layer = evt.layer;
-    var shape = layer.toGeoJSON();
-    //var vectorOverlapping = searchForVectorParents(allDrawnItems, shape.geometry.coordinates[0]); 
-    var vector_is_child_of = false;
-    var vector_is_parent_of = false;
 
-    ////put in allowances for selectingVector and checking overlapping properly
-
-    allDrawnItems.addLayer(layer);
-    if (  (vector_is_child_of != false) && (selectingVector == false)  ) { 
-      allDrawnItems.removeLayer(layer);
-      vectorSelected = vector_is_child_of;
-      alert("Highlight the text first and then draw a smaller shape for it.");
-      //open the relevant parent editor and make it glow
-    }
-    else if (vector_is_parent_of != false) { 
-      allDrawnItems.removeLayer(layer);
-      alert("Link these shapes in order please!");
-      //make #polyanno-merge-shapes-enable glow
-      $("#polyanno-merge-shapes-enable").effect("highlight");
-    }
-    else if (  (vector_is_child_of != false) && (selectingVector != false)  )  {
-      if ( vector_is_child_of == selectingVector.vector_parent) {
-        layer.bindPopup(popupSelectingVectorHTML).openPopup();
-      }
-      else {
-        alert("Please draw the shape inside its parent!");
-        polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
-      };
+    if ( selectingVector != false )   {      ///drawing a new vector for a smaller text fragment
+      polyanno_linking_annos_to_vector_checks(layer);
     }
     else {
-      polyanno_new_vector_made(layer, shape);
+      var shape = layer.toGeoJSON();
+      //[number, shape_array]
+      //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
+      var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, false, false);
+      allDrawnItems.addLayer(layer);
+
+      ///////just overlapping with shapes - never acceptable practice tsk!
+      if (checkingOverlapping[0] == 1) {  
+        alert("You cannot draw overlapping shapes.");
+        allDrawnItems.removeLayer(layer);
+      }
+      ///////inside another shape but not whilst selectingVector
+      else if (checkingOverlapping[0] == 2)  {   
+        allDrawnItems.removeLayer(layer);
+        vectorSelected = checkingOverlapping[1][0];
+        alert("Highlight the text first and then draw a smaller shape for it.");
+        //open the relevant parent editor and make it glow??
+      }
+      ////containing other smaller shapes but not actually merging in order
+      else if (checkingOverlapping[0] == 3)  {      
+        allDrawnItems.removeLayer(layer);
+        alert("Link these shapes in order please!");
+        //make #polyanno-merge-shapes-enable glow
+        $("#polyanno-merge-shapes-enable").effect("highlight");
+      }
+
+      else {
+        polyanno_new_vector_made(layer, shape);
+      };
     };
 
   });
