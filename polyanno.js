@@ -2326,8 +2326,8 @@ var polyanno_closing_merging = function() {
   $(".leaflet-draw-toolbar-top").css("color", "#333");
   $(".annoPopup").css("opacity", 1.0);
   $(".polyanno-merging-buttons").toggle("swing");
-  var transcription_id = $("#polyanno_merging_transcription").closest("annoPopup").attr("id");
-  var translation_id = $("#polyanno_merging_translation").closest("annoPopup").attr("id");
+  var transcription_id = $("#polyanno_merging_transcription").closest(".annoPopup").attr("id");
+  var translation_id = $("#polyanno_merging_translation").closest(".annoPopup").attr("id");
   alert("the display ids are "+transcription_id+" and "+translation_id);
   dragondrop_remove_pop(transcription_id);
   dragondrop_remove_pop(translation_id);
