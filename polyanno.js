@@ -622,7 +622,20 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
   var transcription_data = {text: linked_transcriptions, children: polyanno_merging_transcription, metadata: imageSelectedMetadata};
   var translation_data = {text: linked_translations, children: polyanno_merging_translation, metadata: imageSelectedMetadata};
 
-  ///dealing sequentially to address global variables problems??    
+  ///dealing sequentially to address global variables problems??  
+
+  var vector_children_counter = 0;
+
+  var polyanno_update_vector_children_iteratively = function () {
+      var this_layer_id = polyanno_merging_array[vector_children_counter]._leaflet_id;
+      var the_data = { parent: merged_vector };
+      if (vector_children_counter == (polyanno_merging_array.length - 1)) {
+        updateAnno(this_layer_id, the_data);
+      }
+      else {
+        updateAnno(this_layer_id, the_data, polyanno_update_vector_children_iteratively );
+      };
+  };  
 
   var polyanno_new_translation_via_linking = function() {
     if (!isUseless(linked_translations)) {
@@ -638,12 +651,12 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
             var annoData = { body: { id: createdText }, target: [
               {id: merged_vector,  format: "image/SVG"  },
               {id: imageSelected,  format: "application/json"  } ] };
-            polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false]); ////add callback function to update each of the children
+            polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false], polyanno_update_vector_children_iteratively ); 
           }
       });
     }
     else {
-      ////add callback function to update each of the children
+      polyanno_update_vector_children_iteratively();
     };
   };
 
@@ -1842,6 +1855,7 @@ var polyanno_add_merge_annos = function(new_vec_layer) {
   var new_vec = new_vec_layer.toGeoJSON();
   if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.transcription))) { 
     var new_frag = polyanno_load_merging_anno(new_vec, "transcription");
+    alert("the new transcription to merge is "+new_frag);
     polyanno_merging_transcription.push(new_frag);
   };
   if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.translation))) { 
@@ -2302,22 +2316,6 @@ var polyanno_vector_edit_setup = function() {
     updateAnno(vectorSelected, shape); ////////////
     /////
   });
-};
-
-var polyanno_leaflet_vector_to_json = function(layer){
-
-  var vector = {  "type": "Feature",  "properties":{},  "geometry":{}  };
-
-  vector.id = layer._leaflet_id;
-  vector.notFeature.notGeometry.notType = layer.geometry.type;
-  vector.notFeature.notGeometry.notCoordinates = layer.geometry.coordinates[0];
-  vector.transcription = findField("layer.properties", "transcription");
-  vector.translation = findField("layer.properties", "translation");
-  vector.parent = findField("layer.properties", "parent");
-  vector.OCD = findField("layer.properties", "OCD");
-
-  return vector;
-
 };
 
 ///creating the new Leaflet Merging Toolbar
