@@ -2438,8 +2438,13 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
     if (polyanno_merging_array.length > 1) {
       var layer = polyanno_submit_merge_shape();
-      var shape = layer.toGeoJSON(); ////geometry undefined???
-      polyanno_new_vector_made(layer, shape, false, polyanno_merging_array, polyanno_posted_merge_shape); //layer, shape, parent, children, callback
+      var shape = layer.toGeoJSON(); 
+      var the_children_array;
+      for (var i=0; i < polyanno_merging_array; i++) {
+        var this_json = polyanno_merging_array[i].toGeoJSON();
+        the_children_array.push(this_json);
+      };
+      polyanno_new_vector_made(layer, shape, false, the_children_array, polyanno_posted_merge_shape, true); //layer, shape, parent, children, callback, fromMerge
     }
     else {
       temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
