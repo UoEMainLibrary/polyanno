@@ -633,8 +633,8 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
         updateAnno(this_layer_id, the_data);
       }
       else {
-        updateAnno(this_layer_id, the_data, polyanno_update_vector_children_iteratively );
         vector_children_counter += 1;
+        updateAnno(this_layer_id, the_data, polyanno_update_vector_children_iteratively );
       };
   };  
 
@@ -2433,7 +2433,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       $(".polyanno-merging-buttons").toggle("swing");
       $(".leaflet-draw-toolbar-top").css("color", "yellow");
       $(".annoPopup").css("opacity", 0.3);
-      $("#imageViewer").css("opacity", 1.0);
+      $("#imageViewer").css("opacity", 1.0).addClass("flex-first");
   });
 
 
