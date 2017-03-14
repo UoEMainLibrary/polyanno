@@ -1296,11 +1296,8 @@ var settingEditorVars = function(thisEditor) {
 ////HIGHLIGHTING 
 
 var highlightVectorChosen = function(chosenVector, colourChange) {
-  alert("the vector to highlight is "+chosenVector);
-  allDrawnItems.eachLayer(function(layer){
-    alert("the layer id is "+layer._leaflet_id);
-  });
-  allDrawnItems.getLayer(chosenVector).setStyle({color: colourChange});
+  var this_layer = allDrawnItems.getLayer(chosenVector);
+  this_layer.setStyle({color: colourChange});
 };
 
 var highlightEditorsChosen = function(chosenEditor, colourChange) {
