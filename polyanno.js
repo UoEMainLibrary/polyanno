@@ -2511,6 +2511,7 @@ var polyanno_setup_highlighting = function() {
     findAndHighlight("editor", thisEditor, polyanno_default_colours_array);
   });
 
+/* For some reason these, and only these, highlighting is causing errors for setStyle
   $('#polyanno-page-body').on("mouseover", ".leaflet-popup", function(event){
     highlightVectorChosen(vectorSelected, polyanno_highlight_colours_array[1]);
     findAndHighlight("vSelected", vectorSelected, polyanno_highlight_colours_array);
@@ -2520,7 +2521,7 @@ var polyanno_setup_highlighting = function() {
     highlightVectorChosen(vectorSelected, polyanno_default_colours_array[1]);
     findAndHighlight("vSelected", vectorSelected, polyanno_default_colours_array);
   });
-
+*/
   allDrawnItems.on('mouseover', function(vec) {
     vec.layer.setStyle({color: polyanno_highlight_colours_array[1]});
     findAndHighlight("vSelected", vec.layer._leaflet_id, polyanno_highlight_colours_array);
