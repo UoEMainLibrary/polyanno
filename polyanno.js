@@ -1323,7 +1323,7 @@ var findAndHighlight = function(searchField, searchFieldValue, highlightColours)
 
 var resetVectorHighlight = function(thisEditor) {
   var thisVector = fieldMatching(editorsOpen, "editor", thisEditor).vSelected; 
-  if(!isUseless(thisVector)){ highlightVectorChosen("#"+thisVector, polyanno_default_colours_array[1]); };
+  if(!isUseless(thisVector)){ highlightVectorChosen(thisVector, polyanno_default_colours_array[1]); };
 };
 
 ///////LEAFLET 
@@ -1369,11 +1369,11 @@ var find_concavity_angles = function(coordinates) {
     if ((the_angle > 180) && (the_angle < 360)) {
       ///[x,y, coordinates_array_position]
       var the_vertex_array = [coordinates[0],coordinates[1],i];
-      alert("the angle that currently represents a notch is "+JSON.stringify(the_vertex_array)+" with an angle of "+the_angle);
+      //alert("the angle that currently represents a notch is "+JSON.stringify(the_vertex_array)+" with an angle of "+the_angle);
       notches_array.push(the_vertex_array);
     };
   };
-  alert("so the final notches array is "+JSON.stringify(notches_array));
+  //alert("so the final notches array is "+JSON.stringify(notches_array));
   return notches_array;
 };
 
@@ -1701,7 +1701,7 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var final_coords = shape1_segment.slice(0,1);
 
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, final_coords); //the first and last coordinates need to be identical
-  alert("the final merged shape coords are "+JSON.stringify(final_merge_shape_coords));
+  //alert("the final merged shape coords are "+JSON.stringify(final_merge_shape_coords));
   return final_merge_shape_coords;
 };
 
@@ -2153,13 +2153,13 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
     success: 
       function (data) {
         //setting global variables
-        vectorSelected = data.url;
+        layer._leaflet_id = data.url;
+        vectorSelected = layer._leaflet_id;
         targetType = "vector";
         targetSelected = [vectorSelected];
         targetData.body.id = data.url;
         polyanno_add_annotationdata(targetData, false, false, [false], [data.url], [false], [false]);
 
-        layer._leaflet_id = data.url;
         if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
         else {  updateVectorSelection(data.url); };
 
@@ -2723,7 +2723,7 @@ var polyanno_setup = function(opts) {
   var polyanno_image_title_HTML = "<span class='glyphicon glyphicon-picture'></span>";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
-  $("#polyanno-page-body").addClass("atu-keyboard-parent");
+  $("#polyanno-page-body").addClass("row atu-keyboard-parent polyanno-page-body");
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
   $(image_viewer_id).show("fold");
