@@ -1133,14 +1133,14 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
     var vector_layer = allDrawnItems.getLayer(vectorSelected).toGeoJSON();
     var theCoords = vector_layer.geometry.coordinates[0];
     var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
-    textData.target.push({id: IIIFsection, format: "image/jpg"});
-    textData.target.push({id: vectorSelected, format: "image/SVG"});
+    theData.target.push({id: IIIFsection, format: "image/jpg"});
+    theData.target.push({id: vectorSelected, format: "image/SVG"});
     this_vec = vectorSelected;
   };
 
   if (targetType.includes(polyanno_text_type_selected)) {
-    textData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
-    textData.parent = polyanno_text_selectedParent;
+    theData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
+    theData.parent = polyanno_text_selectedParent;
     this_parent = polyanno_text_selectedParent;
   };
 
