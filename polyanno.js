@@ -1130,7 +1130,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   var this_parent = false;
   var this_vec = false;
   if (targetType.includes("vector")) {
-    var vector_layer = allDrawnItems.getLayer(vectorSelected);
+    var vector_layer = allDrawnItems.getLayer(vectorSelected).toGeoJSON();
     var theCoords = vector_layer.geometry.coordinates[0];
     var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
     textData.target.push({id: IIIFsection, format: "image/jpg"});
@@ -1896,7 +1896,9 @@ var polyanno_remove_merge_annos = function(vec_removed_layer) {
 ///////
 var polyanno_setting_selecting_vector = function() {
   var this_layer = allDrawnItems.getLayer(vectorSelected);
-  polyanno_new_vector_made(this_layer, this_layer.shape, vector_is_child_of);
+  var this_shape = this_layer.toGeoJSON();
+  var this_parent = selectingVector.parent_vector.toGeoJSON();
+  polyanno_new_vector_made(this_layer, this_shape, this_parent);
 };
 var polyanno_reset_selecting_vector = function() {
   var this_layer = allDrawnItems.getLayer(vectorSelected);
@@ -1960,7 +1962,7 @@ var polyanno_make_rectangular_outer = function(coordinates){
 
 var getIIIFsectionURL = function (imageJSON, coordinates, format) {
 
-    var imagewithoutinfo = imageJSON.split("/info.json",1);
+    var imagewithoutinfo = imageJSON.split("info.json",1);
     var imagewithoutinfoURL = imagewithoutinfo[0];
 
     //use the IIIF Image Section API somehow??
