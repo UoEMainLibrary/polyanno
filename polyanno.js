@@ -1897,7 +1897,7 @@ var polyanno_remove_merge_annos = function(vec_removed_layer) {
 var polyanno_setting_selecting_vector = function() {
   var this_layer = allDrawnItems.getLayer(vectorSelected);
   var this_shape = this_layer.toGeoJSON();
-  var this_parent = selectingVector.parent_vector.toGeoJSON();
+  var this_parent = selectingVector.parent_vector._leaflet_id;
   polyanno_new_vector_made(this_layer, this_shape, this_parent);
 };
 var polyanno_reset_selecting_vector = function() {
