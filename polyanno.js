@@ -634,6 +634,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
       }
       else {
         updateAnno(this_layer_id, the_data, polyanno_update_vector_children_iteratively );
+        vector_children_counter += 1;
       };
   };  
 
