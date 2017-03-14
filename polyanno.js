@@ -615,6 +615,22 @@ var polyanno_new_anno_via_selection = function(baseURL) {
 
 };
 
+var polyanno_new_anno_for_child_of_merge = function(this_url, this_data, callback) {
+
+  $.ajax({
+    type: "POST",
+    url: this_url,
+    async: false,
+    data: this_data,
+    success: 
+      function (data) {
+        var createdText = data.url;
+        var annoData = { body: { id: createdText }, target: this_data.target };
+        polyanno_add_annotationdata(annoData, false, false, [data.url], [false], [this_data.parent], [false], callback); ///giving the vector as false so it can be called with both the new anno AND the parent
+      }
+  });
+};
+
 var polyanno_new_annos_via_linking = function(merged_vector) {
   var linked_transcriptions = $("#polyanno_merging_transcription").html();
   var linked_translations = $("#polyanno_merging_translation").html();
@@ -622,65 +638,86 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
   var transcription_data = {text: linked_transcriptions, children: polyanno_merging_transcription, metadata: imageSelectedMetadata};
   var translation_data = {text: linked_translations, children: polyanno_merging_translation, metadata: imageSelectedMetadata};
 
-  ///dealing sequentially to address global variables problems??  
+  var createdTranslation;
+  var createdTranscription;
+
+  var textTarget = [
+            {id: merged_vector,  format: "image/SVG"  },
+            {id: imageSelected,  format: "application/json"  } ];
 
   var vector_children_counter = 0;
 
   var polyanno_update_vector_children_iteratively = function () {
-      var this_layer_id = polyanno_merging_array[vector_children_counter]._leaflet_id;
-      var the_data = { parent: merged_vector };
-      if (vector_children_counter == (polyanno_merging_array.length - 1)) {
+
+    /////////separate into two parts so the anno ids can be created and added
+
+      var this_layer = polyanno_merging_array[vector_children_counter];
+      var this_layer_id = this_layer._leaflet_id;
+      textTarget[0].id = this_layer_id;
+      var these_properties = this_layer.toGeoJSON().properties;
+      var the_data = { parent: merged_vector  };
+      var new_text_data = {  text: "  ", target: textTarget, metadata: imageSelectedMetadata };
+
+      if (isUseless(these_properties)) { 
+        this_layer.toGeoJSON().properties = {}; 
+        new_text_data.parent = createdTranscription;
+      };
+
+      the_data.transcription = these_properties.transcription;
+      the_data.translation = these_properties.translation;
+
+      if (isUseless(these_properties.transcription)) {
+        new_text_data.parent = createdTranscription;
+        ///need to set polyanno_text_selectedID
+
+        polyanno_new_anno_for_child_of_merge(polyanno_urls.transcription, new_text_data, polyanno_update_vector_children_iteratively); 
+        //this will POST to t, then POST to anno, then leave PUT to parent whilst returning to this loop
+      }
+      else if (isUseless(these_properties.transcription)) {
+        new_text_data.parent = createdTranslation;
+        ///need to set polyanno_text_selectedID
+
+        polyanno_new_anno_for_child_of_merge(polyanno_urls.translation, new_text_data, polyanno_update_vector_children_iteratively);
+        //this will POST to t, then POST to anno, then leave PUT to parent whilst returning to this loop
+      }
+      else if (vector_children_counter == (polyanno_merging_array.length - 1)) {
         updateAnno(this_layer_id, the_data);
       }
       else {
         vector_children_counter += 1;
+
         updateAnno(this_layer_id, the_data, polyanno_update_vector_children_iteratively );
       };
   };  
 
   var polyanno_new_translation_via_linking = function() {
-    if (!isUseless(linked_translations)) {
-      $.ajax({
-        type: "POST",
-        url: polyanno_urls.translation,
-        async: false,
-        data: translation_data,
-        success: 
-          function (data) {
-            var createdText = data.url;
-            polyanno_text_selected = createdText;
-            var annoData = { body: { id: createdText }, target: [
-              {id: merged_vector,  format: "image/SVG"  },
-              {id: imageSelected,  format: "application/json"  } ] };
-            polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false], polyanno_update_vector_children_iteratively ); 
-          }
-      });
-    }
-    else {
-      polyanno_update_vector_children_iteratively();
-    };
-  };
-
-  if (!isUseless(linked_transcriptions)) {
     $.ajax({
       type: "POST",
-      url: polyanno_urls.transcription,
+      url: polyanno_urls.translation,
       async: false,
-      data: transcription_data,
+      data: translation_data,
       success: 
         function (data) {
-          var createdText = data.url;
-          polyanno_text_selected = createdText;
-          var annoData = { body: { id: createdText }, target: [
-            {id: merged_vector,  format: "image/SVG"  },
-            {id: imageSelected,  format: "application/json"  } ] };
-          polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false], polyanno_new_translation_via_linking);
+          createdTranslation = data.url;
+          var annoData = { body: { id: data.url }, target: textTarget };
+          polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false], polyanno_update_vector_children_iteratively ); 
         }
     });
-  }
-  else {
-    polyanno_new_translation_via_linking();
   };
+
+  $.ajax({
+    type: "POST",
+    url: polyanno_urls.transcription,
+    async: false,
+    data: transcription_data,
+    success: 
+      function (data) {
+        createdTranscription = data.url;
+        var annoData = { body: { id: data.url }, target: textTarget };
+        polyanno_add_annotationdata(annoData, false, false, [data.url], [merged_vector], [false], [false], polyanno_new_translation_via_linking);
+      }
+  });
+
 
 };
 
@@ -2090,6 +2127,8 @@ var polyanno_load_existing_vectors = function(existingVectors) {
 
   var tempGeoJSON = {  "type": "Feature",  "properties":{},  "geometry":{}  };
   var currentVectorLayers = {};
+
+  ///need to make sure that the layers load in the correct order so that the children are always on top of their parents
 
   if (!isUseless(existingVectors)) {
     existingVectors.forEach(function(vector) {
