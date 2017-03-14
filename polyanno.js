@@ -1771,7 +1771,8 @@ var polyanno_submit_merge_shape = function() {
         { style: {color: polyanno_default_colours_array[1]},
           onEachFeature: function (feature, layer) {
             allDrawnItems.addLayer(layer),
-            submitted_layer_id = layer._leaflet_id
+            submitted_layer_id = layer._leaflet_id,
+            layer.bringToBack()
           }
         }).addTo(polyanno_map);
   temp_merge_shape.removeLayer(polyanno_temp_merge_shape);  
