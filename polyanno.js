@@ -870,7 +870,7 @@ var createEditorPopupBox = function() {
     "beforeclose": preBtnClosing
   };
   var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
-  var popupIDstring = add_dragondrop_pop("textEditorPopup align-self-center", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
+  var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
   $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups)
   $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
   $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change");
@@ -2426,8 +2426,8 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos align-self-center", polyanno_merging_transcription_HTML, "polyanno-page-body", true, null, true);
-      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos align-self-center", polyanno_merging_translation_HTML, "polyanno-page-body", true, null, true);
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_transcription_HTML, "polyanno-page-body", true, null, true);
+      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true, null, true);
       ///need to set highlighted display??
       $(".polyanno-merging-buttons").toggle("swing");
       $(".leaflet-draw-toolbar-top").css("color", "yellow");
@@ -2587,7 +2587,7 @@ var polyanno_setup_editor_events = function() {
       });
     };
     the_tags_html.concat("</div>");
-    add_dragondrop_pop("polyanno-image-tags-pop align-self-center", the_tags_html, "polyanno-page-body", true);
+    add_dragondrop_pop("polyanno-image-tags-pop", the_tags_html, "polyanno-page-body", true);
   });
 
   $('#polyanno-page-body').on("click", '.addAnnotationSubmit', function(event) {
@@ -2726,7 +2726,7 @@ var polyanno_setup = function(opts) {
   //will this induce synchronicity problems?
   $("#polyanno-page-body").addClass("row atu-keyboard-parent");
 
-  var image_viewer_id = add_dragondrop_pop( "polyanno-image-box align-self-center", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
+  var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
   $(image_viewer_id).show("fold");
   $(image_viewer_id).attr("id", "imageViewer");
 
