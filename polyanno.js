@@ -1297,9 +1297,9 @@ var settingEditorVars = function(thisEditor) {
 
 var highlightVectorChosen = function(chosenVector, colourChange) {
   alert("the vector to highlight is "+chosenVector);
-  allDrawnItems.eachLayer(function(layer)){
+  allDrawnItems.eachLayer(function(layer){
     alert("the layer id is "+layer._leaflet_id);
-  };
+  });
   allDrawnItems.getLayer(chosenVector).setStyle({color: colourChange});
 };
 
@@ -2157,7 +2157,6 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
         vectorSelected = data.url;
         targetType = "vector";
         targetSelected = [vectorSelected];
-
         targetData.body.id = data.url;
         polyanno_add_annotationdata(targetData, false, false, [false], [data.url], [false], [false]);
 
