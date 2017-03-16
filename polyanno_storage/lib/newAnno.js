@@ -1,8 +1,32 @@
 var mongoose     = require('mongoose');
-
 var Schema       = mongoose.Schema;
 
+/////If further information is required about the subjects involved then LOOKUPs are completed on the subject
+var subdoc = new Schema({
+    "id": {
+    	type: String
+    },
+    "format": {
+    	type: String
+    },
+    "language": [{}],
+    "processingLanguage": {
+    	type: String
+    },
+    "textDirection": {
+      type: String,
+      match: /^(ltr|rtl|auto)$/
+    },
+    "type": {
+    	type: []
+    }
+});
+
 var annoSchema   = new Schema({
+
+	"_id": {
+		type: Number
+	},
 
 	"@context": {
 		type: [], 
@@ -12,35 +36,22 @@ var annoSchema   = new Schema({
 	"id": {
 		type: String,
 	},
-	"body": {
-		"id": {
-			type: String,
-		},
-		"format": {
-			type: String,
-			default: "application/json"
-		},
-		"language": {
-			type: String
-		}
-	},
-	"target": 
-		[{
-			"id": {
-				type: String
-			},
-			"format": {
-				type: String,
-				default: "application/json"
-			},
-			"language": {
-				type: String
-			}
-		}]
-	,
+	"body": subdoc,
+	"target": [subdoc],
 	"type": {
-		type: "string",
+		type: String,
 		default: "Annotation"
+	},
+	"created": { type: Date, default: Date.now },
+	"creator": {
+		"id": {
+		  type:  String, 
+		  ref: 'newUser'
+		},
+		"motivation": {
+		  type: String,
+		  default: "identifying"
+		}
 	}
 
 },
@@ -49,4 +60,4 @@ var annoSchema   = new Schema({
 
 );
 
-module.exports = mongoose.model('newAnno', annoSchema);
+exports.schema = annoSchema;

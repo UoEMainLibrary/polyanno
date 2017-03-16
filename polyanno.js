@@ -410,6 +410,16 @@ var searchCookie = function(field) {
 
 ////GENERAL ANNOTATION FUNCTIONS
 
+var replaceChildText = function(oldText, spanID, newInsert, oldInsert) {
+    var idIndex = oldText.indexOf(spanID);
+    var startIndex = oldText.indexOf(oldInsert, idIndex);
+    var startHTML = oldText.slice(0, startIndex);
+    var EndIndex = startIndex + oldInsert.length;
+    var endHTML = oldText.substring(EndIndex);
+    var newText = startHTML + newInsert+ endHTML;
+    return newText;
+};
+
 var findClassID = function(classString, IDstring) {
   var IDindex = classString.search(IDstring) + IDstring.length;
   var IDstart = classString.substring(IDindex);
@@ -425,14 +435,6 @@ var checkForVectorTarget = function(theText, the_target_type) {
   var theChecking = checkFor(findByBodyURL, "target");
   if (  isUseless(theChecking[0])  ) { return false } 
   else {   
-/* This is returning the JSON of annotation target of the type:
-  {
-    "id": "http:\/\/localhost:8080\/api\/vectors\/58bd6c0e6ef3451b18000007",
-    "_id": "58bd6c2e6ef3451b1800000e",
-    "format": "image\/SVG"
-  }
-  So the .id is only providing the URL alone, not the JSON
-*/
     return fieldMatching(theChecking, "format", 'image/SVG').id;  
   };
 
@@ -442,8 +444,6 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
 
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
-
-  ///currently polyanno_storage is returning all annotations with this target, regardless of annotation type
 
   $.ajax({
     type: "GET",
@@ -1877,9 +1877,7 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
   };
 };
 
-var polyanno_load_merging_anno = function(new_vec, text_type) {
-  var this_id = new_vec.properties[text_type]; 
-  var this_json = getTargetJSON();
+var polyanno_create_merging_anno_span = function(this_json, text_type) {
   var this_display_id = "#polyanno_merging_"+text_type;
   var old_text = $(this_display_id).html();
   var new_frag_id = Math.random().toString().substring(2);
@@ -1887,20 +1885,37 @@ var polyanno_load_merging_anno = function(new_vec, text_type) {
   var the_new_span = "<a class='" + newSpanClass(this_class) + " ' id='" + new_frag_id + "' >" + this_json.text + "</a>";
   var new_text = old_text.concat(the_new_span);
   $(this_display_id).html(new_text);
-  var new_fragment = {id: new_frag_id, fragments: [{id: this_id}]};
-  return new_fragment;
+  alert("the new transcription to merge is "+new_text);
+  return new_text; 
 };
 
-var polyanno_add_merge_annos = function(new_vec_layer) {
-  var new_vec = new_vec_layer.toGeoJSON();
-  if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.transcription))) { 
-    var new_frag = polyanno_load_merging_anno(new_vec, "transcription");
-    alert("the new transcription to merge is "+new_frag);
-    polyanno_merging_transcription.push(new_frag);
+var polyanno_load_merging_anno = function(new_vec, text_type) {
+  var this_id = new_vec.properties[text_type]; 
+  var this_json = getTargetJSON(this_json);
+  var new_fragment = polyanno_create_merging_anno_span(this_json, text_type);
+  var new_json = this_json;
+  new_json.text = new_fragment;
+  return new_json;
+};
+
+var polyanno_add_merge_annos = function(new_vec) {
+  if (isUseless(new_vec.feature.properties)) { 
+    new_vec.feature.properties = {}; 
   };
-  if ((!isUseless(new_vec.properties)) && (!isUseless(new_vec.properties.translation))) { 
-    var new_frag = polyanno_load_merging_anno(new_vec, "translation");
+  if (!isUseless(new_vec.feature.properties.transcription)) { 
+    var new_frag = polyanno_load_merging_anno(new_vec.feature, "transcription");
+    polyanno_merging_transcription.push(new_frag);
+  }
+  else {
+
+  };
+
+  if (!isUseless(new_vec.feature.properties.translation)) { 
+    var new_frag = polyanno_load_merging_anno(new_vec.feature, "translation");
     polyanno_merging_translation.push(new_frag);
+  }
+  else {
+
   };
   return [polyanno_merging_transcription, polyanno_merging_translation];
 };

@@ -8,7 +8,14 @@ var setup = require('./routes_setup');
 
 exports.findAll = function(req, res) {
       
-    setup.vector_model.find(function(err, vectors) {
+    setup.vector_model
+    .find()
+    .populate('parent')
+    .populate('children')
+    .populate('transcription_fragment')
+    .populate('translation_fragment')
+    .populate('creator')
+    .exec(function(err, vectors) {
         if (err) {res.send(err)};
         res.json(vectors);
     }); 
@@ -58,9 +65,12 @@ exports.addNew = function(req, res) {
 
     vector.id = vector_modelURL;
     jsonFieldPush(req.body, "metadata");
+    jsonFieldPush(req.body, "children");
     vector.parent = setup.jsonFieldEqual(vector.parent, req.body, "parent");
-    vector.translation = setup.jsonFieldEqual(vector.translation, req.body, "translation");
-    vector.transcription = setup.jsonFieldEqual(vector.transcription, req.body, "transcription");
+    vector.translation_fragment = setup.jsonFieldEqual(vector.translation_fragment, req.body, "translation_fragment");
+    vector.transcription_fragment = setup.jsonFieldEqual(vector.transcription_fragment, req.body, "transcription_fragment");
+    vector.OCD = setup.jsonFieldEqual(vector.OCD, req.body, "OCD");
+    vector.creator = setup.jsonFieldEqual(vector.creator, req.body, "creator");
 
     vector.save(function(err, vector) {
         if (err) {
@@ -75,7 +85,15 @@ exports.addNew = function(req, res) {
 };
 
 exports.getByID = function(req, res) {
-    setup.vector_model.findById(req.params.vector_id).lean().exec( function(err, vector) {
+    setup.vector_model
+    .findById(req.params.vector_id)
+    .populate('parent')
+    .populate('children')
+    .populate('transcription_fragment')
+    .populate('translation_fragment')
+    .populate('creator')
+    .lean() ///will this work after populates??
+    .exec( function(err, vector) {
         if (err) {
             res.send(err);     
         }
@@ -97,22 +115,13 @@ exports.updateOne = function(req, res) {
     updateDoc.exec(function(err, vector) {
         if (err) {res.send(err)};
 
-        if (typeof newInfo.target != 'undefined' || newInfo.target != null) {
-
-            vector.target.push({
-                "id": req.body.target.id,
-                "language": req.body.target.language,
-                "format": req.body.target.format
-            });
-
-        };
-        if (typeof newInfo.transcription != 'undefined' || newInfo.transcription != null) {
-            vector.transcription = req.body.transcription;
-        };
-
-        if (typeof newInfo.transcription != 'undefined' || newInfo.transcription != null) {
-            vector.translation = req.body.translation;
-        };
+        jsonFieldPush(req.body, "metadata");
+        jsonFieldPush(req.body, "children");
+        vector.parent = setup.jsonFieldEqual(vector.parent, req.body, "parent");
+        vector.translation_fragment = setup.jsonFieldEqual(vector.translation_fragment, req.body, "translation_fragment");
+        vector.transcription_fragment = setup.jsonFieldEqual(vector.transcription_fragment, req.body, "transcription_fragment");
+        vector.OCD = setup.jsonFieldEqual(vector.OCD, req.body, "OCD");
+        vector.creator = setup.jsonFieldEqual(vector.creator, req.body, "creator");
 
         if (typeof newInfo.geometry != 'undefined' || newInfo.geometry != null) {
             if (typeof newInfo.geometry.coordinates != 'undefined' || newInfo.geometry.coordinates != null) {
@@ -129,25 +138,7 @@ exports.updateOne = function(req, res) {
                 });
                 var theCoordinates = vector.notFeature.notGeometry.notCoordinates;
 
-                //the image fragment is always pushed in after the json target
-                var imageID = vector.target[0].id;
-                var imageFormats = vector.target[1].format;
-                var newIIIFsection = getIIIFsectionURL(imageID, theCoordinates, imageFormats);
-
-                vector.target[1].id = newIIIFsection;
             };
-        };
-
-        if (typeof req.body.metadata != 'undefined' || req.body.metadata != null) {
-            vector.metadata.push(req.body.metadata);
-        };
-
-        if (typeof req.body.children != 'undefined' || req.body.children != null) {
-            vector.children.push(req.body.children);
-        };
-
-        if (typeof req.body.creator != 'undefined' || req.body.creator != null) {
-            vector.creator = req.body.creator;
         };
         
         vector.save(function(err, vector) {
@@ -173,11 +164,14 @@ exports.searchByIds = function(req, res) {
 
     var theArray = req.params._ids.split(",");
 
-    //console.log("searching for vectors with ids "+JSON.stringify(theArray));
-
     var otherSearch = setup.vector_model
-    .where('id').in( theArray );
-    //.find( { 'id' : { $in : theArray } } );
+    .find()
+    .where('id').in( theArray )
+    .populate('parent')
+    .populate('children')
+    .populate('transcription_fragment')
+    .populate('translation_fragment')
+    .populate('creator');
 
     otherSearch.exec(function(err, texts){
 
@@ -190,8 +184,81 @@ exports.searchByIds = function(req, res) {
             texts.forEach(function(doc){
                 ids.push(doc);
             });
-            //console.log(JSON.stringify(ids));
             res.json({list: ids});
         };
     });
 };
+
+exports.searchByParent = function(req,res) {
+    var the_parent = req.params.parent_id;
+
+    var theSearch = setup.vector_model
+    .find()
+    .populate('parent')
+    .where('parent.id').equals(the_parent)
+    .populate('children')
+    .populate('transcription_fragment')
+    .populate('translation_fragment')
+    .populate('creator');
+
+    theSearch.exec(function(err, annos) {
+        if (err) {  res.json({list: false })    }
+        else {
+            var docs = [];
+            texts.forEach(function(doc){
+                docs.push(doc);
+            });
+            res.json({list: docs});
+        };
+    });
+};
+
+exports.searchByTranscription = function(req,res) {
+    var the_frag = req.params.frag_id;
+
+    var theSearch = setup.vector_model
+    .find()
+    .populate('transcription_fragment')
+    .where('transcription_fragment.id').equals(the_frag)
+    .populate('parent')
+    .populate('children')
+    .populate('translation_fragment')
+    .populate('creator');
+
+    theSearch.exec(function(err, annos) {
+        if (err) {  res.json({list: false })    }
+        else {
+            var docs = [];
+            texts.forEach(function(doc){
+                docs.push(doc);
+            });
+            res.json({list: docs});
+        };
+    });
+};
+
+exports.searchByTranslation = function(req,res) {
+    var the_frag = req.params.frag_id;
+
+    var theSearch = setup.vector_model
+    .find()
+    .populate('translation_fragment')
+    .where('translation_fragment.id').equals(the_frag)
+    .populate('parent')
+    .populate('children')
+    .populate('transcription_fragment')
+    .populate('creator');
+
+    theSearch.exec(function(err, annos) {
+        if (err) {  res.json({list: false })    }
+        else {
+            var docs = [];
+            texts.forEach(function(doc){
+                docs.push(doc);
+            });
+            res.json({list: docs});
+        };
+    });
+};
+
+

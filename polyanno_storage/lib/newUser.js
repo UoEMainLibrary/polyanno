@@ -3,24 +3,15 @@ var mongoose     = require('mongoose');
 var Schema       = mongoose.Schema;
 
 var userSchema   = new Schema({
+	"_id": {
+		type: Number
+	},
 
 	"username": String,
 
-	"docs_edited": {
-		"vectors" : {
-			"created" : [],
-			"edited" : [],
-			"deleted" : []
-		},
-		"transcriptions" : {
-			"created" : [],
-			"edited" : [],
-			"deleted" : []
-		},
-		"translations" : {
-			"created" : [],
-			"edited" : [],
-			"deleted" : []
+	"profile": {
+		"icon": {
+			type: String
 		}
 	},
 
@@ -30,9 +21,18 @@ var userSchema   = new Schema({
 			"type": Boolean,
 			"default": false
 		},
-		"transcriptions" : [],
-		"translations" : [],
-		"vectors" : []
+		"transcriptions" : [{
+			    type: Number,
+			    ref: 'newTranscription'
+			  }],
+		"translations" : [{
+			    type: Number,
+			    ref: 'newTranslation'
+			  }],
+		"vectors" : [{
+		        type: Number,
+		        ref: 'newVector'
+		    }]
 	}]
 
 },
@@ -41,4 +41,4 @@ var userSchema   = new Schema({
 
 );
 
-module.exports = mongoose.model('newUser', userSchema);
+exports.schema = userSchema;

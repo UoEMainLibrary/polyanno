@@ -7,12 +7,26 @@ var setup = require('./routes_setup');
 
 ////INTERNAL FUNCTIONS
 
+///Need to setup a lookup for bodies and targets so they can optionally include other data, or simply the JSON object actually sent if it does not actually exist locally
+
 var makeArray = function(anArray) {
     if (Array.isArray(anArray) == false) {
         return [anArray];
     }
     else { return anArray };
 };
+
+//
+/*
+{
+    "id": {},
+    "format": {},
+    "language": [{}],
+    "processingLanguage": {},
+    "textDirection": {},
+    "type": {}
+}
+*/
 
 // ROUTE FUNCTIONS
 
@@ -51,107 +65,221 @@ exports.addNew = function(req, res) {
     var theURL = setup.annotationURL.concat(newID);
     annotation.id = theURL;
 
-    var jsonFieldPush = function(bodyDoc, theField) {
-        if ( !setup.isUseless(bodyDoc[theField]) ) {
-            bodyDoc[theField].forEach(function(subdoc){    annotation[theField].addToSet(subdoc);    });
-        };
-    };
+    annotation.body.body = setup.jsonFieldEqual(annotation.body, req.body, "body");     
 
-    annotation.body.id = req.body.body.id; 
-
-    jsonFieldPush(req.body, "target");  
-
+    if (!setup.isUseless(req.body.target)) {
+        for (var i=0; i < req.body.target.length; i++) {
+            var this_target = req.body.target[i];
+            annotation.target.push(this_target);
+        };     
+    };       
     annotation.save(function(err) {
-        if (err) {    res.send(err);    }
-        else {    res.json({"url": theURL});    };
-    });
+        if (err) {res.send(err)}
+        else {
+            res.json({"url": theURL})
+        }
+    }); 
 
 };
 
 exports.updateOne = function(req, res) {
 
-    console.log("to be updated "+JSON.stringify(req.body));
-
-    var updateDoc = newUser.findOne({'body.id': req.body.target_id});
+    var updateDoc = setup.anno_model.findOne({'id': req.params.anno_id});
     updateDoc.exec(function(err, anno) {
-
-        var jsonFieldPush = function(bodyDoc, theField) {
-            if (!setup.isUseless(bodyDoc[theField])) {
-                bodyDoc[theField].forEach(function(subdoc){
-                    anno[theField].addToSet(subdoc);
-                });
-            };
-        };
 
         if (err) {res.send(err)};
 
-        jsonFieldPush(req.body, "target"); 
-
+        if (!setup.isUseless(req.body.body)) {
+            annotation.body.body.id = setup.jsonFieldEqual(annotation.body.id, req.body.body, "id");  
+            annotation.body.body.format = setup.jsonFieldEqual(annotation.body.format, req.body.body, "format"); 
+            annotation.body.body.language = setup.jsonFieldEqual(annotation.body.language, req.body.body, "language"); 
+            annotation.body.body.processingLanguage = setup.jsonFieldEqual(annotation.body.processingLanguage, req.body.body, "processingLanguage"); 
+            annotation.body.body.type = setup.jsonFieldEqual(annotation.body.type, req.body.body, "type"); 
+            annotation.body.body.textDirection = setup.jsonFieldEqual(annotation.body.textDirection, req.body.body, "textDirection");       
+        };
+        if (!setup.isUseless(req.body.target)) {
+            for (var i=0; i < req.body.target.length; i++) {
+                var this_target = req.body.target[i];
+                ///
+                anno.target.push(isAnno);
+            };     
+        };       
         anno.save(function(err) {
             if (err) {res.send(err)}
-            else next();
-        });
+            else {
+                next();
+            }
+        }); 
 
     });
 };
 
+////FUNCTIONS THAT DO NOT RETURN THE SUBDOC
 
 exports.getAll = function(req, res) {
-    setup.anno_model.find(function(err, annotations) {
+    setup.anno_model
+    .find()
+    .populate('creator.id', 'id')
+    .exec(function(err, annotations) {
         if (err) {res.send(err)}
-        else { res.json(annotations); };
+        else { 
+            res.json(annotations); 
+        };
     });
 };
 
 exports.getAllVectorAnnos = function(req, res) {
-    setup.anno_model.find({ 'body.id' : '/.*vector.*/' }, function(err, vectorAnnos) {
+    setup.anno_model
+    .where({ 'body.id' : '/.*vector.*/' })
+    .populate('creator.id', 'id')
+    .exec( function(err, vectorAnnos) {
         if (err) {res.send(err)}
         else { res.json(vectorAnnos); };
     });
 };
 
 exports.getAllTranscriptionAnnos = function(req, res) {
-    setup.anno_model.find({ 'body.id' : '/.*transcription.*/' }, function(err, transcriptionAnnos) {
+    setup.anno_model
+    .where({ 'body.id' : '/.*transcription.*/' })
+    .populate('creator.id', 'id')
+    .exec( function(err, transcriptionAnnos) {
         if (err) {res.send(err)}
         else { res.json(transcriptionAnnos); };
     });
 };
 
 exports.getAllTranslationAnnos = function(req, res) {
-    setup.anno_model.find({ 'body.id' : '/.*translation.*/' }, function(err, translationAnnos) {
+    setup.anno_model
+    .where({ 'body.id' : '/.*translation.*/' })
+    .populate('creator.id', 'id')
+    .exec( function(err, translationAnnos) {
         if (err) {res.send(err)}
         else { res.json(translationAnnos); };
     });
 };
 
+///////FUNCTIONS INCLUDING LOOKUPS
+
 exports.getByID = function(req, res) {
-    setup.anno_model.findById(req.params.anno_id, function(err, anno) {
-        if (err) {res.send(err) }
-        else { res.json(anno) };  
-    });
+    var the_anno_search = setup.anno_model
+    .findById(req.params.anno_id)
+    .populate('creator.id', 'id');
+
+    if (!setup.isUseless(req.body.withAnnos)) {
+        var the_basics_search = setup.basic_model
+        .find();
+
+        the_anno_search
+        .aggregate([
+           {
+              $unwind: "$target"
+           },
+           {
+              $lookup:
+                 {
+                    from: "the_basics_search",
+                    localField: "target.id",
+                    foreignField: "id",
+                    as: "target_docs"
+                }
+           },
+           {
+              $lookup:
+                 {
+                    from: "the_basics_search",
+                    localField: "body.id",
+                    foreignField: "id",
+                    as: "body_docs"
+                }
+           }           
+        ])
+        .exec( function(err, anno) {
+            if (err) {res.send(err) }
+            else {     
+                console.log("get by id has found"+JSON.stringify(anno));
+                res.json(anno)     
+            };  
+        });
+
+    }
+    else {
+        the_anno_search
+        .exec( function(err, anno) {
+            if (err) {res.send(err) }
+            else {     res.json(anno)     };  
+        });
+    };
+
 };
 
 exports.getByBody = function(req, res) {
 
     var bodyID = req.params.body_id;
-    var theSearch = setup.anno_model.findOne({'body.id': bodyID});
+    var theSearch = setup.anno_model
+    .where('body.id', bodyID)
+    .populate('creator.id', 'id');
 
-    theSearch.exec(function(err, text){
+    if (!setup.isUseless(req.body.withAnnos)) {
+        var the_basics_search = setup.basic_model
+        .find();
 
-        if (err) {
-            console.log(err);
-            res.json({error: false});
-        }
-        else {
-            res.json(text); 
-        };
-    });
+        theSearch
+        .aggregate([
+           {
+              $unwind: "$target"
+           },
+           {
+              $lookup:
+                 {
+                    from: "the_basics_search",
+                    localField: "target.id",
+                    foreignField: "id",
+                    as: "target_docs"
+                }
+           },
+           {
+              $lookup:
+                 {
+                    from: "the_basics_search",
+                    localField: "body.id",
+                    foreignField: "id",
+                    as: "body_docs"
+                }
+           }           
+        ])
+        .exec(function(err, text){
+
+            if (err) {
+                console.log(err);
+                res.json({error: false});
+            }
+            else {
+                res.json(text[0]); 
+            };
+        });
+
+    }
+    else {
+        theSearch.exec(function(err, text){
+
+            if (err) {
+                console.log(err);
+                res.json({error: false});
+            }
+            else {
+                res.json(text[0]); 
+            };
+        });
+    };
+
 };
 
 exports.getByTarget = function(req, res) {
 
     var targetID = req.params.target_id;
-    var theSearch = setup.anno_model.find({'target.id': targetID});
+    var theSearch = setup.anno_model
+    .where('target.id', targetID)
+    .populate('creator.id', 'id');
 
     theSearch.exec(function(err, texts){
 
@@ -172,27 +300,22 @@ exports.getByTarget = function(req, res) {
 exports.getVectorsByTarget = function(req, res) {
 
     var targetID = req.params.target;
-    console.log("looking for target ID of "+targetID);
-    /////change search
     var theSearch = setup.anno_model
-    .where('target.id', targetID);
-    //.where('body.id', '/.*vectors.*/' );
+    .where({ 'body.id' : '/.*vector.*/' })
+    .where('target.id', targetID)
+    .populate('creator.id', 'id');
 
     theSearch.exec(function(err, texts){
-
-        console.log("running the search and finding "+texts);
 
         if (err) {
             console.log("in getVectorsByTarget - "+err);
             res.json({"list": false});
         }
         else {
-        	//var ids = the_texts.map(function(el) { return el._id } );
             var ids = [];
             texts.forEach(function(doc){
                 ids.push(doc);
             });
-            console.log("the ids founds are: "+ids);
             res.json({"list": ids}); 
         };
     });
@@ -202,13 +325,13 @@ exports.getTranscriptionsByTarget = function(req, res) {
 
     var targetID = req.params.target;
     var theSearch = setup.anno_model
-    .where('target.id', targetID);
-    //.where('body.id', '/.*transcription.*/' );
+    .where('body.id', '/.*transcription.*/' )
+    .where('target.id', targetID)
+    .populate('creator.id', 'id');
 
     theSearch.exec(function(err, texts){
         if (err) {    res.json({"list": false});    }
         else {	
-            //var ids = the_texts.map(function(el) { return el._id } );
             console.log(texts);
             var ids = [];
             texts.forEach(function(doc){
@@ -223,13 +346,13 @@ exports.getTranslationsByTarget = function(req, res) {
 
     var targetID = req.params.target;
     var theSearch = setup.anno_model
+    .where('body.id', '/.*translation.*/' )
     .where('target.id', targetID)
-    //.where('body.id', '/.*translation.*/' );
+    .populate('creator.id', 'id');
 
     theSearch.exec(function(err, texts){
         if (err) {    res.json({"list": false});    }
         else {	
-            //var ids = the_texts.map(function(el) { return el._id } );
             console.log(texts);
             var ids = [];
             texts.forEach(function(doc){

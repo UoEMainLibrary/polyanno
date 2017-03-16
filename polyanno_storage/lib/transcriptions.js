@@ -6,144 +6,6 @@ var setup = require('./routes_setup');
 
 //ROUTE FUNCTIONS
 
-var replaceChildText = function(oldText, spanID, newInsert, oldInsert) {
-    var idIndex = oldText.indexOf(spanID);
-    var startIndex = oldText.indexOf(oldInsert, idIndex);
-    var startHTML = oldText.slice(0, startIndex);
-    var EndIndex = startIndex + oldInsert.length;
-    var endHTML = oldText.substring(EndIndex);
-    var newText = startHTML + newInsert+ endHTML;
-    return newText;
-};
-
-exports.voting = function(req, res) {
-
-    var voteOn = setup.transcription_model.findOne({'id':req.body.parent});
-    voteOn.exec(function(err, transcription) {
-
-        if (err) {res.send(err)};
-
-        ///////ARRAY LOCATION FUNCTIONS
-
-        var findLocationIndex = function(loc) {    
-            return transcription.children.indexOf(loc);    
-        };
-
-        var theLocation = setup.fieldMatching(transcription.children, "id", req.body.children[0].id);
-        var thelocationIndex = findLocationIndex(theLocation);
-
-        var findFragmentIndex = function(thefrag) {
-            return theLocation.fragments.indexOf(thefrag); 
-        };
-
-        var theChildDoc =  setup.fieldMatching(transcription.children[thelocationIndex].fragments, "id", req.body.children[0].fragments[0].id);
-        var thefragmentIndex = findFragmentIndex(theChildDoc); 
-
-        var fragmentChild = function(nIndex) {
-            return transcription.children[thelocationIndex].fragments[nIndex];
-        };
-
-        var fragmentChildByRank = function(therank) {
-            return setup.fieldMatching(transcription.children[thelocationIndex].fragments, "rank", therank);
-        };
-
-        ///////VOTE AND RANK FUNCTIONS
-
-        var rankChange = function(indexNumber, rankChangeNumber) {
-            return transcription.children[thelocationIndex].fragments[indexNumber].rank += rankChangeNumber;
-        };
-
-        var reload = function(newChildRank) {   //check to see if now highest ranking child and update the main transcription if so
-            if (newChildRank == 0){ 
-                transcription.text = replaceChildText(transcription.text, req.body.children[0].id, req.body.votedText, req.body.topText);
-                return {"reloadText": true};
-            }
-            else {
-                return {"reloadText": false};
-            };
-        };
-/*
-        var reorderByRank = function(voteIndex, nIndex) {
-            var neigbourFrag = fragmentChild(nIndex);
-            var voteFrag = theChildDoc;
-
-            transcription.children[thelocationIndex].fragments.set(nIndex, voteFrag); //put the voted fragment in the neighbour's index
-            transcription.children[thelocationIndex].fragments.set(voteIndex, neighbourFrag); //put the neighbour fragment in the old voted fragment's index
-
-            if ((transcription.children[thelocationIndex].fragments[nIndex] == voteFrag) &&(transcription.children[thelocationIndex].fragments[voteIndex] == neighbourFrag)) {
-                return transcription; ///only return once process is done
-            };
-        };
-*/
-
-        var votingUpNow = function(theNeighbourIndex) {
-            rankChange(theNeighbourIndex, 1);
-            rankChange(thefragmentIndex, -1);
-            return true;
-        };
-        var votingDownNow = function(theNeighbourIndex) {
-            rankChange(theNeighbourIndex, -1);
-            rankChange(thefragmentIndex, 1);    
-            return true;            
-        };
-
-        var voteRankChange = function(voteNumber) {
-        ///NOTE: the ranking is ONLY changed if the vote is now above or below the neighbour, not if now equal
-            var neighbourRank =  theChildDoc.rank - voteNumber; 
-            var theNeighbour = fragmentChildByRank(neighbourRank); 
-           
-            if ( (neighbourRank >= 0) && (theChildDoc.rank > neighbourRank) && ( theChildDoc.votesUp > theNeighbour.votesUp ) ) {
-                return votingUpNow( findFragmentIndex(theNeighbour) );
-            }
-            else if ( ( !setup.isUseless(fragmentChildByRank(neighbourRank)) ) && (  theChildDoc.rank < neighbourRank  ) &&  (   theChildDoc.votesUp < theNeighbour.votesUp ) ) {
-                return votingDownNow( findFragmentIndex(theNeighbour) );               
-            }
-            else {
-                return false;
-            };
-        };
-
-        var rankChangeLoopCheck = function(voteNumber) {
-            var shouldReload = voteRankChange(voteNumber);
-            if (shouldReload == false) {
-                return {"reloadText": false};
-            }
-            else {
-                do {    shouldReload = voteRankChange(voteNumber);    }
-                while ( shouldReload != false );
-                if ( shouldReload == false ) { reload(transcription.children[thelocationIndex].fragments[thefragmentIndex].rank) }; ///fragindex() 
-            };
-        };
-
-        var voteCheckChange = function(voteType) {
-            if (voteType == "up") {
-                transcription.children[thelocationIndex].fragments[thefragmentIndex].votesUp += 1 ; ///make into Promise setup??
-                return voteRankChange(1); //reload(newChildRank); 
-            }
-            else if (voteType == "down") {
-                transcription.children[thelocationIndex].fragments[thefragmentIndex].votesUp -= 1 ; 
-                return voteRankChange(-1);
-            };
-        };
-
-        //Node is synchronous so this ensures that nothing is saved until whole process is done without Promises
-        var savingFunction = function(theNewVotes) {
-            transcription.save(function(err) {
-                if (err) {res.send(err)}
-                else {  
-                    res.json(theNewVotes);  
-                };
-            });
-        };
-
-        ///////START VOTING FUNCTIONS & SAVE
-
-        var updateVotes = voteCheckChange(req.params.voteType);
-        savingFunction(updateVotes);
-
-    });
-};
-
 exports.findAll = function(req, res) {
     setup.transcription_model.find(function(err, transcriptions) {
         if (err) {res.send(err)}
@@ -166,73 +28,6 @@ exports.deleteAll = function(req, res) {
             res.send("all gone");
         };
     }); 
-};
-/*
-var bodySetting = function(oldBody, reqDoc) {
-    if ( (setup.isUseless(reqDoc) ) ){    return oldBody;    }
-    else {
-        var newBody = {};
-        newBody.text = setup.jsonFieldEqual(oldBody, reqDoc, "text");
-        newBody.format = setup.jsonFieldEqual(oldBody, reqDoc, "format");
-        newBody.language = setup.jsonFieldEqual(oldBody, reqDoc, "format");
-        return newBody;  
-    };
-};
-*/
-var newFragmentObject = function(theID, theRank) {
-    return  {
-        "id": theID,
-        "votesUp": 0,
-        "votesDown": 0,
-        "rank": theRank
-    };
-};
-
-var newLocationObject = function(theID, theFragments) {
-    return {
-        "id": theID,
-        "fragments": theFragments
-    };
-};
-
-var newChildrenLocationArray = function(oldChildren, newChildren) {
-    var newFragmentChild = newFragmentObject(newChildren.fragments[0].id, 0);
-    var newLocation = newLocationObject(newChildren.id, [ newFragmentChild ] );
-    return [-1, newLocation];
-};
-
-var newChildrenChecking = function(oldChildren, newChildren) {
-
-    if ( (typeof newChildren == 'undefined' || newChildren == null) || (typeof newChildren[0] == 'undefined' || newChildren[0] == null) ){
-        return [-1,-1];
-    }
-    else {
-        return oldChildrenChecking(oldChildren, newChildren[0]);
-    };
-};
-
-var oldChildrenChecking = function(oldChildren, newChildren) {
-
-    if (typeof oldChildren[0] != 'undefined' || oldChildren[0] != null) {
-        return childrenLocationChecking(oldChildren, newChildren);
-    }
-    else {
-        return newChildrenLocationArray(oldChildren, newChildren);
-    };
-};
-
-var childrenLocationChecking = function(oldChildren, newChildren) {
-
-    var theLocation = setup.fieldMatching(oldChildren, "id", newChildren.id);
-    if (setup.isUseless(theLocation)) {
-        return newChildrenLocationArray(oldChildren, newChildren);
-    }
-    else {
-        var thelocationIndex = oldChildren.indexOf(theLocation);
-        var newRank = theLocation.fragments.length;
-        var newFragmentChild = newFragmentObject(newChildren.fragments[0].id, newRank);
-        return [thelocationIndex, newFragmentChild];
-    };
 };
 
 
@@ -263,51 +58,9 @@ var arrayIDCompare = function(arrayA, arrayB) {
     else if ( (i == arrayA.length) && (setup.isUseless(returnArray[0]) == false ) ) {    return returnArray;    };
 };
 
-var foundParent = function(textParent, spanID, textArray) {
-    var findSpanLocation = function() {    return setup.fieldMatching(textParent.children, "id", spanID);    };
-    return arrayIDCompare(textArray, findSpanLocation().fragments);
-};
+var 
 
-var bracketedArray = function(texts) {
-
-    var theArray = [];
-    texts.forEach(function(doc){
-        theArray.push([doc]);
-    });
-    if (theArray.length == texts.length) {
-        return theArray;
-    };
-};
-
-var votingInfoTexts = function(targetID, textArray, res) {
-
-    var parts = targetID.split("#", 2); //////this will work with first two not last two.....
-    var parentID = parts[0];
-    var spanID = parts[1];
-    setup.transcription_model.findOne({'id': parentID}, function(err, textParent){
-        if (err) { 
-            res.json({list: bracketedArray(textArray, res)});
-        }
-        else {
-            var theVoteDocs = foundParent(textParent, spanID, textArray);
-            res.json({list: theVoteDocs});
-        };
-    });
-};
-
-/*
-var generateVoteJSON = function(fragmentChild, theJSON) {
-    ///adds new field before returning
-    var voteDoc = {"votingInfo" : fragmentChild};
-    var JSONadded =  setup.asyncPush([theJSON], []); 
-    return setup.asyncPush([voteDoc], JSONadded);
-
-};
-*/
-
-
-
-exports.addNew = function(req, res) {
+exports.addNew = function(req, res, next) {
     
     var transcription = new setup.transcription_model(); 
 
@@ -319,25 +72,35 @@ exports.addNew = function(req, res) {
     var transURL = setup.transcriptionURL.concat(transcription._id);
     transcription.id = transURL; 
     transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "text");
-    transcription.language = setup.jsonFieldEqual(transcription.language, req.body, "language");    
-    transcription.parent = setup.jsonFieldEqual(transcription.parent, req.body, "parent");
-    transcription.translation = setup.jsonFieldEqual(transcription.translation, req.body, "translation");
+    transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "format");
+    transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "processingLanguage");
+    transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "textDirection");
 
+    jsonFieldPush(req.body, "language");
     jsonFieldPush(req.body, "metadata");
+    jsonFieldPush(req.body, "type");
 
-    var newChildrenArray = newChildrenChecking(transcription.children, req.body.children);
-    if ( ( !setup.isUseless(transcription.children)) && (!setup.isUseless(newChildrenArray[0]) )
-        && (newChildrenArray[0] != -1) ) {
-        transcription.children[newChildrenArray[0]].fragments.addToSet(newChildrenArray[1]);
-    }
-    else if ( ( !setup.isUseless(transcription.children) ) && (!setup.isUseless(newChildrenArray[0]) )
-        && (newChildrenArray[0] == -1) && (newChildrenArray[1] != -1) ) {
-        transcription.children.addToSet(newChildrenArray[1]);
-    };
+    var the_parent = setup.jsonFieldEqual(transcription.parent, req.body, "parent");
+    var the_translation = setup.jsonFieldEqual(transcription.translation, req.body, "translation");
+    var the_vector = setup.jsonFieldEqual(transcription.vector, req.body, "vector");   
+
+    transcription.parent = setup.db_model_checks(the_parent);
+    transcription.translation = setup.db_model_checks(the_translation);
+    transcription.vector = setup.db_model_checks(the_vector);
+
+    var the_creator = setup.jsonFieldEqual(transcription.creator, req.body, "creator");
+    transcription.creator = setup.db_model_checks(the_creator);
+
+    ///need to build and pass on
+    var anno_body = {};
+    var anno_targets = [];
 
     transcription.save(function(err) {
         if (err) {    res.send(err);    }
-        else {    res.json({ "url": transURL });    };
+        else {   
+
+
+        };
     });
 
 };
@@ -349,11 +112,7 @@ exports.getByID = function(req, res) {
     });
 };
 
-////IMPORTANT NOTE: use updateOne to add new children but NOT to change vote or rank!
-
-exports.updateOne = function(req, res) {
-
-    console.log("to be updated "+JSON.stringify(req.body));
+exports.updateOne = function(req, res, next) {
 
     var updateDoc = setup.transcription_model.findById(req.params.transcription_id);
     updateDoc.exec(function(err, transcription) {
@@ -369,21 +128,26 @@ exports.updateOne = function(req, res) {
         };
 
         transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "text");
-        transcription.language = setup.jsonFieldEqual(transcription.language, req.body, "language");
-        transcription.parent = setup.jsonFieldEqual(transcription.parent, req.body, "parent");
-        transcription.translation = setup.jsonFieldEqual(transcription.translation, req.body, "translation");
-        jsonFieldPush(req.body, "metadata");
-        jsonFieldPush(req.body, "target"); 
+        transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "format");
+        transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "processingLanguage");
+        transcription.text = setup.jsonFieldEqual(transcription.text, req.body, "textDirection");
 
-        var newChildrenArray = newChildrenChecking(transcription.children, req.body.children);
-        if ( ( setup.isUseless(transcription.children) == false) && (setup.isUseless(newChildrenArray[0]) == false )
-            && (newChildrenArray[0] != -1) ) {
-            transcription.children[newChildrenArray[0]].fragments.addToSet(newChildrenArray[1]);
-        }
-        else if ( ( setup.isUseless(transcription.children) == false) && (setup.isUseless(newChildrenArray[0]) == false )
-            && (newChildrenArray[0] == -1) && (newChildrenArray[1] != -1) ) {
-            transcription.children.addToSet(newChildrenArray[1]);
-        };
+        jsonFieldPush(req.body, "language");
+        jsonFieldPush(req.body, "metadata");
+        jsonFieldPush(req.body, "type");       
+
+        var the_parent = setup.jsonFieldEqual(transcription.parent, req.body, "parent");
+        var the_translation = setup.jsonFieldEqual(transcription.translation, req.body, "translation");
+        var the_vector = setup.jsonFieldEqual(transcription.vector, req.body, "vector");   
+
+        transcription.parent = setup.db_model_checks(the_parent);
+        transcription.translation = setup.db_model_checks(the_translation);
+        transcription.vector = setup.db_model_checks(the_vector);
+
+        if (!setup.isUseless(req.body.voting)) {
+            transcription.voting.up = setup.jsonFieldEqual(transcription.voting.up, req.body.voting, "up");
+            transcription.voting.down = setup.jsonFieldEqual(transcription.voting.down, req.body.voting, "down");
+        };        
 
         transcription.save(function(err) {
             if (err) {res.send(err)}
@@ -407,10 +171,11 @@ exports.deleteOne = function(req, res) {
 
 exports.searchByIds = function(req, res) {
     var theArray = req.params._ids.split(",");
-    var targetID = req.params.target_id;
     var otherSearch = setup.transcription_model
-    //.find( { 'id' : { $in : theArray } } );
-    .where('id').in( theArray );
+    .where('id').in( theArray )
+    .populate('parent')
+    .populate('vector')
+    .populate('translation');
 
     otherSearch.exec(function(err, texts){
 
@@ -418,11 +183,53 @@ exports.searchByIds = function(req, res) {
             console.log(err);
             res.json({list: false});
         }
-        else if (targetID.includes("#")) {
-            votingInfoTexts(targetID, texts, res);            
-        }
         else {
-            res.json({list: bracketedArray(texts)});
+            res.json({list: texts});
+        };
+    });
+};
+
+exports.searchByParent = function(req,res) {
+    var the_parent = req.params.parent_id;
+
+    var theSearch = setup.transcription_model
+    .find()
+    .populate('parent')
+    .where('parent.id').equals(the_parent)
+    .populate('vector')
+    .populate('translation');
+
+    theSearch.exec(function(err, annos) {
+        if (err) {  res.json({list: false })    }
+        else {
+            var docs = [];
+            texts.forEach(function(doc){
+                docs.push(doc);
+            });
+            res.json({list: docs});
+        };
+    });
+};
+
+exports.searchByFragmentID = function(req,res) {
+    var the_id = req.params.frag_id;
+
+    var theSearch = setup.transcription_model
+    .$where(function() {
+        return this.text.includes(the_id);
+    })
+    .populate('parent')
+    .populate('vector')
+    .populate('translation');
+
+    theSearch.exec(function(err, annos) {
+        if (err) {  res.json({list: false })    }
+        else {
+            var docs = [];
+            texts.forEach(function(doc){
+                docs.push(doc);
+            });
+            res.json({list: docs});
         };
     });
 };

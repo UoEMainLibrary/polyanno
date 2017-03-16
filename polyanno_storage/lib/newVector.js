@@ -1,15 +1,5 @@
-var mongoose     = require('mongoose');
+exports.schema_opts = {
 
-var Schema       = mongoose.Schema;
-
-var vectorSchema   = new Schema({
-
-	"@context": {
-		type: []
-    },
-	"id": {
-		type: String
-	},
     "notFeature": {
     	"notType": {
     		type: String,
@@ -39,39 +29,23 @@ var vectorSchema   = new Schema({
     		}
     	}
 	},
-	"metadata": [],
+    "OCD": [],
     "parent": {
-    	type: String
+        type: Number,
+        ref: 'newVector'
     },
-    "children": {
-    	type: []
+    "children": [{
+        type: Number,
+        ref: 'newVector'
+    }],
+    "transcription_fragment": {
+        type: Number,
+        ref: 'newTranscription'
     },
-    "translation": {
-    	type: String,
-    	default: ""
-    },
-    "transcription": {
-    	type: String,
-    	default: ""
-    },
-	"created": { type: Date, default: Date.now },
-	"creator": {
-		"id": {
-			type: String
-		},
-		"name": {
-			type: String
-		},
-		"motivation": {
-			type: String,
-			default: "identifying"
-		}
-	},
+    "translation_fragment": {
+        type: Number,
+        ref: 'newTranslation'
+    }
 
-},
+};
 
-{ autoIndex: false }
-
-);
-
-module.exports = mongoose.model('newVector', vectorSchema);
