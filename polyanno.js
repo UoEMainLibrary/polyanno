@@ -523,44 +523,61 @@ Polyanno.baseTextObject = function(opts) {
   Polyanno.baseAnnotationObject.call(this, opts);
   this.text = opts.text;
   this.vector = opts.vector;
+  this.parent = opts.parent;
   this.voting = {
     up: 0,
     down: 0
   };
 };
 
-Object.defineProperty(Polyanno.baseTextObject.prototype, "voting.up", {
-  value: 0,
-  enumerable: true,
-  configurable: false,
-  writable: true,
+Object.defineProperty(Polyanno.baseTextObject.prototype, "vector", {
   set: function(value) {
-    if (!(value instanceof Number)) {
-      value = Number(value);
-    };
-    if (value >= 0) {
-      this.voting.up += value;
-    }
-    else {
-      console.error("Cannot vote negative values.");
-    };
+    if (value instanceof Polyanno.vector) {  this.vector = value;  }
+    else { console.error("TypeError");  };
   }
 });
 
-Object.defineProperty(Polyanno.baseTextObject.prototype, "voting.rank", {
-  enumerable: true,
-  set: function(value) {  },
-  get: function() {
-    var type;
-    if (this instanceof Polyanno.transcription) {
-      type = transcription;
-    }
-    else if (this instanceof Polyanno.translation) {
-      type = translation
-    }
-    $.grep()
+var sharedParentSearch = function(arr, item) {
+  var array = $.grep(arr, function(a){
+    return a.parent == item.parent;
+  });
+  return array.sort(function(x, y){
+    return x.rank - y.rank;
+  });
+};
+
+var setInitialRank = function(arr, item) {
+  var all = sharedParentSearch(arr, item);
+  var blank = $.grep(all, function(a){
+    return (a.voting.up == 0) && (a.voting.down == 0);
+  });
+  if (blank.length == 0) {
+    return all[all.length -1].rank + 1;
   }
-});
+  else {
+    return blank[0].rank + 1;
+  };
+};
+
+var voteChangeRank = function(arr, item, vote) {
+  ///vote = +1 or -1
+  var arr = votingRankSearch(Polyanno.transcriptions, item);
+  var index = arr.indexOf(item);
+  if (index != 0) {
+    var neighbour = index - vote;
+    var diff = (arr[neighbour].voting.up - arr[neighbour].voting.down) - (item.voting.up - item.voting.down);
+    while ((diff <= 0) && (neighbour >= 0) && (neighbour <= arr.length - 1)) {
+      neighbour -= vote;
+    };
+    if ((neighbour < 0) && (neighbour > arr.length - 1)){
+      return arr[(neighbour += vote)].rank;
+    }
+    else {
+      return arr[neighbour].rank + vote;
+    };
+  };
+};
+
 
 /////Methods
 
@@ -568,6 +585,41 @@ Object.defineProperty(Polyanno.baseTextObject.prototype, "voting.rank", {
 
 //////////////////Transcriptions
 
+Polyanno.transcription = function(opts) {
+  Polyanno.baseTextObject.call(this, opts);
+  this.translation = opts.translation;
+  this.voting.rank = setInitialRank(Polyanno.transcriptions, this);
+};
+
+Object.defineProperty(Polyanno.transcription.prototype, "parent", {
+  set: function(value) {
+    if (value instanceof Polyanno.transcription) {  this.parent = value;  }
+    else { console.error("TypeError: Parents should be of same type as child.");  };
+  }
+});
+
+Object.defineProperty(Polyanno.transcription.prototype, "translation", {
+  set: function(value) {
+    if (value instanceof Polyanno.translation) {  this.translation = value;  }
+    else { console.error("TypeError");  };
+  }
+});
+
+Object.defineProperty(Polyanno.transcription.prototype, "voting.up", {
+  enumerable: true,
+  set: function() {
+    voting.up += 1;
+    this.rank = voteChangeRank(Polyanno.transcriptions, this, 1);
+  }
+});
+
+Object.defineProperty(Polyanno.transcription.prototype, "voting.down", {
+  enumerable: true,
+  set: function() {
+    voting.up -= 1;
+    this.rank = voteChangeRank(Polyanno.transcriptions, this, -1);
+  }
+});
 
 /////Methods
 
@@ -628,13 +680,7 @@ Polyanno.annotations.onadd = function(func) {
 
 ////Events Setting Methods
 
-Polyanno.annotations.onadd = function(func) {
-  var oldFunc = this.add;
-  this.add = function(anno) {
-    oldFunc.call(this, anno); 
-    func.call(this, anno);
-  };
-};
+
 
 ///////////////////Vectors
 
