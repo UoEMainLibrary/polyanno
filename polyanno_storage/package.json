@@ -1,0 +1,32 @@
+{
+  "name": "polyanno_storage",
+  "version": "0.1.06",
+  "description": "Node and Express backend for easy MongoDB storage of Polyanno annotations",
+  "main": "./lib/polyanno_storage.js",
+  "directories": {
+    "lib": "./lib"
+  },
+  "author": "Erin Nolan",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BluePigeons/polyanno_storage"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "keywords": [
+    "polyanno",
+    "express",
+    "annotation",
+    "transcription",
+    "translation"
+  ],
+  "dependencies": {
+    "express": "4.14.0",
+    "mongoose": "~4.1.0",
+    "bluebird": "latest",
+    "body-parser": "~1.0.1"
+  }
+}
