@@ -5,19 +5,118 @@
 
 var Polyanno = {
   annotations: [],
-  vectors: [],
   transcriptions: [],
   translations: [],
   image: {},
-  urls: {
-    "vector": "/api/vectors/",
-    "transcription": "/api/transcriptions/",
-    "translation": "/api/translations/",
-    "annotation": "/api/annotations/"
-  },
+  urls: {},
   colours: {},
   editors: [],
   HTML: {}
+};
+
+var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
+var findingcookies = document.cookie;
+var $langSelector = false;
+var $imeSelector = false;
+
+/////GENERIC FUNCTIONS
+
+var isUseless = function(something) {
+  if (rejectionOptions.has(something) || rejectionOptions.has(typeof something)) {  return true;  }
+  else {  return false;  };
+};
+
+var getTargetJSON = function(target, callback_function) {
+
+  if ( isUseless(target) ) { return null;  }
+  else {
+    var targetJSON;
+
+    $.ajax({
+    type: "GET",
+    dataType: "json",
+    url: target,
+    async: false,
+    success: 
+      function (data) {
+        targetJSON = data;
+      }
+    });
+    return targetJSON;
+  };
+};
+
+var updateAnno = function(targetURL, targetData, callback_function) {
+  $.ajax({
+    type: "PUT",
+    url: targetURL,
+    async: false,
+    dataType: "json",
+    data: targetData,
+    success:
+      function (data) { 
+        if (!isUseless(callback_function)) {
+          callback_function();
+        };
+      }
+  });
+};
+
+var fieldMatching = function(searchArray, field, fieldValue) {
+  if (isUseless(searchArray) || isUseless(field) || isUseless(fieldValue)) {  return false  }
+  else {
+    var theMatch = false; 
+    searchArray.forEach(function(childDoc){
+      if ((childDoc[field] == fieldValue) || (new RegExp(fieldValue).test(childDoc[field])) ) {
+          theMatch = childDoc;
+      };
+    });
+    return theMatch;
+  };
+};
+
+var asyncPush = function(addArray, oldArray) {
+    var theArray = oldArray;
+    var mergedArray = function() {
+        addArray.forEach(function(addDoc){
+            theArray.push(addDoc);
+        });
+        if (theArray.length = (oldArray.length + addArray.length)) {
+            return theArray;
+        };
+    };
+    return mergedArray();
+};
+
+var arrayIDCompare = function(arrayA, arrayB) {
+  return arrayA.forEach(function(doc){
+    var theCheck = fieldMatching(arrayB, "id", arrayA.id);
+    if (  isUseless(theCheck) ) { return false }
+    else {
+      return [doc, theCheck];
+    };
+  });
+};
+
+var findField = function(target, field) {
+  if ( isUseless(field) || isUseless(target) || isUseless(target[field])  ) {  return false  } 
+  else {  return target[field] }; 
+};
+
+var checkFor = function(target, field) {
+  var theChecking = getTargetJSON(target);
+  return findField(theChecking, field);
+};
+
+var searchCookie = function(field) {
+  var fieldIndex = findingcookies.lastIndexOf(field);
+  if (fieldIndex == -1) {  return false;  }
+  else {
+    var postField = findingcookies.substring(fieldIndex+field.length);
+    var theValueEncoded = postField.split(";", 1);
+    var theValue = theValueEncoded[0];
+    return theValue;
+  };
 };
 
 var findByID = function(array, id) {
@@ -26,32 +125,94 @@ var findByID = function(array, id) {
   });
 };
 
-var addReplace = function(annoField, doc) {
-  var existing = findByID(Polyanno[annoField], doc.id)[0];
+var arraySearchReplace = function(annoField, doc) {
+  var existing = findByID(annoField, doc.id);
   if (existing.length > 0) {
-    Polyanno[annoField].splice(Polyanno[annoField].indexOf(existing), 1, doc);
+    return annoField.splice(annoField.indexOf(existing[0]), 1, doc);
   }
   else {
-    Polyanno[annoField].push(this);
+    return false;
   };
 };
+
+var annoCheckType = function(anno, type) {
+  if (anno instanceof type) {
+    return true;
+  }
+  else {
+    console.error("TypeError: Polyanno[annos] must contain Polyanno[anno] Objects.");
+    return false;
+  };
+};
+
+var annosCheckArray = function(annos, value, type) {
+  if (!(value instanceof Array)) {
+    console.error("TypeError: Polyanno.annotations must be an Array type.");
+  }
+  else if (value == []) {
+    annos = [];
+  }
+  else {
+    var check = false;
+    for (var i=0; i < value.length; i++) {
+      if (!annoCheckType(value[i], type)){ check = true; };
+    };
+    if (!check) {  annos = value;  };
+  };
+};
+
+//////////////////URLS
+
+Polyanno.urls = {
+    "vector": window.location.host + "/api/vectors/",
+    "transcription": window.location.host + "/api/transcriptions/",
+    "translation": window.location.host + "/api/translations/",
+    "annotation": window.location.host + "/api/annotations/"
+};
+
+/////Methods
+
+//check for url
+
+//if no DB then handle AJAX requests throughout Polyanno
+
+///////////////////Colours
+
+Polyanno.colours = {
+  highlight: {
+    editor: "#EC0028",
+    vector: "#EC0028",
+    span: "#EC0028"
+  },
+  default: {
+    editor: "buttonface",
+    vector: "#03f",
+    span: "transparent"
+  },
+  processing: {
+    editor: "yellow",
+    vector: "yellow",
+    span: "yellow"
+  }
+};
+
+/////Methods
+
+////////////////////Minimising
+
+
+/////Methods
+
+///////////////////HTML
+
+
+/////Methods
+
+
+
+
 
 /////////////Annotations
-
-Polyanno.annotation = function(opts) {
-  this["@context"] = [
-    "http://www.w3.org/ns/anno.jsonld"
-    ];
-  this._id = opts._id;
-  this.id = Polyanno.urls.annotation.concat(opts._id);
-  this.type = "Annotation";
-  this.body = {
-    type: [],
-    language: []
-  };
-  this.target = [];
-  addReplace(Polyanno.annotations, this);
-};
 
 var polyanno_OAM_subdoc = function(existing, value) {
   var subdoc = existing;
@@ -80,7 +241,63 @@ var polyanno_OAM_subdoc = function(existing, value) {
 
 };
 
-Object.defineProperty(Polyanno.annotation, "type", {
+///
+
+Polyanno.annotation = function(opts) {
+  this["@context"] = [
+    "http://www.w3.org/ns/anno.jsonld"
+    ];
+  if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = opts.id;
+  }
+  else if ((!isUseless(opts._id)) && (isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = Polyanno.urls.annotation.concat(opts._id);
+  }
+  else if ((isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = this.id = opts.id;
+  }
+  else {
+    console.error("Annotations need a URI for the id field.");
+  };
+
+  this.type = "Annotation";
+  this.body = opts.body;
+  this.target = opts.target;
+
+  Polyanno.annotations.add(this);
+
+};
+
+///
+
+Object.defineProperty(Polyanno, "annotations", {
+  set: function(value) {
+    annosCheckArray(Polyanno.annotations, value, Polyanno.annotation); 
+  }
+});
+
+Polyanno.annotations.add = function(anno) {
+  var oldArr = Polyanno.annotations;
+  oldArr.push(anno);
+  Polyanno.annotations = oldArr;
+};
+
+Polyanno.annotations.replaceOne = function(anno) {
+  var oldArr = Polyanno.annotations;
+  var newArr = arraySearchReplace(oldArr, anno);
+  Polyanno.annotations = newArr;
+};
+
+///
+
+Polyanno.annotation.prototype.body = {
+  type: [],
+  language: []
+};
+
+Object.defineProperty(Polyanno.annotation.prototype, "type", {
   set: function(value) {
     if (!value.includes("Annotation")) {
       console.error("Annotations must include 'Annotation' in their Type string.");
@@ -91,13 +308,13 @@ Object.defineProperty(Polyanno.annotation, "type", {
   }
 });
 
-Object.defineProperty(Polyanno.annotation, "body", {
+Object.defineProperty(Polyanno.annotation.prototype, "body", {
   set: function(value) {
     this.body = polyanno_OAM_subdoc(this.body, value);
   }
 });
 
-Object.defineProperty(Polyanno.annotation, "target", {
+Object.defineProperty(Polyanno.annotation.prototype, "target", {
   set: function(value) {
     if (typeof value == Array) {
       for (var i=0; i < value.length; i++) {
@@ -111,19 +328,31 @@ Object.defineProperty(Polyanno.annotation, "target", {
   }
 });
 
+
 /////Methods
 
-Polyanno.annotation.getById = function(the_id) {
+Polyanno.annotations.getById = function(the_id) {
   return findByID(Polyanno.annotations, the_id)[0];
 };
 
-Polyanno.annotation.delete = function(the_id) {
-  var the_item = findByID(Polyanno.annotations, the_id)[0];
+Polyanno.annotation.update = function(opts) {
+  for (var property in opts) {
+    this[property] = opts[property];
+  };
+  Polyanno.annotations.replaceOne(this);
+};
+
+Polyanno.annotation.delete = function() {
+  var the_item = findByID(Polyanno.annotations, this.id)[0];
   Polyanno.annotations.splice(Polyanno.annotations.indexOf(the_item), 1);
 };
 
 Polyanno.annotation.deleteAll = function() {
   Polyanno.annotations = [];
+};
+
+Polyanno.annotation.getAll = function() {
+  return Polyanno.annotations;
 };
 
 Polyanno.annotation.getByTarget = function(target, type) {
@@ -140,8 +369,8 @@ Polyanno.annotation.getByTarget = function(target, type) {
   var arr = $.grep(Polyanno.annotations, function(anno){
     return search(anno.target, target);
   });
-  /*
-  switch (type) {
+
+  arr = switch (type) {
     default: 
       return arr;
     case "vectors"
@@ -151,10 +380,36 @@ Polyanno.annotation.getByTarget = function(target, type) {
     case "translations"
       return types(arr, "translations");   
   };
-  */
+  return arr;
 };
 
-//test case
+////Events Setting Methods
+
+Polyanno.annotations.onadd = function(func) {
+  var oldFunc = Polyanno.annotations.add;
+  Polyanno.annotations.add = function(anno) {
+    oldFunc.call(this, anno); 
+    func.call(this, anno);
+  };
+};
+
+Polyanno.annotation.onupdated = function(func) {
+  var oldFunc = Polyanno.annotations.update;
+  this.update = function(opts) {
+    oldFunc.call(this, opts); 
+    func.call(this, this, opts); ///expecting function(annoUpdated, opts)
+  };
+};
+
+Polyanno.annotation.ondeleted = function(func) {
+  var oldFunc = Polyanno.annotations.delete;
+  this.delete = function() {
+    oldFunc.call(this); 
+    func.call(this, this); ///expecting function(annoDeleted)
+  };
+};
+
+//test cases
 
 var t1 = new Polyanno.annotation({
   _id: 21376127467,
@@ -169,13 +424,14 @@ console.log(JSON.stringify(t2));
 
 ////////////////////Base Annotations
 
+Polyanno.baseAnnotationObject = function(opts) {
+  this._id = opts._id;
+  this.parent = opts.parent;
+  this.
+};
 
 /////Methods
 
-///////////////////Vectors
-
-
-/////Methods
 
 //////////////////Transcriptions
 
@@ -188,31 +444,102 @@ console.log(JSON.stringify(t2));
 
 /////Methods
 
+///////////////////Vectors
+
+Polyanno.vector = function(value) {
+  ///create Leaflet Layer -- to update then specifically use the update method?
+
+  this.id = value.id;
+
+  var GeoJson = {
+    "type": "Feature",  
+    "properties":{},  
+    "geometry":{}
+  };
+  GeoJSON.geometry = value.geometry;
+  GeoJSON.properties = value.properties;
+
+  this.layer = L.geoJson(GeoJSON, 
+    { style: {
+        color: Polyanno.colours.default.vector
+      },
+      onEachFeature: function (feature, layer) {
+        layer._leaflet_id = this.id, 
+        allDrawnItems.addLayer(layer),
+        layer.bindPopup(popupVectorMenu)
+      }
+    });
+
+  this.layer.addTo(polyanno_map);
+
+  Polyanno.vectors.addTo()
+
+};
+
+Object.defineProperty(Polyanno, "vector", {
+  get: function() { return allDrawnItems.getLayer(this.id); }
+});
+
+/////Methods
+
+
+
 ///////////////////Image
 
 
 
-//////////////////URLS
-
-
 /////Methods
 
-///////////////////Colours
-
-
-/////Methods
-
-////////////////////Minimising
-
-
-/////Methods
-
-///////////////////HTML
-
-
-/////Methods
 
 ///////////////////Editors
+
+var checkEachEditorOpen = function(value) {
+  if (isUseless(value.id)) {  return false;  };
+  return true;
+};
+
+var checkEditorsArray = function(value) {
+  if (typeof value == Array) { 
+    for (var i=0; i < value.length; i++) {
+      if (!checkEachEditorOpen(value[i])) { 
+        console.error("Invalid Polyanno.editor value.");
+        return false;
+      };
+    };
+    return true;
+  };
+};
+
+Object.defineProperty(Polyanno, "editors", {
+  get: function() { return Polyanno.editors; },
+  set: function(value) {
+    if (checkEditorsArray(value)) {   Polyanno.editors = value;   };
+  }
+});
+
+Polyanno.editors.removeEditor = function(id) {
+
+};
+
+Polyanno.editors.removeAll = function() {
+  Polyanno.editors = [];
+};
+
+Polyanno.editors.addEditor = function() {
+
+};
+
+Polyanno.editors.closeEditor = function() {
+
+};
+
+Polyanno.editors.closeAll = function() {
+
+};
+
+Polyanno.editors.openEditor = function() {
+
+};
 
 
 
@@ -220,22 +547,59 @@ console.log(JSON.stringify(t2));
 
 ///////////////////Selected
 
+Polyanno.selected = {
+  vectors: [],
+  transcriptions: [],
+  translations: []
+};
+
+var PSelectedObject = function(doc) {
+  this.doc = doc;
+  this.id = doc.id;
+  this.parent = doc.parent;
+  this.target = [];
+  //this.fragment = Selection object
+  this.DOMid = doc.DOMid;
+  this.URI = this.parent + this.DOMid;
+};
+
+Object.defineProperty(Polyanno.selected, "vector", {
+  get: function() { return Polyanno.selected.vectors[0] },
+  set: function(value) {
+    Polyanno.selected.vectors[0] = new PSelectedObject(value);
+  }
+});
+
+Object.defineProperty(Polyanno.selected, "transcription", {
+  get: function() { return Polyanno.selected.transcriptions[0] },
+  set: function(value) {
+    Polyanno.selected.transcriptions[0] = new PSelectedObject(value);
+  }
+});
+Object.defineProperty(Polyanno.selected, "translation", {
+  get: function() { return Polyanno.selected.translations[0] },
+  set: function(value) {
+    Polyanno.selected.translations[0] = new PSelectedObject(value);
+  }
+});
 
 
 /////Methods
 
-///////////////////Polyanno
+Polyanno.selected.setSelected = function (docs) {
 
-/////Methods
+};
 
+Polyanno.selected.updateOne = function (doc) {
 
+};
 
+Polyanno.selected.reset = function () {
 
-
+};
 
 /////GLOBAL VARIABLES
 
-var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
 
 var websiteAddress;
 var polyanno_urls = {};
@@ -265,10 +629,6 @@ var targetSelected; //array
 var targetType; 
 var polyanno_siblingArray;
 
-///[editor, vector, span] colours
-var polyanno_highlight_colours_array = ["#EC0028","#EC0028","#EC0028"];
-var polyanno_default_colours_array = ["buttonface","#03f","transparent"]; 
-
 var editorsOpen = []; //those targets currently open in editors
 /* 
 {
@@ -283,10 +643,7 @@ var selectingVector = false; //used to indicate if the user is currently searchi
       parent_anno : polyanno_siblingArray[0].parent,
       parent_vector : checkForVectorTarget(parent_anno)
 }*/
-var findingcookies = document.cookie;
 
-var $langSelector = false;
-var $imeSelector = false;
 
 ////leaflet
 
@@ -545,105 +902,6 @@ var polyannoEditorHTML_partfinal = `
 
 atu_the_input = $("#polyanno-dummy-textarea");
 
-/////GENERIC FUNCTIONS
-
-var isUseless = function(something) {
-  if (rejectionOptions.has(something) || rejectionOptions.has(typeof something)) {  return true;  }
-  else {  return false;  };
-};
-
-var getTargetJSON = function(target, callback_function) {
-
-  if ( isUseless(target) ) { return null;  }
-  else {
-    var targetJSON;
-
-    $.ajax({
-    type: "GET",
-    dataType: "json",
-    url: target,
-    async: false,
-    success: 
-      function (data) {
-        targetJSON = data;
-      }
-    });
-    return targetJSON;
-  };
-};
-
-var updateAnno = function(targetURL, targetData, callback_function) {
-  $.ajax({
-    type: "PUT",
-    url: targetURL,
-    async: false,
-    dataType: "json",
-    data: targetData,
-    success:
-      function (data) { 
-        if (!isUseless(callback_function)) {
-          callback_function();
-        };
-      }
-  });
-};
-
-var fieldMatching = function(searchArray, field, fieldValue) {
-  if (isUseless(searchArray) || isUseless(field) || isUseless(fieldValue)) {  return false  }
-  else {
-    var theMatch = false; 
-    searchArray.forEach(function(childDoc){
-      if ((childDoc[field] == fieldValue) || (new RegExp(fieldValue).test(childDoc[field])) ) {
-          theMatch = childDoc;
-      };
-    });
-    return theMatch;
-  };
-};
-
-var asyncPush = function(addArray, oldArray) {
-    var theArray = oldArray;
-    var mergedArray = function() {
-        addArray.forEach(function(addDoc){
-            theArray.push(addDoc);
-        });
-        if (theArray.length = (oldArray.length + addArray.length)) {
-            return theArray;
-        };
-    };
-    return mergedArray();
-};
-
-var arrayIDCompare = function(arrayA, arrayB) {
-  return arrayA.forEach(function(doc){
-    var theCheck = fieldMatching(arrayB, "id", arrayA.id);
-    if (  isUseless(theCheck) ) { return false }
-    else {
-      return [doc, theCheck];
-    };
-  });
-};
-
-var findField = function(target, field) {
-  if ( isUseless(field) || isUseless(target) || isUseless(target[field])  ) {  return false  } 
-  else {  return target[field] }; 
-};
-
-var checkFor = function(target, field) {
-  var theChecking = getTargetJSON(target);
-  return findField(theChecking, field);
-};
-
-var searchCookie = function(field) {
-  var fieldIndex = findingcookies.lastIndexOf(field);
-  if (fieldIndex == -1) {  return false;  }
-  else {
-    var postField = findingcookies.substring(fieldIndex+field.length);
-    var theValueEncoded = postField.split(";", 1);
-    var theValue = theValueEncoded[0];
-    return theValue;
-  };
-};
 
 ////GENERAL ANNOTATION FUNCTIONS
 
@@ -1569,19 +1827,19 @@ var highlightSpanChosen = function(chosenSpan, colourChange) {
 
 var findAndHighlight = function(searchField, searchFieldValue, highlightColours) {
   var thisEditor = checkingItself(searchField, searchFieldValue, "editor");
-  if (!isUseless(thisEditor)) {  highlightEditorsChosen(thisEditor, highlightColours[0]);  };
+  if (!isUseless(thisEditor)) {  highlightEditorsChosen(thisEditor, highlightColours.editor);  };
   var thisVector = checkingItself(searchField, searchFieldValue, "vSelected");
-  if (!isUseless(thisVector)) {  highlightVectorChosen(thisVector, highlightColours[1]);  };
+  if (!isUseless(thisVector)) {  highlightVectorChosen(thisVector, highlightColours.vector);  };
   var thisSpan = checkingItself(searchField, searchFieldValue, "tSelectedID");
   if (!isUseless(thisSpan)) {  
     if (!thisSpan.includes("#")) {  thisSpan = "#"+thisSpan; };
-    if (!isUseless($(thisSpan))) {  highlightSpanChosen(thisSpan, highlightColours[2]);  };
+    if (!isUseless($(thisSpan))) {  highlightSpanChosen(thisSpan, highlightColours.span);  };
   };
 };
 
 var resetVectorHighlight = function(thisEditor) {
   var thisVector = fieldMatching(editorsOpen, "editor", thisEditor).vSelected; 
-  if(!isUseless(thisVector)){ highlightVectorChosen(thisVector, polyanno_default_colours_array[1]); };
+  if(!isUseless(thisVector)){ highlightVectorChosen(thisVector, Polyanno.colours.default.vector); };
 };
 
 ///////LEAFLET 
@@ -2025,7 +2283,7 @@ var polyanno_submit_merge_shape = function() {
   var thisJSON = polyanno_temp_merge_shape.toGeoJSON();
   var submitted_layer_id;
   L.geoJson(thisJSON, 
-        { style: {color: polyanno_default_colours_array[1]},
+        { style: {color: Polyanno.colours.default.vector},
           onEachFeature: function (feature, layer) {
             allDrawnItems.addLayer(layer),
             submitted_layer_id = layer._leaflet_id,
@@ -2379,7 +2637,7 @@ var polyanno_load_existing_vectors = function(existingVectors) {
 
       var existingVectorFeature = L.geoJson(oldData, 
         { style: {
-            color: polyanno_default_colours_array[1]
+            color: Polyanno.colours.default.vector
           },
           onEachFeature: function (feature, layer) {
             layer._leaflet_id = vector.id,
@@ -2759,49 +3017,38 @@ var polyanno_setup_highlighting = function() {
 
     var thisEditor = "#" + $(event.target).closest(".textEditorPopup").attr("id");
     //////////
-    $(thisEditor).find(".polyanno-colour-change").css("background-color", polyanno_highlight_colours_array[0]);
-    findAndHighlight("editor", thisEditor, polyanno_highlight_colours_array);
+    $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.highlight.editor);
+    findAndHighlight("editor", thisEditor, Polyanno.colours.highlight);
     //////////
     $(thisEditor).on("mouseenter", ".opentranscriptionChildrenPopup", function(event){
-      $(thisEditor).find(".polyanno-colour-change").css("background-color", polyanno_default_colours_array[0]);
-      findAndHighlight("editor", thisEditor, polyanno_default_colours_array);
+      $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.default.editor);
+      findAndHighlight("editor", thisEditor, Polyanno.colours.default);
       var thisSpan = $(event.target).attr("id");
-      $("#"+thisSpan).css("background-color", polyanno_highlight_colours_array[2]);
-      findAndHighlight("tSelectedID", thisSpan, polyanno_highlight_colours_array);
+      $("#"+thisSpan).css("background-color", Polyanno.colours.highlight.span);
+      findAndHighlight("tSelectedID", thisSpan, Polyanno.colours.highlight);
     });
 
     $(thisEditor).on("mouseleave", ".opentranscriptionChildrenPopup", function(event){
       var thisSpan = $(event.target).attr("id");
-      $("#"+thisSpan).css("background-color", polyanno_default_colours_array[2]);
-      findAndHighlight("tSelectedID", thisSpan, polyanno_default_colours_array);
+      $("#"+thisSpan).css("background-color", Polyanno.colours.default.span);
+      findAndHighlight("tSelectedID", thisSpan, Polyanno.colours.default);
     });  
 
   });
 
   $('#polyanno-page-body').on("mouseout", ".textEditorBox", function(event){
     var thisEditor = "#" + $(event.target).closest(".textEditorPopup").attr("id");
-    $(thisEditor).find(".polyanno-colour-change").css("background-color", polyanno_default_colours_array[0]);
-    findAndHighlight("editor", thisEditor, polyanno_default_colours_array);
+    $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.default.editor);
+    findAndHighlight("editor", thisEditor, Polyanno.colours.default);
   });
 
-/* For some reason these, and only these, highlighting is causing errors for setStyle
-  $('#polyanno-page-body').on("mouseover", ".leaflet-popup", function(event){
-    highlightVectorChosen(vectorSelected, polyanno_highlight_colours_array[1]);
-    findAndHighlight("vSelected", vectorSelected, polyanno_highlight_colours_array);
-  });
-
-  $('#polyanno-page-body').on("mouseover", ".leaflet-popup", function(event){
-    highlightVectorChosen(vectorSelected, polyanno_default_colours_array[1]);
-    findAndHighlight("vSelected", vectorSelected, polyanno_default_colours_array);
-  });
-*/
   allDrawnItems.on('mouseover', function(vec) {
-    vec.layer.setStyle({color: polyanno_highlight_colours_array[1]});
-    findAndHighlight("vSelected", vec.layer._leaflet_id, polyanno_highlight_colours_array);
+    vec.layer.setStyle({color: Polyanno.colours.highlight.vector});
+    findAndHighlight("vSelected", vec.layer._leaflet_id, Polyanno.colours.highlight);
   });
   allDrawnItems.on('mouseout', function(vec) {
-    vec.layer.setStyle({color: polyanno_default_colours_array[1]});
-    findAndHighlight("vSelected", vec.layer._leaflet_id, polyanno_default_colours_array);
+    vec.layer.setStyle({color: Polyanno.colours.default.vector});
+    findAndHighlight("vSelected", vec.layer._leaflet_id, Polyanno.colours.default);
   });
 
 };
