@@ -7,7 +7,17 @@ var Polyanno = {
   annotations: [],
   vectors: [],
   transcriptions: [],
-  translations: []
+  translations: [],
+  image: {},
+  urls: {
+    "vector": "/api/vectors/",
+    "transcription": "/api/transcriptions/",
+    "translation": "/api/translations/",
+    "annotation": "/api/annotations/"
+  },
+  colours: {},
+  editors: [],
+  HTML: {}
 };
 
 var findByID = function(array, id) {
@@ -29,18 +39,18 @@ var addReplace = function(annoField, doc) {
 /////////////Annotations
 
 Polyanno.annotation = function(opts) {
-  this.@context = [
+  this["@context"] = [
     "http://www.w3.org/ns/anno.jsonld"
     ];
   this._id = opts._id;
-  this.id = polyanno_urls.annotations.conact(opts._id);
+  this.id = Polyanno.urls.annotation.concat(opts._id);
   this.type = "Annotation";
   this.body = {
     type: [],
     language: []
   };
   this.target = [];
-  addReplace(annotations, this);
+  addReplace(Polyanno.annotations, this);
 };
 
 var polyanno_OAM_subdoc = function(existing, value) {
@@ -130,6 +140,7 @@ Polyanno.annotation.getByTarget = function(target, type) {
   var arr = $.grep(Polyanno.annotations, function(anno){
     return search(anno.target, target);
   });
+  /*
   switch (type) {
     default: 
       return arr;
@@ -140,16 +151,16 @@ Polyanno.annotation.getByTarget = function(target, type) {
     case "translations"
       return types(arr, "translations");   
   };
+  */
 };
 
 //test case
 
-var test = new Polyanno;
 var t1 = new Polyanno.annotation({
   _id: 21376127467,
-  target: [
+  target: [{
     "id": "sheep"
-  ]
+  }]
 });
 
 var t2 = Polyanno.annotation.getByTarget("sheep");
