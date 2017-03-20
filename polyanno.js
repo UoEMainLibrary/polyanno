@@ -265,15 +265,11 @@ atu_the_input = $("#polyanno-dummy-textarea");
 
 ////POLYANNO OBJECTS
 
-var Polyanno = {
-  annotations: [],
-  transcriptions: [],
-  translations: [],
-  image: {},
-  urls: {},
-  colours: {},
-  editors: [],
-  HTML: {}
+var Polyanno = function(opts) {
+  this.image = {},
+  this.urls = {},
+  this.colours = {},
+  this.HTML = {}
 };
 
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
@@ -467,16 +463,19 @@ Polyanno.colours = {
 
 ///////////////////HTML
 
-Polyanno.HTML.buildingParentsTranscriptions = `
-                                    <div class="row">
-                                      <h2>The New Transcription:</h2>
-                                    </div>
-                                    <div id="polyanno_merging_transcription" class="row"></div>`;
-Polyanno.HTML.buildingParentsTranslations = `
-                                    <div class="row">
-                                      <h2>The New Translation:</h2>
-                                    </div>
-                                    <div id="polyanno_merging_translation" class="row"></div>`;
+Polyanno.HTML = {
+  buildingParentsTranscriptions : `
+                                      <div class="row">
+                                        <h2>The New Transcription:</h2>
+                                      </div>
+                                      <div id="polyanno_merging_transcription" class="row"></div>`,
+  buildingParentsTranslations : `
+                                      <div class="row">
+                                        <h2>The New Translation:</h2>
+                                      </div>
+                                      <div id="polyanno_merging_translation" class="row"></div>`
+};
+
 
 
 
@@ -489,34 +488,35 @@ Polyanno.HTML.buildingParentsTranslations = `
 
 /////////////Annotations
 
-var polyanno_OAM_subdoc = function(existing, value) {
-  var subdoc = existing;
-  if (isUseless(value.id)) {
-    console.error("There should be a unique URI provided as the id field of all bodies and targets in annotations");
-    subdoc.id = Math.random().toString().substring(2);
-  }
-  else {
-    subdoc.id = value.id;
-  };
-  if (!isUseless(value.format)) {
-    subdoc.format = value.format;
-  };
-  if ((!isUseless(value.language)) && (typeof value.language == Array)) {
-    subdoc.language = value.language;
-  };
-  if (!isUseless(value.processingLanguage)) {
-    subdoc.processingLanguage = value.processingLanguage;
-  };
-  if ((!isUseless(value.type)) && (typeof value.type == Array)) {
-    subdoc.type = value.type;
-  };
-  if (["auto", "ltr", "rtl"].includes(value.textDirection)) {
-    subdoc.textDirection = value.textDirection;
-  };
 
+Polyanno.annotations = function(opts) {
+  this.array = [];
 };
 
-///
+var PAnnoSubDoc = function(value) {
+  if (isUseless(value.id)) {
+    console.error("There should be a unique URI provided as the id field of all bodies and targets in annotations");
+    this.id = Math.random().toString().substring(2);
+  }
+  else {
+    this.id = value.id;
+  };
+  if (!isUseless(value.format)) {
+    this.format = value.format;
+  };
+  if ((!isUseless(value.language)) && (typeof value.language == Array)) {
+    this.language = value.language;
+  };
+  if (!isUseless(value.processingLanguage)) {
+    this.processingLanguage = value.processingLanguage;
+  };
+  if ((!isUseless(value.type)) && (typeof value.type == Array)) {
+    this.type = value.type;
+  };
+  if (["auto", "ltr", "rtl"].includes(value.textDirection)) {
+    this.textDirection = value.textDirection;
+  };
+};
 
 Polyanno.annotation = function(opts) {
   this["@context"] = [
@@ -538,8 +538,10 @@ Polyanno.annotation = function(opts) {
   };
 
   this.type = "Annotation";
-  this.body = opts.body;
-  this.target = opts.target;
+  this.body = new PAnnoSubDoc(opts.body);
+  for (var i=0; i < opts.target.length; i++) {
+    this.target.push(new PAnnoSubDoc(opts.target[i]));
+  };
 
   this.creator = {
     name: polyanno_current_username,
@@ -552,18 +554,13 @@ Polyanno.annotation = function(opts) {
 
 ///
 
-Object.defineProperty(Polyanno, "annotations", {
+Object.defineProperty(Polyanno.annotations.prototype, "array", {
   set: function(value) {
-    annosCheckArray(Polyanno.annotations, value, Polyanno.annotation); 
+    annosCheckArray(array, value, Polyanno.annotation); 
   }
 });
 
 ///
-
-Polyanno.annotation.prototype.body = {
-  type: [],
-  language: []
-};
 
 Object.defineProperty(Polyanno.annotation.prototype, "type", {
   set: function(value) {
@@ -571,14 +568,14 @@ Object.defineProperty(Polyanno.annotation.prototype, "type", {
       console.error("Annotations must include 'Annotation' in their Type string.");
     }
     else {
-      this.type = value;
+      type = value;
     };
   }
 });
 
 Object.defineProperty(Polyanno.annotation.prototype, "body", {
   set: function(value) {
-    this.body = polyanno_OAM_subdoc(this.body, value);
+    body = new PAnnoSubDoc(value);
   }
 });
 
@@ -587,12 +584,19 @@ Object.defineProperty(Polyanno.annotation.prototype, "target", {
     if (typeof value == Array) {
       for (var i=0; i < value.length; i++) {
         var this_target = value[i];
-        ///check if target already exists to update
-
-        ///
-        this.target.push(polyanno_OAM_subdoc({}, this_target));
+        var existing = findByID(this.target, this_target);
+        if (existing.length > 0) {
+          for (props in this_target) {
+            existing[0][props] = this_target[props];
+          };
+          arraySearchReplace(target, existing);
+        }
+        else {
+          target.push(new PAnnoSubDoc(this_target));
+        };
       }
-    };
+    }
+    else {  console.error("TypeError: Annotation.target must be of Type Array.");  };
   }
 });
 
@@ -602,27 +606,27 @@ Object.defineProperty(Polyanno.annotation.prototype, "target", {
 //plural
 
 Polyanno.annotations.prototype.add = function(anno) {
-  var oldArr = Polyanno.annotations;
+  var oldArr = Polyanno.annotations.array;
   oldArr.push(anno);
-  Polyanno.annotations = oldArr;
+  Polyanno.annotations.array = oldArr;
 };
 
 Polyanno.annotations.prototype.replaceOne = function(anno) {
-  var oldArr = this;
+  var oldArr = this.array;
   var newArr = arraySearchReplace(oldArr, anno);
-  this = newArr;
+  this.array = newArr;
 };
 
 Polyanno.annotations.prototype.getById = function(the_id) {
-  return findByID(this, the_id)[0];
+  return findByID(this.array, the_id)[0];
 };
 
 Polyanno.annotations.prototype.deleteAll = function() {
-  Polyanno.annotations = [];
+  Polyanno.annotations.array = [];
 };
 
 Polyanno.annotations.prototype.getAll = function() {
-  return Polyanno.annotations;
+  return Polyanno.annotations.array;
 };
 
 Polyanno.annotations.prototype.getByTarget = function(target, type) {
@@ -636,7 +640,7 @@ Polyanno.annotations.prototype.getByTarget = function(target, type) {
   var types = function(items, t) {
 
   };
-  var arr = $.grep(Polyanno.annotations, function(anno){
+  var arr = $.grep(Polyanno.annotations.array, function(anno){
     return search(anno.target, target);
   });
 
@@ -665,8 +669,8 @@ Polyanno.annotation.prototype.update = function(opts) {
 };
 
 Polyanno.annotation.prototype.delete = function() {
-  var the_item = findByID(Polyanno.annotations, this.id)[0];
-  Polyanno.annotations.splice(Polyanno.annotations.indexOf(the_item), 1);
+  var the_item = findByID(Polyanno.annotations.array, this.id)[0];
+  Polyanno.annotations.array.splice(Polyanno.annotations.array.indexOf(the_item), 1);
 };
 
 ////Events Setting Methods
@@ -752,7 +756,7 @@ Polyanno.baseAnnotationObject = function(opts) {
 Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "textDirection", {
   set: function(value) {
     if (["auto", "ltr", "rtl"].includes(value)) {
-      this.textDirection = value.textDirection;
+      textDirection = value.textDirection;
     };
   }
 });
@@ -764,7 +768,7 @@ Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "metadata", {
   configurable: true,
   set: function(value) {
     if (value instanceof Array) {
-      this.metadata = value;
+      metadata = value;
     };
   }
 });
@@ -813,7 +817,7 @@ Polyanno.baseTextObject = function(opts) {
 
 Object.defineProperty(Polyanno.baseTextObject.prototype, "vector", {
   set: function(value) {
-    if (value instanceof Polyanno.vector) {  this.vector = value;  }
+    if (value instanceof Polyanno.vector) {  vector = value;  }
     else { console.error("TypeError");  };
   }
 });
@@ -878,20 +882,20 @@ Polyanno.transcription = function(opts) {
 
 Object.defineProperty(Polyanno, "transcriptions", {
   set: function(value) {
-    annosCheckArray(Polyanno.transcriptions, value, Polyanno.transcription); 
+    annosCheckArray(transcriptions, value, Polyanno.transcription); 
   }
 });
 
 Object.defineProperty(Polyanno.transcription.prototype, "parent", {
   set: function(value) {
-    if (value instanceof Polyanno.transcription) {  this.parent = value;  }
+    if (value instanceof Polyanno.transcription) {  parent = value;  }
     else { console.error("TypeError: Parents should be of same type as child.");  };
   }
 });
 
 Object.defineProperty(Polyanno.transcription.prototype, "translation", {
   set: function(value) {
-    if (value instanceof Polyanno.translation) {  this.translation = value;  }
+    if (value instanceof Polyanno.translation) {  translation = value;  }
     else { console.error("TypeError");  };
   }
 });
@@ -900,7 +904,7 @@ Object.defineProperty(Polyanno.transcription.prototype, "voting.up", {
   enumerable: true,
   set: function() {
     voting.up += 1;
-    this.rank = voteChangeRank(Polyanno.transcriptions, this, 1);
+    rank = voteChangeRank(Polyanno.transcriptions, this, 1);
   }
 });
 
@@ -908,7 +912,7 @@ Object.defineProperty(Polyanno.transcription.prototype, "voting.down", {
   enumerable: true,
   set: function() {
     voting.up -= 1;
-    this.rank = voteChangeRank(Polyanno.transcriptions, this, -1);
+    rank = voteChangeRank(Polyanno.transcriptions, this, -1);
   }
 });
 
@@ -1107,19 +1111,19 @@ Object.defineProperty(Polyanno.selected, "translation", {
 
 Object.defineProperty(Polyanno.selected, "vectors", {
   set: function(value) {
-    annosCheckArray(Polyanno.selected.vector.ids, value, PSelectedObject); 
+    annosCheckArray(vectors, value, PSelectedObject); 
   }
 });
 
 Object.defineProperty(Polyanno.selected, "transcriptions", {
   set: function(value) {
-    annosCheckArray(Polyanno.selected.transcriptions, value, PSelectedObject); 
+    annosCheckArray(transcriptions, value, PSelectedObject); 
   }
 });
 
 Object.defineProperty(Polyanno.selected, "translations", {
   set: function(value) {
-    annosCheckArray(Polyanno.selected.translations, value, PSelectedObject); 
+    annosCheckArray(translations, value, PSelectedObject); 
   }
 });
 
@@ -1235,13 +1239,13 @@ Polyanno.prototype.editor = function(opts) {
 
 Object.defineProperty(Polyanno.editor, "docs", {
   set: function(value) {
-    annosCheckArray(this.docs, value, PSelectedObject); 
+    annosCheckArray(docs, value, PSelectedObject); 
   }
 });
 
 Object.defineProperty(Polyanno, "editors", {
   set: function(value) {
-    annosCheckArray(Polyanno.editors, value, Polyanno.editor); 
+    annosCheckArray(editors, value, Polyanno.editor); 
   }
 });
 
