@@ -14,39 +14,14 @@ var imageSelected; //info.json format URL
 var imageSelectedMetadata = []; ////???
 
 
-
-var Polyanno.selected.vector; //API URL
-var vectorSelectedParent; //API URL
-var currentCoords;
-
-var polyanno_text_selected; //API URL of the image currently being displayed
-
 //target variables
-var polyanno_text_selectedParent; //API URL
-var polyanno_text_selectedID; //DOM id
-var polyanno_text_selectedHash; //parent API URL + ID
-var polyanno_text_selectedFragment; //HTML Selection Object
+
 var polyanno_text_type_selected;
 
 //URLs
-var targetSelected; //array
+
 var targetType; 
-var polyanno_siblingArray;
 
-var editorsOpen = []; //those targets currently open in editors
-/* 
-{
-  id: id_string,
-
-}
-*/
-
-var selectingVector = false; //used to indicate if the user is currently searching for a vector to link or not
-/*
-{     siblings: polyanno_siblingArray,
-      parent_anno : polyanno_siblingArray[0].parent,
-      parent_vector : checkForVectorTarget(parent_anno)
-}*/
 
 
 ////leaflet
@@ -66,18 +41,7 @@ var controlOptions = {
 };
 
 var popupVectorMenu;
-    
-//to track when editing
-var currentlyEditing = false;
-var currentlyDeleting = false;
 
-//merging variables
-var polyanno_merging_vectors = false;
-var polyanno_temp_merge_shape = false; ///Leaflet layer not just GeoJSON
-var polyanno_merging_array = [];
-
-var polyanno_merging_transcription = []; ///equal to the children array of parent anno
-var polyanno_merging_translation = []; ///equal to the children array of parent anno
 
 ////HTML VARIABLES
 
@@ -143,9 +107,9 @@ var polyanno_top_bar_HTML = `
 
 
 var openHTML = "<div class='popupAnnoMenu'>";
-var transcriptionOpenHTML = `<a class="openTranscriptionMenu polyanno-standard-btn btn btn-default" onclick="checkEditorsOpen('vector', 'transcription');
+var transcriptionOpenHTML = `<a class="openTranscriptionMenu polyanno-standard-btn btn btn-default" onclick="Polyanno.editors.ifOpen('vector', 'transcription');
       polyanno_map.closePopup();">`+polyanno_transcribe_symbol+`</a><br>`;
-var translationOpenHTML = `<a class="openTranslationMenu polyanno-standard-btn btn btn-default" onclick="checkEditorsOpen('vector', 'translation');
+var translationOpenHTML = `<a class="openTranslationMenu polyanno-standard-btn btn btn-default" onclick="Polyanno.editors.ifOpen('vector', 'translation');
       polyanno_map.closePopup();">`+polyanno_translate_symbol+`</a>`;
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
@@ -153,7 +117,7 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
-var polyanno_merging_transcription_HTML = `
+var Polyanno.selected.buildingParents.transcriptions_HTML = `
                                     <div class="row">
                                       <h2>The New Transcription:</h2>
                                     </div>
@@ -179,7 +143,7 @@ var transcriptionIconHTML = `<span class='glyphicon glyphicon-list-alt'></span>
 var translationIconHTML = `<span class='glyphicon glyphicon-globe'></span>
                             <span>Translation</span>`;
 
-var popupSelectingVectorHTML = `
+var popupConnectingEqualsHTML = `
   <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
     <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_setting_selecting_vector(); polyanno_map.closePopup();">Submit</a>
     <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_reset_selecting_vector(); polyanno_map.closePopup();">Cancel</a>
@@ -987,13 +951,7 @@ Polyanno.transcription.delete = function() {
 
 ////Events Setting Methods
 
-Polyanno.annotations.onadd = function(func) {
-  var oldFunc = this.add;
-  this.add = function(anno) {
-    oldFunc.call(this, anno); 
-    func.call(this, anno);
-  };
-};
+
 
 
 
@@ -1062,7 +1020,8 @@ Object.defineProperty(Polyanno, "vector", {
 Polyanno.selected = {
   vectors: [],
   transcriptions: [],
-  translations: []
+  translations: [],
+  targets: []
 };
 
 var PSelectedObject = function(doc) {
@@ -1076,9 +1035,9 @@ var PSelectedObject = function(doc) {
 };
 
 Object.defineProperty(Polyanno.selected, "vector", {
-  get: function() { return Polyanno.selected.vectors[0] },
+  get: function() { return Polyanno.selected.vector.ids[0] },
   set: function(value) {
-    Polyanno.selected.vectors[0] = new PSelectedObject(value);
+    Polyanno.selected.vector.ids[0] = new PSelectedObject(value);
   }
 });
 
@@ -1097,7 +1056,7 @@ Object.defineProperty(Polyanno.selected, "translation", {
 
 Object.defineProperty(Polyanno.selected, "vectors", {
   set: function(value) {
-    annosCheckArray(Polyanno.selected.vectors, value, PSelectedObject); 
+    annosCheckArray(Polyanno.selected.vector.ids, value, PSelectedObject); 
   }
 });
 
@@ -1126,10 +1085,10 @@ PSelectedObject.update = function(opts) {
 
 //plural
 
-Polyanno.selected.vectors.add = function(anno) {
-  var oldArr = Polyanno.selected.vectors;
+Polyanno.selected.vector.ids.add = function(anno) {
+  var oldArr = Polyanno.selected.vector.ids;
   oldArr.push(anno);
-  Polyanno.selected.vectors = oldArr;
+  Polyanno.selected.vector.ids = oldArr;
 };
 
 Polyanno.selected.transcriptions.add = function(anno) {
@@ -1145,7 +1104,7 @@ Polyanno.selected.translations.add = function(anno) {
 };
 
 
-Polyanno.selected.vectors.replaceOne = function(anno) {
+Polyanno.selected.vector.ids.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
@@ -1169,9 +1128,10 @@ Polyanno.selected.getAll = function() {
 };
 
 Polyanno.selected.reset = function () {
-  Polyanno.selected.vectors = [];
+  Polyanno.selected.vector.ids = [];
   Polyanno.selected.transcriptions = [];
   Polyanno.selected.translations = [];
+  Polyanno.selected.targets = [];
 };
 
 Polyanno.selected.setSelected = function (docs) {
@@ -1180,6 +1140,43 @@ Polyanno.selected.setSelected = function (docs) {
     Polyanno.selected[property] = docs[property];
   };
 };
+
+/////connectingEquals
+
+Polyanno.selected.connectingEquals = {};
+Polyanno.selected.connectingEquals.status = false; //used to indicate if the user is currently searching for a vector to link or not
+/*
+{     siblings: Polyanno.selected.transcriptions,
+      parent_anno : Polyanno.selected.transcriptions[0].parent,
+      parent_vector : checkForVectorTarget(parent_anno)
+}*/
+
+//editing
+
+Polyanno.selected.currentlyEditing = false;
+Polyanno.selected.currentlyDeleting = false;
+
+
+////buildingParents
+
+Polyanno.selected.buildingParents = {
+  status: false,
+  vectors: [],
+  transcriptions: [],
+  translations: [],
+  parent: {
+    //vector
+    //transcription
+    //translation
+  }
+};
+
+//merging variables
+var polyanno_merging_vectors = false;
+var polyanno_temp_merge_shape = false; ///Leaflet layer not just GeoJSON
+
+var polyanno_merging_translation = []; ///equal to the children array of parent anno
+
 
 
 
@@ -1211,7 +1208,11 @@ Object.defineProperty(Polyanno, "editors", {
 
 /////Methods
 
-
+Polyanno.editors.add = function(editor) {
+  var oldArr = Polyanno.editors;
+  oldArr.push(editor);
+  Polyanno.editors = oldArr;
+};
 
 Polyanno.editors.removeEditor = function(id) {
   var this_editor = findByID(Polyanno.editors, id)[0];
@@ -1235,7 +1236,37 @@ Polyanno.editors.openEditor = function() {
 };
 
 
+var Polyanno.editors.ifOpen = function(fromType, textType) {
+  polyanno_text_type_selected = textType;
+  if (isUseless(Polyanno.editors[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
+  else {
+    var canOpen = true;
+    Polyanno.editors.forEach(function(editorOpen){
+      if ( ( (  !isUseless(editorOpen["vector"]) && (editorOpen["vector"] == Polyanno.selected.vector.id)  )||( !isUseless(editorOpen["transcription.parent"]) && editorOpen["transcription.parent"] == Polyanno.selected.transcription.parent)) && (editorOpen["tTypeSelected"] == textType)){
+        $(editorOpen.editor).effect("shake");
+        canOpen = false;
+      };
+    });
+    if (canOpen == true) {  polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions) };
+  };
+};
 
+var addEditorsOpen = function(popupIDstring) {
+
+  Polyanno.editors.add({
+    "id": popupIDstring,
+
+    "vector": Polyanno.selected.vector.id,
+    "transcription.parent": Polyanno.selected.transcription.parent,
+    "transcription.DOMid": Polyanno.selected.transcription.DOMid,
+    "transcription.URI": Polyanno.selected.transcription.URI,
+
+    "tTypeSelected": polyanno_text_type_selected,
+    "children": Polyanno.selected.transcriptions,
+    "typesFor": targetType
+  });
+  return Polyanno.editors;
+};
 
 ////GENERAL ANNOTATION FUNCTIONS
 
@@ -1312,33 +1343,33 @@ var polyanno_search_annos_by_ids = function(list, callback_function) {
 var updateVectorSelection = function(the_vector_url) {
   ///this is the process for linking vectors to text segments
   var textData = {target: [{id: the_vector_url, format: "image/SVG"}]};
-  selectingVector.siblings.forEach(function(child){
+  Polyanno.selected.connectingEquals.siblings.forEach(function(child){
     updateAnno(child[0].body.id, textData);
   });
 
-  var editorID = fieldMatching(editorsOpen, "tSelectedParent", selectingVector.parent_anno).editor;
+  var editorID = fieldMatching(Polyanno.editors, "transcription.parent", Polyanno.selected.connectingEquals.parent_anno).editor;
   //need to ensure asynchronicity here
-  selectingVector = false;
+  Polyanno.selected.connectingEquals.status = false;
   $(editorID).find(".polyanno-vector-link-row").css("display", "none");
-  ///update editorsOpen to activate highlighting
+  ///update Polyanno.editors to activate highlighting
 
 };
 
 var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID) {
   if (updatedTranscription) {    
-    polyanno_text_selected = targetID;
+    Polyanno.selected.transcription.id = targetID;
     closeEditorMenu(editorID, targetID);  
   };
-  if (updatedTranscription && (!isUseless(vectorSelected))) {
+  if (updatedTranscription && (!isUseless(Polyanno.selected.vector.id))) {
     var updateTargetData = {};
     updateTargetData[polyanno_text_type_selected] = targetID;
-    updateAnno(vectorSelected, updateTargetData);
+    updateAnno(Polyanno.selected.vector.id, updateTargetData);
   };
 
   ///////if the parent is open in an editor rebuild carousel with new transcription 
-  editorsOpen.forEach(function(editorOpen){
+  Polyanno.editors.forEach(function(editorOpen){
     editorOpen.children.forEach(function(eachChild){
-      if ( eachChild.id == polyanno_text_selectedID ){
+      if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
         closeEditorMenu(editorOpen.editor, editorOpen.body.id);
       };
     });
@@ -1352,9 +1383,9 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
   var targetID = findBaseURL().concat(votedID); ///API URL of the annotation voted on
   var votedTextBody = $("#"+votedID).html(); 
   var targetData = {
-    parent: polyanno_text_selectedParent, ///it is this that is updated containing the votedText within its body
+    parent: Polyanno.selected.transcription.parent, ///it is this that is updated containing the votedText within its body
     children: [{
-      id: polyanno_text_selectedID, //ID of span location
+      id: Polyanno.selected.transcription.DOMid, //ID of span location
       fragments: [{
         id: targetID
       }]
@@ -1406,7 +1437,7 @@ function getSelected() {
 
 var insertSpanDivs = function() {
   $(outerElementTextIDstring).html(newContent); 
-  polyanno_text_selectedID = newNodeInsertID;
+  Polyanno.selected.transcription.DOMid = newNodeInsertID;
 };
 
 var findBaseURL = function() {
@@ -1416,17 +1447,17 @@ var findBaseURL = function() {
 
 var polyanno_new_anno_via_selection = function(baseURL) {
   //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
-  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID); 
-  targetSelected = [polyanno_text_selectedHash];
+  Polyanno.selected.transcription.URI = Polyanno.selected.transcription.parent.concat("#"+Polyanno.selected.transcription.DOMid); 
+  Polyanno.selected.targets = [Polyanno.selected.transcription.URI];
   var targetData = {
-    text: polyanno_text_selectedFragment, metadata: imageSelectedMetadata, parent: polyanno_text_selectedParent,
+    text: Polyanno.selected.transcription.fragment, metadata: imageSelectedMetadata, parent: Polyanno.selected.transcription.parent,
     target: [
-          {id: polyanno_text_selectedHash, format: "text/html"}, 
-          {id: polyanno_text_selectedParent, format: "application/json"}, 
+          {id: Polyanno.selected.transcription.URI, format: "text/html"}, 
+          {id: Polyanno.selected.transcription.parent, format: "application/json"}, 
           {id: imageSelected,  format: "application/json"  } 
           ]
   };
-  var thisEditorString = $("#"+polyanno_text_selectedID).closest(".textEditorPopup").attr("id");
+  var thisEditorString = $("#"+Polyanno.selected.transcription.DOMid).closest(".textEditorPopup").attr("id");
   
   $.ajax({
     type: "POST",
@@ -1436,8 +1467,8 @@ var polyanno_new_anno_via_selection = function(baseURL) {
     success: 
       function (data) {
         var createdText = data.url;
-        polyanno_text_selected = createdText;
-        polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [polyanno_text_selectedParent], polyanno_siblingArray);
+        Polyanno.selected.transcription.id = createdText;
+        polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [Polyanno.selected.transcription.parent], Polyanno.selected.transcriptions);
       }
   });
 
@@ -1462,7 +1493,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
   var linked_transcriptions = $("#polyanno_merging_transcription").html();
   var linked_translations = $("#polyanno_merging_translation").html();
 
-  var transcription_data = {text: linked_transcriptions, children: polyanno_merging_transcription, metadata: imageSelectedMetadata, 
+  var transcription_data = {text: linked_transcriptions, children: Polyanno.selected.buildingParents.transcriptions, metadata: imageSelectedMetadata, 
     target: [
             {id: merged_vector,  format: "image/SVG"  },
             {id: imageSelected,  format: "application/json"  } ]
@@ -1482,7 +1513,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
 
     /////////separate into two parts so the anno ids can be created and added
 
-      var this_layer = polyanno_merging_array[vector_children_counter];
+      var this_layer = Polyanno.selected.buildingParents.vectors[vector_children_counter];
       var this_layer_id = this_layer._leaflet_id;
       textTarget[0].id = this_layer_id;
       var these_properties = this_layer.toGeoJSON().properties;
@@ -1499,19 +1530,19 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
 
       if (isUseless(these_properties.transcription)) {
         new_text_data.parent = createdTranscription;
-        ///need to set polyanno_text_selectedID
+        ///need to set Polyanno.selected.transcription.DOMid
 
         polyanno_new_anno_for_child_of_merge(Polyanno.urls.transcription, new_text_data, polyanno_update_vector_children_iteratively); 
         //this will POST to t, then POST to anno, then leave PUT to parent whilst returning to this loop
       }
       else if (isUseless(these_properties.transcription)) {
         new_text_data.parent = createdTranslation;
-        ///need to set polyanno_text_selectedID
+        ///need to set Polyanno.selected.transcription.DOMid
 
         polyanno_new_anno_for_child_of_merge(Polyanno.urls.translation, new_text_data, polyanno_update_vector_children_iteratively);
         //this will POST to t, then POST to anno, then leave PUT to parent whilst returning to this loop
       }
-      else if (vector_children_counter == (polyanno_merging_array.length - 1)) {
+      else if (vector_children_counter == (Polyanno.selected.buildingParents.vectors.length - 1)) {
         updateAnno(this_layer_id, the_data);
       }
       else {
@@ -1550,14 +1581,14 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
 
 };
 
-var setpolyanno_text_selectedID = function(theText) {
+var setPolyanno.selected.transcription.DOMid = function(theText) {
 
   var findByBodyURL = Polyanno.urls.annotation + "body/"+encodeURIComponent(theText);
   var the_regex = '/.*'+findBaseURL()+'.*/';
   var theTarget = fieldMatching(checkFor(findByBodyURL, "target"), "format", "text/html");
   if ( theTarget != false ) { 
-    polyanno_text_selectedHash = theTarget.id;
-    polyanno_text_selectedID = polyanno_text_selectedHash.substring(polyanno_text_selectedParent.length + 1); //the extra one for the hash   
+    Polyanno.selected.transcription.URI = theTarget.id;
+    Polyanno.selected.transcription.DOMid = Polyanno.selected.transcription.URI.substring(Polyanno.selected.transcription.parent.length + 1); //the extra one for the hash   
     return theTarget.id;     
   };
 
@@ -1591,7 +1622,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
   $('.openTranscriptionMenuNew').on("click", function(event) {
     ///
     insertSpanDivs();
-    polyanno_text_selectedParent = Polyanno.urls.transcription.concat(theParent);
+    Polyanno.selected.transcription.parent = Polyanno.urls.transcription.concat(theParent);
     polyanno_text_type_selected = "transcription";
     targetType = "transcription";
     $(theTextIDstring).popover('hide'); 
@@ -1600,7 +1631,7 @@ var newTextPopoverOpen = function(theTextIDstring, theParent) {
 
   $('.openTranslationMenuNew').on("click", function(event) {
     insertSpanDivs();
-    polyanno_text_selectedParent = Polyanno.urls.translation.concat(theParent);
+    Polyanno.selected.transcription.parent = Polyanno.urls.translation.concat(theParent);
     polyanno_text_type_selected = "translation";
     targetType = "translation";
     $(theTextIDstring).popover('hide'); 
@@ -1711,7 +1742,7 @@ var setNewTextVariables = function(selection, classCheck) {
     var outerElementEndContent = setOEEC(outerElementHTML, nextSpanContent, nextSpan );
 
     newContent = outerElementStartContent + newSpan + outerElementEndContent;
-    polyanno_text_selectedFragment = strangeTrimmingFunction(selection);
+    Polyanno.selected.transcription.fragment = strangeTrimmingFunction(selection);
 
     initialiseNewTextPopovers(outerElementTextIDstring, startParentID);
 
@@ -1810,7 +1841,7 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
     var thisItemID = subarray[0]._id;
     var thisItemURL = findBaseURL() + thisItemID;
 
-    if (thisItemURL == polyanno_text_selected){
+    if (thisItemURL == Polyanno.selected.transcription.id){
       $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
     }
     else {
@@ -1841,27 +1872,13 @@ var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 
 };
 
-var addEditorsOpen = function(popupIDstring) {
-
-  return editorsOpen.push({
-    "editor": popupIDstring,
-    "typesFor": targetType,
-    "vSelected": vectorSelected,
-    "tSelectedParent": polyanno_text_selectedParent,
-    "tSelectedID": polyanno_text_selectedID,
-    "tSelectedHash": polyanno_text_selectedHash,
-    "tTypeSelected": polyanno_text_type_selected,
-    "children": polyanno_siblingArray
-  });
-};
-
 var polyanno_reset_global_variables = function() {
-  Polyanno.selected.vector = false;
-  polyanno_text_selectedParent = false;
-  polyanno_text_selectedID = false;
-  polyanno_text_selectedHash = false;
+  Polyanno.selected.vector.id = false;
+  Polyanno.selected.transcription.parent = false;
+  Polyanno.selected.transcription.DOMid = false;
+  Polyanno.selected.transcription.URI = false;
   polyanno_text_type_selected = false;
-  polyanno_siblingArray = [];
+  Polyanno.selected.transcriptions = [];
 };
 
 var polyanno_populate_tags = function(theAnno, popupIDstring) {
@@ -1909,33 +1926,27 @@ var returnTextIcon = function(polyanno_text_type_selected){
 
 var checkingItself = function(searchField, searchFieldValue, theType) {
   if (theType == searchField) { return false }
-  else {  return fieldMatching(editorsOpen, searchField, searchFieldValue)[theType] };
-};
-
-var removeEditorsOpen = function(popupIDstring) {
-  var theEditorItem = fieldMatching(editorsOpen, "editor", popupIDstring);
-  var currentIndex = editorsOpen.indexOf(theEditorItem); 
-  editorsOpen.splice(currentIndex,1);
+  else {  return fieldMatching(Polyanno.editors, searchField, searchFieldValue)[theType] };
 };
 
 var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
-    polyanno_text_selected = reopen;
+    Polyanno.selected.transcription.id = reopen;
     polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
     return the_editor_gone;
   }
   else {
     resetVectorHighlight(thisEditor);
-    removeEditorsOpen(thisEditor);
+    Polyanno.editors.removeEditor(thisEditor);
     return the_editor_gone;
   }
 };
 
 var preBtnClosing = function(thisEditor) {
   resetVectorHighlight(thisEditor);
-  removeEditorsOpen(thisEditor);
+  Polyanno.editors.removeEditor(thisEditor);
 };
 
 var findNewTextData = function(editorString) {
@@ -1956,8 +1967,8 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
   if ((!isUseless(polyanno_text_type_selected)) && targetType.includes(polyanno_text_type_selected)) {
 
     var newHTML = $(outerElementTextIDstring).html();
-    var polyanno_new_target_data = {text: newHTML, children: [{id: polyanno_text_selectedID, fragments: [{id: thisAnnoData.id}] }]};
-    var polyanno_the_parent = polyanno_text_selectedParent;
+    var polyanno_new_target_data = {text: newHTML, children: [{id: Polyanno.selected.transcription.DOMid, fragments: [{id: thisAnnoData.id}] }]};
+    var polyanno_the_parent = Polyanno.selected.transcription.parent;
     updateAnno(polyanno_the_parent, polyanno_new_target_data);
 
     //open new editor for child text then as callback refresh the parent editor
@@ -1965,10 +1976,10 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
 
   };
 
-  if (  targetType.includes("vector") && (  isUseless(polyanno_siblingArray) || isUseless(polyanno_siblingArray[0]) )) {
+  if (  targetType.includes("vector") && (  isUseless(Polyanno.selected.transcriptions) || isUseless(Polyanno.selected.transcriptions[0]) )) {
     var polyanno_new_target_data = {};
     polyanno_new_target_data[polyanno_text_type_selected] = thisAnnoData.body.id;
-    var polyanno_this_vector = Polyanno.selected.vector;
+    var polyanno_this_vector = Polyanno.selected.vector.id;
     updateAnno(polyanno_this_vector, polyanno_new_target_data);
 
   };
@@ -1986,18 +1997,18 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   var this_parent = false;
   var this_vec = false;
   if (targetType.includes("vector")) {
-    var vector_layer = allDrawnItems.getLayer(vectorSelected).toGeoJSON();
+    var vector_layer = allDrawnItems.getLayer(Polyanno.selected.vector.id).toGeoJSON();
     var theCoords = vector_layer.geometry.coordinates[0];
     var IIIFsection = getIIIFsectionURL(imageSelected, theCoords, "jpg");
     theData.target.push({id: IIIFsection, format: "image/jpg"});
-    theData.target.push({id: vectorSelected, format: "image/SVG"});
-    this_vec = Polyanno.selected.vector;
+    theData.target.push({id: Polyanno.selected.vector.id, format: "image/SVG"});
+    this_vec = Polyanno.selected.vector.id;
   };
 
   if (targetType.includes(polyanno_text_type_selected)) {
-    theData.target.push({id: polyanno_text_selectedHash, format: "text/html"});
-    theData.parent = polyanno_text_selectedParent;
-    this_parent = polyanno_text_selectedParent;
+    theData.target.push({id: Polyanno.selected.transcription.URI, format: "text/html"});
+    theData.parent = Polyanno.selected.transcription.parent;
+    this_parent = Polyanno.selected.transcription.parent;
   };
 
   $.ajax({
@@ -2009,7 +2020,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
       function (data) {
 
         closeEditorMenu(thisEditor);
-        polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, polyanno_siblingArray);
+        polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);
       }
   });
 
@@ -2019,83 +2030,83 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
 
   if (fromType == "vector") {
     var does_vector_have_text;
-    if (isUseless(text_selected)) { does_vector_have_text = checkFor(vectorSelected, polyanno_text_type_selected); } //return the api url NOT json file 
+    if (isUseless(text_selected)) { does_vector_have_text = checkFor(Polyanno.selected.vector.id, polyanno_text_type_selected); } //return the api url NOT json file 
     else { does_vector_have_text = text_selected[0]; };
 
     if (does_vector_have_text != false) {
-      polyanno_text_selected = does_vector_have_text;
+      Polyanno.selected.transcription.id = does_vector_have_text;
       var does_text_have_parent;
       if (isUseless(text_parent)) { does_text_have_parent = checkFor(does_vector_have_text, "parent"); }
       else { does_text_have_parent = text_parent[0]; };
       
       if (does_text_have_parent != false) {
-        polyanno_text_selectedParent = does_text_have_parent;
-        var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+        Polyanno.selected.transcription.parent = does_text_have_parent;
+        var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
         targetType = "vector " + polyanno_text_type_selected;
-        return targetSelected = [theHashHere, vectorSelected];
+        return Polyanno.selected.targets = [theHashHere, Polyanno.selected.vector.id];
       }
       else {
         targetType = "vector";
-        return targetSelected = [vectorSelected];
+        return Polyanno.selected.targets = [Polyanno.selected.vector.id];
       };
     }
     else {
       targetType = "vector";
-      return targetSelected = [vectorSelected];
+      return Polyanno.selected.targets = [Polyanno.selected.vector.id];
     };
     
   }
   else if (fromType == "text") {
     var what_is_topvoted_here;
     if (isUseless(text_selected)) { 
-      var the_parent_json = getTargetJSON(polyanno_text_selectedParent);
-      what_is_topvoted_here = findHighestRankingChild(the_parent_json.children, polyanno_text_selectedID); 
+      var the_parent_json = getTargetJSON(Polyanno.selected.transcription.parent);
+      what_is_topvoted_here = findHighestRankingChild(the_parent_json.children, Polyanno.selected.transcription.DOMid); 
     }
     else { what_is_topvoted_here = text_selected[0]; };
 
-    polyanno_text_selected = what_is_topvoted_here;
+    Polyanno.selected.transcription.id = what_is_topvoted_here;
 
     var does_have_vector_target;
     if (isUseless(this_vector_selected)) { does_have_vector_target = checkForVectorTarget(what_is_topvoted_here); } ///returning URL alone, NOT JSON
     else { does_have_vector_target = this_vector_selected[0]; };
 
     if (does_have_vector_target != false) {
-      Polyanno.selected.vector =  does_have_vector_target;
+      Polyanno.selected.vector.id =  does_have_vector_target;
 
       targetType = "vector " + polyanno_text_type_selected;
-      return targetSelected = [polyanno_text_selectedHash, does_have_vector_target];
+      return Polyanno.selected.targets = [Polyanno.selected.transcription.URI, does_have_vector_target];
     }
     else {
       targetType = polyanno_text_type_selected;
-      return targetSelected = [polyanno_text_selectedHash];
+      return Polyanno.selected.targets = [Polyanno.selected.transcription.URI];
     };   
   }
   else if (fromType == "refresh") {
     var does_text_have_parent;
-    if (isUseless(text_parent)) { does_text_have_parent = checkFor(polyanno_text_selected, "parent"); }
+    if (isUseless(text_parent)) { does_text_have_parent = checkFor(Polyanno.selected.transcription.id, "parent"); }
     else { does_text_have_parent = text_parent[0]; };
 
     var does_have_vector_target;
-    if (isUseless(this_vector_selected)) { does_have_vector_target = checkForVectorTarget(polyanno_text_selected); } ///returning URL alone, NOT JSON
+    if (isUseless(this_vector_selected)) { does_have_vector_target = checkForVectorTarget(Polyanno.selected.transcription.id); } ///returning URL alone, NOT JSON
     else { does_have_vector_target = this_vector_selected[0]; };
 
    if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
-      polyanno_text_selectedParent = does_text_have_parent;
-      var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+      Polyanno.selected.transcription.parent = does_text_have_parent;
+      var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
 
       targetType = "vector " + polyanno_text_type_selected;
-      return targetSelected = [theHashHere, does_have_vector_target];
+      return Polyanno.selected.targets = [theHashHere, does_have_vector_target];
     }
     else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
-      polyanno_text_selectedParent = does_text_have_parent;
-      var theHashHere = setpolyanno_text_selectedID(does_vector_have_text);
+      Polyanno.selected.transcription.parent = does_text_have_parent;
+      var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
       targetType = polyanno_text_type_selected;
-      return targetSelected = [theHashHere];
+      return Polyanno.selected.targets = [theHashHere];
     }
     else if ((does_text_have_parent == false) && (does_have_vector_target != false)) {
       targetType = "vector";
-      return targetSelected = [does_have_vector_target];
+      return Polyanno.selected.targets = [does_have_vector_target];
     };
   };
 
@@ -2104,7 +2115,7 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
 var polyanno_set_and_open = function(fromType, callback_function, text_selected, this_vector, text_parent, text_siblings) {
   var the_targets = polyanno_setting_global_variables(fromType, text_selected, this_vector, text_parent);
   if (!isUseless(the_targets) && (isUseless(text_siblings))) {
-    polyanno_annos_of_target(targetSelected[0], findBaseURL(), openEditorMenu);
+    polyanno_annos_of_target(Polyanno.selected.targets[0], findBaseURL(), openEditorMenu);
     if (!isUseless(callback_function)) { callback_function()  };
   }
   else {
@@ -2112,32 +2123,17 @@ var polyanno_set_and_open = function(fromType, callback_function, text_selected,
   };
 };
 
-var checkEditorsOpen = function(fromType, textType) {
-  polyanno_text_type_selected = textType;
-  if (isUseless(editorsOpen)) {    polyanno_set_and_open(fromType, false, polyanno_text_selected, vectorSelected, polyanno_text_selectedParent, polyanno_siblingArray);  }
-  else {
-    var canOpen = true;
-    editorsOpen.forEach(function(editorOpen){
-      if ( ( (  !isUseless(editorOpen["vSelected"]) && (editorOpen["vSelected"] == vectorSelected)  )||( !isUseless(editorOpen["tSelectedParent"]) && editorOpen["tSelectedParent"] == polyanno_text_selectedParent)) && (editorOpen["tTypeSelected"] == textType)){
-        $(editorOpen.editor).effect("shake");
-        canOpen = false;
-      };
-    });
-    if (canOpen == true) {  polyanno_set_and_open(fromType, false, polyanno_text_selected, vectorSelected, polyanno_text_selectedParent, polyanno_siblingArray) };
-  };
-};
-
 var settingEditorVars = function(thisEditor) {
   if(!thisEditor.includes("#")) { thisEditor = "#" + thisEditor; };
-  editorsOpen.forEach(function(target){
+  Polyanno.editors.forEach(function(target){
     if(target.editor == thisEditor) {
       targetType = target.typesFor;
-      Polyanno.selected.vector = target.vSelected;
-      polyanno_text_selectedParent = target.tSelectedParent;
-      polyanno_text_selectedID = target.tSelectedID;
-      polyanno_text_selectedHash = target.tSelectedHash;
+      Polyanno.selected.vector.id = target.vector;
+      Polyanno.selected.transcription.parent = target.transcription.parent;
+      Polyanno.selected.transcription.DOMid = target.transcription.DOMid;
+      Polyanno.selected.transcription.URI = target.transcription.URI;
       polyanno_text_type_selected = target.tTypeSelected;
-      polyanno_siblingArray = target.children;
+      Polyanno.selected.transcriptions = target.children;
     };
   });
 };
@@ -2162,9 +2158,9 @@ var highlightSpanChosen = function(chosenSpan, colourChange) {
 var findAndHighlight = function(searchField, searchFieldValue, highlightColours) {
   var thisEditor = checkingItself(searchField, searchFieldValue, "editor");
   if (!isUseless(thisEditor)) {  highlightEditorsChosen(thisEditor, highlightColours.editor);  };
-  var thisVector = checkingItself(searchField, searchFieldValue, "vSelected");
+  var thisVector = checkingItself(searchField, searchFieldValue, "vector");
   if (!isUseless(thisVector)) {  highlightVectorChosen(thisVector, highlightColours.vector);  };
-  var thisSpan = checkingItself(searchField, searchFieldValue, "tSelectedID");
+  var thisSpan = checkingItself(searchField, searchFieldValue, "transcription.DOMid");
   if (!isUseless(thisSpan)) {  
     if (!thisSpan.includes("#")) {  thisSpan = "#"+thisSpan; };
     if (!isUseless($(thisSpan))) {  highlightSpanChosen(thisSpan, highlightColours.span);  };
@@ -2172,7 +2168,7 @@ var findAndHighlight = function(searchField, searchFieldValue, highlightColours)
 };
 
 var resetVectorHighlight = function(thisEditor) {
-  var thisVector = fieldMatching(editorsOpen, "editor", thisEditor).vSelected; 
+  var thisVector = fieldMatching(Polyanno.editors, "editor", thisEditor).vector; 
   if(!isUseless(thisVector)){ highlightVectorChosen(thisVector, Polyanno.colours.default.vector); };
 };
 
@@ -2568,7 +2564,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   if (!isUseless(concavity_check)) {
     tempGeoJSON.properties.OCD = concavity_check;
   };
-  tempGeoJSON.properties.transcription = polyanno_merging_transcription;
+  tempGeoJSON.properties.transcription = Polyanno.selected.buildingParents.transcriptions;
   tempGeoJSON.properties.translation = polyanno_merging_translation;
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
   tempGeoJSON.properties.children.push(new_vec_layer._leaflet_id);
@@ -2593,7 +2589,7 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
     "type": "Feature",  
     "properties":{   
       "children": [shape_to_copy._leaflet_id],
-      "transcription": polyanno_merging_transcription,
+      "transcription": Polyanno.selected.buildingParents.transcriptions,
       "translation": polyanno_merging_translation    
     },  
     "geometry":{"type": "Polygon", "coordinates": shapeGeoJSON.geometry.coordinates}  
@@ -2716,7 +2712,7 @@ var polyanno_add_merge_annos = function(new_vec) {
   };
   if (!isUseless(new_vec.feature.properties.transcription)) { 
     var new_frag = polyanno_load_merging_anno(new_vec.feature, "transcription");
-    polyanno_merging_transcription.push(new_frag);
+    Polyanno.selected.buildingParents.transcriptions.push(new_frag);
   }
   else {
 
@@ -2729,7 +2725,7 @@ var polyanno_add_merge_annos = function(new_vec) {
   else {
 
   };
-  return [polyanno_merging_transcription, polyanno_merging_translation];
+  return [Polyanno.selected.buildingParents.transcriptions, Polyanno.selected.buildingParents.translations];
 };
 
 var polyanno_extracting_merged_anno = function(text_type, children_array, this_id) {
@@ -2750,8 +2746,8 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, this_i
 var polyanno_remove_merge_annos = function(vec_removed_layer) {
   var vec_removed = vec_removed_layer.toGeoJSON();
   if ((!isUseless(vec_removed.properties))&&(!isUseless(vec_removed.properties.transcription))) { 
-    var the_index = polyanno_extracting_merged_anno("transcription", polyanno_merging_transcription, vec_removed.properties.transcription);
-    polyanno_merging_transcription.slice(the_index, 1);
+    var the_index = polyanno_extracting_merged_anno("transcription", Polyanno.selected.buildingParents.transcriptions, vec_removed.properties.transcription);
+    Polyanno.selected.buildingParents.transcriptions.slice(the_index, 1);
   };
   if ((!isUseless(vec_removed.properties))&&(!isUseless(vec_removed.properties.translation))) { 
     var the_index = polyanno_extracting_merged_anno("translation", polyanno_merging_translation, vec_removed.properties.translation);
@@ -2761,13 +2757,13 @@ var polyanno_remove_merge_annos = function(vec_removed_layer) {
 
 ///////
 var polyanno_setting_selecting_vector = function() {
-  var this_layer = allDrawnItems.getLayer(vectorSelected);
+  var this_layer = allDrawnItems.getLayer(Polyanno.selected.vector.id);
   var this_shape = this_layer.toGeoJSON();
-  var this_parent = selectingVector.parent_vector._leaflet_id;
+  var this_parent = Polyanno.selected.connectingEquals.parent_vector._leaflet_id;
   polyanno_new_vector_made(this_layer, this_shape, this_parent);
 };
 var polyanno_reset_selecting_vector = function() {
-  var this_layer = allDrawnItems.getLayer(vectorSelected);
+  var this_layer = allDrawnItems.getLayer(Polyanno.selected.vector.id);
   allDrawnItems.removeLayer(this_layer);
 };
 
@@ -2852,13 +2848,13 @@ var polyanno_open_existing_text_transcription_menu = function() {
   ///not sure entirely about synchronicity of this but meh
   polyanno_reset_global_variables();
 
-  polyanno_text_selectedID = startParentID;
+  Polyanno.selected.transcription.DOMid = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
-    polyanno_text_selectedParent = Polyanno.urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
-    alert("so now the text selected parent is "+polyanno_text_selectedParent);
+    Polyanno.selected.transcription.parent = Polyanno.urls.transcription + $(outerElementTextIDstring).parent().attr('id'); 
+    alert("so now the text selected parent is "+Polyanno.selected.transcription.parent);
   };
-  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
-  checkEditorsOpen("text", "transcription");
+  Polyanno.selected.transcription.URI = Polyanno.selected.transcription.parent.concat("#"+Polyanno.selected.transcription.DOMid);
+  Polyanno.editors.ifOpen("text", "transcription");
   $(outerElementTextIDstring).popover('hide'); ////
 };
 
@@ -2870,12 +2866,12 @@ var polyanno_open_existing_text_translation_menu = function() {
   var selection = getSelected(); 
   var classCheck = selection.anchorNode.parentElement.className;
 
-  polyanno_text_selectedID = startParentID;
+  Polyanno.selected.transcription.DOMid = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
-    polyanno_text_selectedParent = Polyanno.urls.translation + $(outerElementTextIDstring).parent().attr('id'); 
+    Polyanno.selected.transcription.parent = Polyanno.urls.translation + $(outerElementTextIDstring).parent().attr('id'); 
   };
-  polyanno_text_selectedHash = polyanno_text_selectedParent.concat("#"+polyanno_text_selectedID);
-  checkEditorsOpen("text", "translation");
+  Polyanno.selected.transcription.URI = Polyanno.selected.transcription.parent.concat("#"+Polyanno.selected.transcription.DOMid);
+  Polyanno.editors.ifOpen("text", "translation");
   $(outerElementTextIDstring).popover('hide'); ////
 };
 
@@ -2989,8 +2985,8 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
   if (!isUseless(shape.properties)&&(!isUseless(shape.properties.OCD))) {  annoData.OCD = shape.properties.OCD;  };
 
-  if (selectingVector != false) { 
-    var theTopText = findHighestRankingChild(selectingVector.parent_anno, polyanno_text_selectedID);
+  if (Polyanno.selected.connectingEquals.status) { 
+    var theTopText = findHighestRankingChild(Polyanno.selected.connectingEquals.parent_anno, Polyanno.selected.transcription.DOMid);
     annoData[polyanno_text_type_selected] = theTopText;  
   }
   else if (fromMerge){
@@ -3022,12 +3018,12 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
       function (data) {
         //setting global variables
         layer._leaflet_id = data.url;
-        Polyanno.selected.vector = layer._leaflet_id;
+        Polyanno.selected.vector.id = layer._leaflet_id;
         targetType = "vector";
-        targetSelected = [vectorSelected];
+        Polyanno.selected.targets = [Polyanno.selected.vector.id];
         polyanno_add_annotationdata(data.vector, false, false, [false], [data.url], [false], [false]);
 
-        if (selectingVector == false) { layer.bindPopup(popupVectorMenu).openPopup(); }
+        if (!Polyanno.selected.connectingEquals.status) { layer.bindPopup(popupVectorMenu).openPopup(); }
         else {  updateVectorSelection(data); };
 
         if (!isUseless(callback_function)) {  callback_function(data.url);  };
@@ -3040,12 +3036,12 @@ var polyanno_linking_annos_to_vector_checks = function(layer) {
   var shape = layer.toGeoJSON();
   var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, false); //don't complete children array, do complete parent array
   allDrawnItems.addLayer(layer);
-  if ((checkingOverlapping[0] == 2) && (checkingOverlapping[1].includes(selectingVector.parent_vector))) {  ///inside the correct vector
-    layer.bindPopup(popupSelectingVectorHTML).openPopup();
+  if ((checkingOverlapping[0] == 2) && (checkingOverlapping[1].includes(Polyanno.selected.connectingEquals.parent_vector))) {  ///inside the correct vector
+    layer.bindPopup(popupConnectingEqualsHTML).openPopup();
   }
   else { 
     alert("Please draw inside the correct larger shape!");
-    polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+    polyanno_map.fitBounds(Polyanno.selected.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
   };
 };
 
@@ -3056,7 +3052,7 @@ var polyanno_creating_vec = function() {
 
     var layer = evt.layer;
 
-    if ( selectingVector != false )   {      ///drawing a new vector for a smaller text fragment
+    if (Polyanno.selected.connectingEquals.status)   {      ///drawing a new vector for a smaller text fragment
       polyanno_linking_annos_to_vector_checks(layer);
     }
     else {
@@ -3071,10 +3067,10 @@ var polyanno_creating_vec = function() {
         alert("You cannot draw overlapping shapes.");
         allDrawnItems.removeLayer(layer);
       }
-      ///////inside another shape but not whilst selectingVector
+      ///////inside another shape but not whilst Polyanno.selected.connectingEquals
       else if (checkingOverlapping[0] == 2)  {   
         allDrawnItems.removeLayer(layer);
-        Polyanno.selected.vector = checkingOverlapping[1][0];
+        Polyanno.selected.vector.id = checkingOverlapping[1][0];
         alert("Highlight the text first and then draw a smaller shape for it.");
         //open the relevant parent editor and make it glow??
       }
@@ -3100,7 +3096,7 @@ var polyanno_vec_select = function() {
 
   polyanno_map.on('draw:deletestart', function(){
 
-    currentlyDeleting = true;
+    Polyanno.selected.currentlyDeleting = true;
     ///check if vector has any annotations
     ///if it does then prevent deleting and alert that it has annotations and admin privileges needed to do that
     var theURL = Polyanno.urls.annotation +"/target/" + vector_url;
@@ -3122,53 +3118,53 @@ var polyanno_vec_select = function() {
     });
   });
   polyanno_map.on('draw:deletestop', function(){
-    currentlyDeleting = false;
+    Polyanno.selected.currentlyDeleting = false;
   });
   polyanno_map.on('draw:editstart', function(){
-    currentlyEditing = true;
+    Polyanno.selected.currentlyEditing = true;
   });
   polyanno_map.on('draw:editstop', function(){
-    currentlyEditing = false;
+    Polyanno.selected.currentlyEditing = false;
   });
 
   allDrawnItems.on('click', function(vec) {
 
-    Polyanno.selected.vector = vec.layer._leaflet_id;
+    Polyanno.selected.vector.id = vec.layer._leaflet_id;
     if((!isUseless(vec.layer.properties)) && (!isUseless(vec.layer.properties.parent))){
-      vectorSelectedParent = vec.layer.properties.parent;
+      Polyanno.selected.vector.parent = vec.layer.properties.parent;
     };
 
-    if (currentlyEditing || currentlyDeleting) {}
-    else if (selectingVector != false) {  
+    if (Polyanno.selected.currentlyEditing || Polyanno.selected.currentlyDeleting) {}
+    else if (Polyanno.selected.connectingEquals.status) {  
       vec.layer.closePopup();
       alert("Draw a new shape around the text on the image!");
-      polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+      polyanno_map.fitBounds(Polyanno.selected.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
       $(".leaflet-draw-toolbar-top").effect("highlight");
     }
     else if (polyanno_merging_vectors) {
       ///need to introduce parents checks??
       vec.layer.closePopup();
-      if (polyanno_merging_array.includes(vec.layer)) {
+      if (Polyanno.selected.buildingParents.vectors.includes(vec.layer)) {
         //unclick and remove this vector
-        var the_index = polyanno_merging_array.indexOf(vec.layer);
-        polyanno_remove_merge_number(vec.layer, polyanno_merging_array, the_index);
-        polyanno_merging_array.splice(the_index, 1);
+        var the_index = Polyanno.selected.buildingParents.vectors.indexOf(vec.layer);
+        polyanno_remove_merge_number(vec.layer, Polyanno.selected.buildingParents.vectors, the_index);
+        Polyanno.selected.buildingParents.vectors.splice(the_index, 1);
         polyanno_remove_merge_annos(vec.layer);
         polyanno_remove_merge_shape(vec.layer, polyanno_temp_merge_shape);
       }
       else if (polyanno_temp_merge_shape != false) {
         //click and merge this vector
-        polyanno_merging_array.push(vec.layer);
+        Polyanno.selected.buildingParents.vectors.push(vec.layer);
         polyanno_add_merge_annos(vec.layer);
-        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, polyanno_merging_array);
-        polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
+        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, Polyanno.selected.buildingParents.vectors);
+        polyanno_add_merge_numbers(vec.layer, Polyanno.selected.buildingParents.vectors);
       }
       else {
         //click and start the new merge shape
-        polyanno_merging_array.push(vec.layer);
+        Polyanno.selected.buildingParents.vectors.push(vec.layer);
         polyanno_add_merge_annos(vec.layer);
         polyanno_add_first_merge_shape(vec.layer);
-        polyanno_add_merge_numbers(vec.layer, polyanno_merging_array);
+        polyanno_add_merge_numbers(vec.layer, Polyanno.selected.buildingParents.vectors);
       };
     }
     else {  vec.layer.openPopup();  };
@@ -3182,7 +3178,7 @@ var polyanno_vector_edit_setup = function() {
   allDrawnItems.on('edit', function(vec){
     var shape = vec.layer.toGeoJSON();
     /////
-    updateAnno(vectorSelected, shape); ////////////
+    updateAnno(Polyanno.selected.vector.id, shape); ////////////
     /////
   });
 };
@@ -3270,13 +3266,13 @@ var polyanno_leaflet_merge_toolbar_setup = function() {
 };
 
 var polyanno_closing_merging = function() {
-  for (var i=0; i < polyanno_merging_array.length; i++) {
-    polyanno_merging_array[i].unbindTooltip();
+  for (var i=0; i < Polyanno.selected.buildingParents.vectors.length; i++) {
+    Polyanno.selected.buildingParents.vectors[i].unbindTooltip();
   };
   polyanno_temp_merge_shape = false;
-  polyanno_merging_transcription = [];
+  Polyanno.selected.buildingParents.transcriptions = [];
   polyanno_merging_translation = [];
-  polyanno_merging_array = [];
+  Polyanno.selected.buildingParents.vectors = [];
   $(".leaflet-draw-toolbar-top").css("color", "#333");
   $(".annoPopup").css("opacity", 1.0);
   $(".polyanno-merging-buttons").toggle("swing");
@@ -3292,7 +3288,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
   $("#polyanno-merge-shapes-enable").on("click", function(event){
       polyanno_merging_vectors = true;
       ///add class "active" to button to stay pressed??
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_transcription_HTML, "polyanno-page-body", true, null, true);
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.selected.buildingParents.transcriptions_HTML, "polyanno-page-body", true, null, true);
       var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true, null, true);
       ///need to set highlighted display??
       $(".polyanno-merging-buttons").toggle("swing");
@@ -3303,12 +3299,12 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
 
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
-    if (polyanno_merging_array.length > 1) {
+    if (Polyanno.selected.buildingParents.vectors.length > 1) {
       var layer = polyanno_submit_merge_shape();
       var shape = layer.toGeoJSON(); 
       var the_children_array;
-      for (var i=0; i < polyanno_merging_array; i++) {
-        var this_json = polyanno_merging_array[i].toGeoJSON();
+      for (var i=0; i < Polyanno.selected.buildingParents.vectors; i++) {
+        var this_json = Polyanno.selected.buildingParents.vectors[i].toGeoJSON();
         the_children_array.push(this_json);
       };
       polyanno_new_vector_made(layer, shape, false, the_children_array, polyanno_posted_merge_shape, true); //layer, shape, parent, children, callback, fromMerge
@@ -3359,13 +3355,13 @@ var polyanno_setup_highlighting = function() {
       findAndHighlight("editor", thisEditor, Polyanno.colours.default);
       var thisSpan = $(event.target).attr("id");
       $("#"+thisSpan).css("background-color", Polyanno.colours.highlight.span);
-      findAndHighlight("tSelectedID", thisSpan, Polyanno.colours.highlight);
+      findAndHighlight("transcription.DOMid", thisSpan, Polyanno.colours.highlight);
     });
 
     $(thisEditor).on("mouseleave", ".opentranscriptionChildrenPopup", function(event){
       var thisSpan = $(event.target).attr("id");
       $("#"+thisSpan).css("background-color", Polyanno.colours.default.span);
-      findAndHighlight("tSelectedID", thisSpan, Polyanno.colours.default);
+      findAndHighlight("transcription.DOMid", thisSpan, Polyanno.colours.default);
     });  
 
   });
@@ -3378,11 +3374,11 @@ var polyanno_setup_highlighting = function() {
 
   allDrawnItems.on('mouseover', function(vec) {
     vec.layer.setStyle({color: Polyanno.colours.highlight.vector});
-    findAndHighlight("vSelected", vec.layer._leaflet_id, Polyanno.colours.highlight);
+    findAndHighlight("vector", vec.layer._leaflet_id, Polyanno.colours.highlight);
   });
   allDrawnItems.on('mouseout', function(vec) {
     vec.layer.setStyle({color: Polyanno.colours.default.vector});
-    findAndHighlight("vSelected", vec.layer._leaflet_id, Polyanno.colours.default);
+    findAndHighlight("vector", vec.layer._leaflet_id, Polyanno.colours.default);
   });
 
 };
@@ -3481,12 +3477,13 @@ var polyanno_setup_editor_events = function() {
     settingEditorVars(thisEditor);
     var parent_vector_id = checkForVectorTarget(parent_anno);
     var the_parent_vector = allDrawnItems.getLayer(parent_vector_id);
-    selectingVector = {
-      siblings: polyanno_siblingArray,
-      parent_anno : polyanno_siblingArray[0].parent,
+    Polyanno.selected.connectingEquals = {
+      status: true,
+      siblings: Polyanno.selected.transcriptions,
+      parent_anno : Polyanno.selected.transcriptions[0].parent,
       parent_vector : the_parent_vector
     };
-    polyanno_map.fitBounds(selectingVector.parent_vector.toGeoJSON().geometry.coordinates[0]);
+    polyanno_map.fitBounds(Polyanno.selected.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
     highlightVectorChosen(parent_vector_id, "yellow");
     var highlight_drawing_tools = $(".leaflet-draw-toolbar-top").effect("highlight");
     $("#"+thisEditor).transfer({
