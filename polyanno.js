@@ -601,31 +601,31 @@ Object.defineProperty(Polyanno.annotation.prototype, "target", {
 
 //plural
 
-Polyanno.annotations.add = function(anno) {
+Polyanno.annotations.prototype.add = function(anno) {
   var oldArr = Polyanno.annotations;
   oldArr.push(anno);
   Polyanno.annotations = oldArr;
 };
 
-Polyanno.annotations.replaceOne = function(anno) {
+Polyanno.annotations.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
-Polyanno.annotations.getById = function(the_id) {
+Polyanno.annotations.prototype.getById = function(the_id) {
   return findByID(this, the_id)[0];
 };
 
-Polyanno.annotations.deleteAll = function() {
+Polyanno.annotations.prototype.deleteAll = function() {
   Polyanno.annotations = [];
 };
 
-Polyanno.annotations.getAll = function() {
+Polyanno.annotations.prototype.getAll = function() {
   return Polyanno.annotations;
 };
 
-Polyanno.annotations.getByTarget = function(target, type) {
+Polyanno.annotations.prototype.getByTarget = function(target, type) {
   var search = function(targets, aim) {
     var a = $.grep(targets, function(t){
       return t.id = aim;
@@ -640,36 +640,38 @@ Polyanno.annotations.getByTarget = function(target, type) {
     return search(anno.target, target);
   });
 
-  arr = switch (type) {
-    default: 
-      return arr;
-    case "vectors"
-      return types(arr, "vectors");
-    case "transcriptions"
-      return types(arr, "transcriptions");
-    case "translations"
-      return types(arr, "translations");   
+  var type_arr = function(the_type) {
+    switch (the_type) {
+      default: 
+        return arr;
+      case "vectors":
+        return types(arr, "vectors");
+      case "transcriptions":
+        return types(arr, "transcriptions");
+      case "translations":
+        return types(arr, "translations");   
+    }
   };
-  return arr;
+  return type_arr(type);
 };
 
 //singular
 
-Polyanno.annotation.update = function(opts) {
+Polyanno.annotation.prototype.update = function(opts) {
   for (var property in opts) {
     this[property] = opts[property];
   };
   Polyanno.annotations.replaceOne(this);
 };
 
-Polyanno.annotation.delete = function() {
+Polyanno.annotation.prototype.delete = function() {
   var the_item = findByID(Polyanno.annotations, this.id)[0];
   Polyanno.annotations.splice(Polyanno.annotations.indexOf(the_item), 1);
 };
 
 ////Events Setting Methods
 
-Polyanno.annotations.onadd = function(func) {
+Polyanno.annotations.prototype.onadd = function(func) {
   var oldFunc = this.add;
   this.add = function(anno) {
     oldFunc.call(this, anno); 
@@ -677,7 +679,7 @@ Polyanno.annotations.onadd = function(func) {
   };
 };
 
-Polyanno.annotation.onupdated = function(func) {
+Polyanno.annotation.prototype.onupdated = function(func) {
   var oldFunc = this.update;
   this.update = function(opts) {
     oldFunc.call(this, opts); 
@@ -685,7 +687,7 @@ Polyanno.annotation.onupdated = function(func) {
   };
 };
 
-Polyanno.annotation.ondeleted = function(func) {
+Polyanno.annotation.prototype.ondeleted = function(func) {
   var oldFunc = this.delete;
   this.delete = function() {
     oldFunc.call(this); 
@@ -779,7 +781,7 @@ Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
 
 ////Events Setting Methods
 
-Polyanno.baseAnnotationObject.onupdated = function(func) {
+Polyanno.baseAnnotationObject.prototype.onupdated = function(func) {
   var oldFunc = this.update;
   this.update = function(opts) {
     oldFunc.call(this, opts); 
@@ -787,7 +789,7 @@ Polyanno.baseAnnotationObject.onupdated = function(func) {
   };
 };
 
-Polyanno.baseAnnotationObject.ondeleted = function(func) {
+Polyanno.baseAnnotationObject.prototype.ondeleted = function(func) {
   var oldFunc = this.delete;
   this.delete = function() {
     oldFunc.call(this); 
@@ -914,40 +916,40 @@ Object.defineProperty(Polyanno.transcription.prototype, "voting.down", {
 
 //plural
 
-Polyanno.transcriptions.add = function(anno) {
+Polyanno.transcriptions.prototype.add = function(anno) {
   var oldArr = Polyanno.transcriptions;
   oldArr.push(anno);
   Polyanno.transcriptions = oldArr;
 };
 
-Polyanno.transcriptions.replaceOne = function(anno) {
+Polyanno.transcriptions.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
-Polyanno.transcriptions.getById = function(the_id) {
+Polyanno.transcriptions.prototype.getById = function(the_id) {
   return findByID(this, the_id)[0];
 };
 
-Polyanno.transcriptions.deleteAll = function() {
+Polyanno.transcriptions.prototype.deleteAll = function() {
   Polyanno.transcriptions = [];
 };
 
-Polyanno.transcriptions.getAll = function() {
+Polyanno.transcriptions.prototype.getAll = function() {
   return Polyanno.transcriptions;
 };
 
 //singular
 
-Polyanno.transcription.update = function(opts) {
+Polyanno.transcription.prototype.update = function(opts) {
   for (var property in opts) {
     this[property] = opts[property];
   };
   Polyanno.transcriptions.replaceOne(this);
 };
 
-Polyanno.transcription.delete = function() {
+Polyanno.transcription.prototype.delete = function() {
   var the_item = findByID(Polyanno.transcriptions, this.id)[0];
   Polyanno.transcriptions.splice(Polyanno.transcriptions.indexOf(the_item), 1);
 };
@@ -1017,40 +1019,40 @@ Object.defineProperty(Polyanno.vector, "layer", {
 
 //plural
 
-Polyanno.vectors.add = function(anno) {
+Polyanno.vectors.prototype.add = function(anno) {
   var oldArr = Polyanno.vectors;
   oldArr.push(anno);
   Polyanno.vectors = oldArr;
 };
 
-Polyanno.vectors.replaceOne = function(anno) {
+Polyanno.vectors.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
-Polyanno.vectors.getById = function(the_id) {
+Polyanno.vectors.prototype.getById = function(the_id) {
   return findByID(this, the_id)[0];
 };
 
-Polyanno.vectors.deleteAll = function() {
+Polyanno.vectors.prototype.deleteAll = function() {
   Polyanno.vectors = [];
 };
 
-Polyanno.vectors.getAll = function() {
+Polyanno.vectors.prototype.getAll = function() {
   return Polyanno.vectors;
 };
 
 //singular
 
-Polyanno.vector.update = function(opts) {
+Polyanno.vector.prototype.update = function(opts) {
   for (var property in opts) {
     this[property] = opts[property];
   };
   Polyanno.vectors.replaceOne(this);
 };
 
-Polyanno.vector.delete = function() {
+Polyanno.vector.prototype.delete = function() {
   var the_item = findByID(Polyanno.vectors, this.id)[0];
   Polyanno.vectors.splice(Polyanno.vectors.indexOf(the_item), 1);
 };
@@ -1066,7 +1068,7 @@ Polyanno.vector.delete = function() {
 
 ///////////////////Selected
 
-Polyanno.selected = {
+Polyanno.prototype.selected = {
   vectors: [],
   transcriptions: [],
   translations: [],
@@ -1125,7 +1127,7 @@ Object.defineProperty(Polyanno.selected, "translations", {
 
 //singular
 
-PSelectedObject.update = function(opts) {
+PSelectedObject.prototype.update = function(opts) {
   for (var property in opts) {
     this[property] = opts[property];
   };
@@ -1134,49 +1136,49 @@ PSelectedObject.update = function(opts) {
 
 //plural
 
-Polyanno.selected.vector.ids.add = function(anno) {
-  var oldArr = Polyanno.selected.vector.ids;
+Polyanno.selected.vectors.prototype.add = function(anno) {
+  var oldArr = Polyanno.selected.vector;
   oldArr.push(anno);
-  Polyanno.selected.vector.ids = oldArr;
+  Polyanno.selected.vectors = oldArr;
 };
 
-Polyanno.selected.transcriptions.add = function(anno) {
+Polyanno.selected.transcriptions.prototype.add = function(anno) {
   var oldArr = Polyanno.selected.transcriptions;
   oldArr.push(anno);
   Polyanno.selected.transcriptions = oldArr;
 };
 
-Polyanno.selected.translations.add = function(anno) {
+Polyanno.selected.translations.prototype.add = function(anno) {
   var oldArr = Polyanno.selected.translations;
   oldArr.push(anno);
   Polyanno.selected.translations = oldArr;
 };
 
 
-Polyanno.selected.vector.ids.replaceOne = function(anno) {
+Polyanno.selected.vectors.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
-Polyanno.selected.transcriptions.replaceOne = function(anno) {
+Polyanno.selected.transcriptions.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
-Polyanno.selected.translations.replaceOne = function(anno) {
+Polyanno.selected.translations.prototype.replaceOne = function(anno) {
   var oldArr = this;
   var newArr = arraySearchReplace(oldArr, anno);
   this = newArr;
 };
 
 
-Polyanno.selected.getAll = function() {
+Polyanno.selected.prototype.getAll = function() {
   return Polyanno.selected;
 };
 
-Polyanno.selected.reset = function () {
+Polyanno.selected.prototype.reset = function () {
   Polyanno.selected.vector.ids = [];
   Polyanno.selected.transcriptions = [];
   Polyanno.selected.translations = [];
@@ -1184,7 +1186,7 @@ Polyanno.selected.reset = function () {
   polyanno_text_type_selected = false; ///temporary
 };
 
-Polyanno.selected.setSelected = function (docs) {
+Polyanno.selected.prototype.setSelected = function (docs) {
   Polyanno.selected.reset();
   for (var property in docs) {
     Polyanno.selected[property] = docs[property];
@@ -1223,7 +1225,7 @@ Polyanno.selected.buildingParents = {
 
 ///////////////////Editors
 
-Polyanno.editor = function(opts) {
+Polyanno.prototype.editor = function(opts) {
   this.id = opts.id;
   this.docs = [];
   /////canlink
@@ -1249,22 +1251,22 @@ Object.defineProperty(Polyanno, "editors", {
 
 /////Methods
 
-Polyanno.editors.add = function(editor) {
+Polyanno.editors.prototype.add = function(editor) {
   var oldArr = Polyanno.editors;
   oldArr.push(editor);
   Polyanno.editors = oldArr;
 };
 
-Polyanno.editors.removeEditor = function(id) {
+Polyanno.editors.prototype.removeEditor = function(id) {
   var this_editor = findByID(Polyanno.editors, id)[0];
   Polyanno.editors.splice(Polyanno.editors.indexOf(this_editor), 1);
 };
 
-Polyanno.editors.removeAll = function() {
+Polyanno.editors.prototype.removeAll = function() {
   Polyanno.editors = [];
 };
 
-Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
+Polyanno.editors.prototype.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
   if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
   var the_editor_gone = dragondrop_remove_pop(thisEditor);
   if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
@@ -1279,18 +1281,18 @@ Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_
   }
 };
 
-Polyanno.editors.closeAll = function() {
+Polyanno.editors.prototype.closeAll = function() {
   for (item in Polyanno.editors) {
     Polyanno.editors.closeEditor(item, false);
   };
 };
 
-Polyanno.editors.openEditor = function() {
+Polyanno.editors.prototype.openEditor = function() {
 
 };
 
 
-Polyanno.editors.ifOpen = function(fromType, textType) {
+Polyanno.editors.prototype.ifOpen = function(fromType, textType) {
   polyanno_text_type_selected = textType;
   if (isUseless(Polyanno.editors[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
   else {
@@ -1642,7 +1644,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
 
 };
 
-var setPolyanno.selected.transcription.DOMid = function(theText) {
+Polyanno.selected.setDOMid  = function(theText) {
 
   var findByBodyURL = Polyanno.urls.annotation + "body/"+encodeURIComponent(theText);
   var the_regex = '/.*'+findBaseURL()+'.*/';
@@ -2086,7 +2088,7 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
       
       if (does_text_have_parent != false) {
         Polyanno.selected.transcription.parent = does_text_have_parent;
-        var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
+        var theHashHere = Polyanno.selected.setDOMid(does_vector_have_text);
         targetType = "vector " + polyanno_text_type_selected;
         return Polyanno.selected.targets = [theHashHere, Polyanno.selected.vector.id];
       }
@@ -2138,14 +2140,14 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
    if ((does_text_have_parent != false) && (does_have_vector_target != false)) {
 
       Polyanno.selected.transcription.parent = does_text_have_parent;
-      var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
+      var theHashHere = Polyanno.selected.setDOMid(does_vector_have_text);
 
       targetType = "vector " + polyanno_text_type_selected;
       return Polyanno.selected.targets = [theHashHere, does_have_vector_target];
     }
     else if ((does_text_have_parent != false) && (does_have_vector_target == false)) {
       Polyanno.selected.transcription.parent = does_text_have_parent;
-      var theHashHere = setPolyanno.selected.transcription.DOMid(does_vector_have_text);
+      var theHashHere = Polyanno.selected.setDOMid(does_vector_have_text);
       targetType = polyanno_text_type_selected;
       return Polyanno.selected.targets = [theHashHere];
     }
