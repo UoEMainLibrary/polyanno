@@ -117,12 +117,12 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
-var Polyanno.selected.buildingParents.transcriptions_HTML = `
+var Polyanno.HTML.buildingParentsTranscriptions = `
                                     <div class="row">
                                       <h2>The New Transcription:</h2>
                                     </div>
                                     <div id="polyanno_merging_transcription" class="row"></div>`;
-var polyanno_merging_translation_HTML = `
+var Polyanno.HTML.buildingParentsTranslations = `
                                     <div class="row">
                                       <h2>The New Translation:</h2>
                                     </div>
@@ -1132,6 +1132,7 @@ Polyanno.selected.reset = function () {
   Polyanno.selected.transcriptions = [];
   Polyanno.selected.translations = [];
   Polyanno.selected.targets = [];
+  polyanno_text_type_selected = false; ///temporary
 };
 
 Polyanno.selected.setSelected = function (docs) {
@@ -1165,17 +1166,15 @@ Polyanno.selected.buildingParents = {
   transcriptions: [],
   translations: [],
   parent: {
-    //vector
+    vector : false ///Leaflet layer not just GeoJSON
     //transcription
     //translation
   }
 };
 
 //merging variables
-var polyanno_merging_vectors = false;
-var polyanno_temp_merge_shape = false; ///Leaflet layer not just GeoJSON
 
-var polyanno_merging_translation = []; ///equal to the children array of parent anno
+var Polyanno.selected.buildingParents.translations = []; ///equal to the children array of parent anno
 
 
 
@@ -1223,12 +1222,25 @@ Polyanno.editors.removeAll = function() {
   Polyanno.editors = [];
 };
 
-Polyanno.editors.closeEditor = function() {
-
+Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
+  if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
+  var the_editor_gone = dragondrop_remove_pop(thisEditor);
+  if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
+    Polyanno.selected.transcription.id = reopen;
+    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
+    return the_editor_gone;
+  }
+  else {
+    resetVectorHighlight(thisEditor);
+    Polyanno.editors.removeEditor(thisEditor);
+    return the_editor_gone;
+  }
 };
 
 Polyanno.editors.closeAll = function() {
-
+  for (item in Polyanno.editors) {
+    Polyanno.editors.closeEditor(item, false);
+  };
 };
 
 Polyanno.editors.openEditor = function() {
@@ -1358,7 +1370,7 @@ var updateVectorSelection = function(the_vector_url) {
 var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID) {
   if (updatedTranscription) {    
     Polyanno.selected.transcription.id = targetID;
-    closeEditorMenu(editorID, targetID);  
+    Polyanno.editors.closeEditor(editorID, targetID);  
   };
   if (updatedTranscription && (!isUseless(Polyanno.selected.vector.id))) {
     var updateTargetData = {};
@@ -1370,7 +1382,7 @@ var polyanno_voting_reload_editors = function(updatedTranscription, editorID, ta
   Polyanno.editors.forEach(function(editorOpen){
     editorOpen.children.forEach(function(eachChild){
       if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
-        closeEditorMenu(editorOpen.editor, editorOpen.body.id);
+        Polyanno.editors.closeEditor(editorOpen.editor, editorOpen.body.id);
       };
     });
   });
@@ -1498,7 +1510,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
             {id: merged_vector,  format: "image/SVG"  },
             {id: imageSelected,  format: "application/json"  } ]
   };
-  var translation_data = {text: linked_translations, children: polyanno_merging_translation, metadata: imageSelectedMetadata,
+  var translation_data = {text: linked_translations, children: Polyanno.selected.buildingParents.translations, metadata: imageSelectedMetadata,
     target: [
             {id: merged_vector,  format: "image/SVG"  },
             {id: imageSelected,  format: "application/json"  } ]
@@ -1872,15 +1884,6 @@ var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
 
 };
 
-var polyanno_reset_global_variables = function() {
-  Polyanno.selected.vector.id = false;
-  Polyanno.selected.transcription.parent = false;
-  Polyanno.selected.transcription.DOMid = false;
-  Polyanno.selected.transcription.URI = false;
-  polyanno_text_type_selected = false;
-  Polyanno.selected.transcriptions = [];
-};
-
 var polyanno_populate_tags = function(theAnno, popupIDstring) {
   var tagHTML1 = "<a class='polyanno-tag' >";
   var tagHTML2 = "</a>";
@@ -1929,21 +1932,6 @@ var checkingItself = function(searchField, searchFieldValue, theType) {
   else {  return fieldMatching(Polyanno.editors, searchField, searchFieldValue)[theType] };
 };
 
-var closeEditorMenu = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
-  if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
-  var the_editor_gone = dragondrop_remove_pop(thisEditor);
-  if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
-    Polyanno.selected.transcription.id = reopen;
-    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
-    return the_editor_gone;
-  }
-  else {
-    resetVectorHighlight(thisEditor);
-    Polyanno.editors.removeEditor(thisEditor);
-    return the_editor_gone;
-  }
-};
-
 var preBtnClosing = function(thisEditor) {
   resetVectorHighlight(thisEditor);
   Polyanno.editors.removeEditor(thisEditor);
@@ -1984,7 +1972,7 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
 
   };
   
-  if (!isUseless(thisEditor)) {  closeEditorMenu(thisEditor, false, this_text, this_vec, this_parent, text_siblings);  };
+  if (!isUseless(thisEditor)) {  Polyanno.editors.closeEditor(thisEditor, false, this_text, this_vec, this_parent, text_siblings);  };
 
   if (!isUseless(callback)) { callback(); };
 
@@ -2019,7 +2007,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
     success: 
       function (data) {
 
-        closeEditorMenu(thisEditor);
+        Polyanno.editors.closeEditor(thisEditor);
         polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);
       }
   });
@@ -2565,7 +2553,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
     tempGeoJSON.properties.OCD = concavity_check;
   };
   tempGeoJSON.properties.transcription = Polyanno.selected.buildingParents.transcriptions;
-  tempGeoJSON.properties.translation = polyanno_merging_translation;
+  tempGeoJSON.properties.translation = Polyanno.selected.buildingParents.translations;
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
   tempGeoJSON.properties.children.push(new_vec_layer._leaflet_id);
 
@@ -2576,7 +2564,7 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
           onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
             layer.bringToBack(),
-            polyanno_temp_merge_shape = layer
+            Polyanno.selected.buildingParents.parent.vector = layer
           }
         }).addTo(polyanno_map);
   temp_merge_shape.bringToBack();
@@ -2590,7 +2578,7 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
     "properties":{   
       "children": [shape_to_copy._leaflet_id],
       "transcription": Polyanno.selected.buildingParents.transcriptions,
-      "translation": polyanno_merging_translation    
+      "translation": Polyanno.selected.buildingParents.translations    
     },  
     "geometry":{"type": "Polygon", "coordinates": shapeGeoJSON.geometry.coordinates}  
   };
@@ -2603,14 +2591,14 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
           onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
             layer.bringToBack(),
-            polyanno_temp_merge_shape = layer
+            Polyanno.selected.buildingParents.parent.vector = layer
           }
         }).addTo(polyanno_map);
   temp_merge_shape.bringToBack();
 };
 
 var polyanno_submit_merge_shape = function() {
-  var thisJSON = polyanno_temp_merge_shape.toGeoJSON();
+  var thisJSON = Polyanno.selected.buildingParents.parent.vector.toGeoJSON();
   var submitted_layer_id;
   L.geoJson(thisJSON, 
         { style: {color: Polyanno.colours.default.vector},
@@ -2620,7 +2608,7 @@ var polyanno_submit_merge_shape = function() {
             layer.bringToBack()
           }
         }).addTo(polyanno_map);
-  temp_merge_shape.removeLayer(polyanno_temp_merge_shape);  
+  temp_merge_shape.removeLayer(Polyanno.selected.buildingParents.parent.vector);  
   var submitted_layer = allDrawnItems.getLayer(submitted_layer_id);
   return submitted_layer;    
 };
@@ -2658,7 +2646,7 @@ var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
           onEachFeature: function (feature, layer) {
             temp_merge_shape.addLayer(layer),
             layer.bringToBack(),
-            polyanno_temp_merge_shape = layer
+            Polyanno.selected.buildingParents.parent.vector = layer
           }
         }).addTo(polyanno_map);
   temp_merge_shape.bringToBack();
@@ -2720,7 +2708,7 @@ var polyanno_add_merge_annos = function(new_vec) {
 
   if (!isUseless(new_vec.feature.properties.translation)) { 
     var new_frag = polyanno_load_merging_anno(new_vec.feature, "translation");
-    polyanno_merging_translation.push(new_frag);
+    Polyanno.selected.buildingParents.translations.push(new_frag);
   }
   else {
 
@@ -2750,8 +2738,8 @@ var polyanno_remove_merge_annos = function(vec_removed_layer) {
     Polyanno.selected.buildingParents.transcriptions.slice(the_index, 1);
   };
   if ((!isUseless(vec_removed.properties))&&(!isUseless(vec_removed.properties.translation))) { 
-    var the_index = polyanno_extracting_merged_anno("translation", polyanno_merging_translation, vec_removed.properties.translation);
-    polyanno_merging_translation.slice(the_index, 1);
+    var the_index = polyanno_extracting_merged_anno("translation", Polyanno.selected.buildingParents.translations, vec_removed.properties.translation);
+    Polyanno.selected.buildingParents.translations.slice(the_index, 1);
   };
 };
 
@@ -2846,7 +2834,7 @@ var polyanno_open_existing_text_transcription_menu = function() {
   var selection = getSelected(); 
 
   ///not sure entirely about synchronicity of this but meh
-  polyanno_reset_global_variables();
+  Polyanno.selected.reset();
 
   Polyanno.selected.transcription.DOMid = startParentID;
   if (  !isUseless($(outerElementTextIDstring).parent().attr('id')) ){
@@ -2861,7 +2849,7 @@ var polyanno_open_existing_text_transcription_menu = function() {
 var polyanno_open_existing_text_translation_menu = function() {
 
   ///not sure entirely about synchronicity of this but meh
-  polyanno_reset_global_variables();
+  Polyanno.selected.reset();
 
   var selection = getSelected(); 
   var classCheck = selection.anchorNode.parentElement.className;
@@ -2878,7 +2866,7 @@ var polyanno_open_existing_text_translation_menu = function() {
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
   ///not sure entirely about synchronicity of this but meh
-  polyanno_reset_global_variables();
+  Polyanno.selected.reset();
 
   var selection = getSelected(); 
   var classCheck;
@@ -2995,7 +2983,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
   }
   else {
     ///not sure entirely about synchronicity of this but meh
-    polyanno_reset_global_variables();
+    Polyanno.selected.reset();
   };
 
   var targetData = {target: [], body: {}};
@@ -3141,7 +3129,7 @@ var polyanno_vec_select = function() {
       polyanno_map.fitBounds(Polyanno.selected.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
       $(".leaflet-draw-toolbar-top").effect("highlight");
     }
-    else if (polyanno_merging_vectors) {
+    else if (Polyanno.selected.buildingParents.status) {
       ///need to introduce parents checks??
       vec.layer.closePopup();
       if (Polyanno.selected.buildingParents.vectors.includes(vec.layer)) {
@@ -3150,13 +3138,13 @@ var polyanno_vec_select = function() {
         polyanno_remove_merge_number(vec.layer, Polyanno.selected.buildingParents.vectors, the_index);
         Polyanno.selected.buildingParents.vectors.splice(the_index, 1);
         polyanno_remove_merge_annos(vec.layer);
-        polyanno_remove_merge_shape(vec.layer, polyanno_temp_merge_shape);
+        polyanno_remove_merge_shape(vec.layer, Polyanno.selected.buildingParents.parent.vector);
       }
-      else if (polyanno_temp_merge_shape != false) {
+      else if (Polyanno.selected.buildingParents.parent.vector != false) {
         //click and merge this vector
         Polyanno.selected.buildingParents.vectors.push(vec.layer);
         polyanno_add_merge_annos(vec.layer);
-        polyanno_update_merge_shape(polyanno_temp_merge_shape, vec.layer, Polyanno.selected.buildingParents.vectors);
+        polyanno_update_merge_shape(Polyanno.selected.buildingParents.parent.vector, vec.layer, Polyanno.selected.buildingParents.vectors);
         polyanno_add_merge_numbers(vec.layer, Polyanno.selected.buildingParents.vectors);
       }
       else {
@@ -3269,9 +3257,9 @@ var polyanno_closing_merging = function() {
   for (var i=0; i < Polyanno.selected.buildingParents.vectors.length; i++) {
     Polyanno.selected.buildingParents.vectors[i].unbindTooltip();
   };
-  polyanno_temp_merge_shape = false;
+  Polyanno.selected.buildingParents.parent.vector = false;
   Polyanno.selected.buildingParents.transcriptions = [];
-  polyanno_merging_translation = [];
+  Polyanno.selected.buildingParents.translations = [];
   Polyanno.selected.buildingParents.vectors = [];
   $(".leaflet-draw-toolbar-top").css("color", "#333");
   $(".annoPopup").css("opacity", 1.0);
@@ -3286,10 +3274,10 @@ var polyanno_closing_merging = function() {
 var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
-      polyanno_merging_vectors = true;
+      Polyanno.selected.buildingParents.status = true;
       ///add class "active" to button to stay pressed??
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.selected.buildingParents.transcriptions_HTML, "polyanno-page-body", true, null, true);
-      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", polyanno_merging_translation_HTML, "polyanno-page-body", true, null, true);
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParentsTranscriptions, "polyanno-page-body", true, null, true);
+      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParentsTranslations, "polyanno-page-body", true, null, true);
       ///need to set highlighted display??
       $(".polyanno-merging-buttons").toggle("swing");
       $(".leaflet-draw-toolbar-top").css("color", "yellow");
@@ -3310,7 +3298,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       polyanno_new_vector_made(layer, shape, false, the_children_array, polyanno_posted_merge_shape, true); //layer, shape, parent, children, callback, fromMerge
     }
     else {
-      temp_merge_shape.removeLayer(polyanno_temp_merge_shape);
+      temp_merge_shape.removeLayer(Polyanno.selected.buildingParents.parent.vector);
       polyanno_closing_merging();
     };
   }); 
