@@ -969,42 +969,88 @@ Polyanno.transcription.delete = function() {
 ///////////////////Vectors
 
 Polyanno.vector = function(value) {
-  ///create Leaflet Layer -- to update then specifically use the update method?
 
-  this.id = value.id;
+  Polyanno.baseAnnotationObject.call(this, opts);
 
-  var GeoJson = {
-    "type": "Feature",  
-    "properties":{},  
-    "geometry":{}
+  this.notFeature = {
+    notType: "Feature",
+    notGeometry: {
+      notType: "Polygon",
+      notCoordinates: []
+    },
+    notCrs: {
+      notType: "name",
+      notProperties: "L.CRS.Simple"
+    }
   };
-  GeoJSON.geometry = value.geometry;
-  GeoJSON.properties = value.properties;
+  this.OCD = opts.OCD;
+  this.parent = opts.parent;
+  this.transcription_fragment = opts.transcription_fragment;
+  this.translation_fragment = opts.translation_fragment;
 
-  this.layer = L.geoJson(GeoJSON, 
-    { style: {
-        color: Polyanno.colours.default.vector
-      },
-      onEachFeature: function (feature, layer) {
-        layer._leaflet_id = this.id, 
-        allDrawnItems.addLayer(layer),
-        layer.bindPopup(popupVectorMenu)
-      }
-    });
+  ////Coordinates
+  ATCarray = 0;
+  opts.geometry.coordinates[0].forEach(function(coordinatesPair){
+      this.notFeature.notGeometry.notCoordinates.push([]);
+      var coordsNumbers = [];
+      coordinatesPair.forEach(function(number){
+          converted = Number(number);
+          coordsNumbers.push(converted);
+      });
+      this.notFeature.notGeometry.notCoordinates[ATCarray] = coordsNumbers;
+      ATCarray += 1;      
+  });
 
-  this.layer.addTo(polyanno_map);
-
-  Polyanno.vectors.addTo()
+  Polyanno.vectors.add(this);
+  var anno = new Polyanno.annotation(opts);
 
 };
 
-Object.defineProperty(Polyanno, "vector", {
+Object.defineProperty(Polyanno.vector, "layer", {
   get: function() { return allDrawnItems.getLayer(this.id); }
-
 });
 
 /////Methods
 
+//plural
+
+Polyanno.vectors.add = function(anno) {
+  var oldArr = Polyanno.vectors;
+  oldArr.push(anno);
+  Polyanno.vectors = oldArr;
+};
+
+Polyanno.vectors.replaceOne = function(anno) {
+  var oldArr = this;
+  var newArr = arraySearchReplace(oldArr, anno);
+  this = newArr;
+};
+
+Polyanno.vectors.getById = function(the_id) {
+  return findByID(this, the_id)[0];
+};
+
+Polyanno.vectors.deleteAll = function() {
+  Polyanno.vectors = [];
+};
+
+Polyanno.vectors.getAll = function() {
+  return Polyanno.vectors;
+};
+
+//singular
+
+Polyanno.vector.update = function(opts) {
+  for (var property in opts) {
+    this[property] = opts[property];
+  };
+  Polyanno.vectors.replaceOne(this);
+};
+
+Polyanno.vector.delete = function() {
+  var the_item = findByID(Polyanno.vectors, this.id)[0];
+  Polyanno.vectors.splice(Polyanno.vectors.indexOf(the_item), 1);
+};
 
 
 ///////////////////Image
@@ -1316,6 +1362,16 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
 
+  var data = Polyanno.annotations.getByTarget(target, "vectors");
+
+    if (!isUseless(data[0])) {
+      polyanno_search_annos_by_ids(data, callback_function);
+    }
+    else if (!isUseless(callback_function)) {
+      callback_function();
+    };  
+
+/*
   $.ajax({
     type: "GET",
     dataType: "json",
@@ -1331,7 +1387,7 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
         };
       }
   });
-
+*/
 };
 
 var polyanno_search_annos_by_ids = function(list, callback_function) {
@@ -1391,20 +1447,16 @@ var polyanno_voting_reload_editors = function(updatedTranscription, editorID, ta
 
 
 var votingFunction = function(vote, votedID, currentTopText, editorID) {
-  var theVote = findBaseURL() + "voting/" + vote;
   var targetID = findBaseURL().concat(votedID); ///API URL of the annotation voted on
   var votedTextBody = $("#"+votedID).html(); 
   var targetData = {
     parent: Polyanno.selected.transcription.parent, ///it is this that is updated containing the votedText within its body
-    children: [{
-      id: Polyanno.selected.transcription.DOMid, //ID of span location
-      fragments: [{
-        id: targetID
-      }]
-    }],
-    votedText: votedTextBody,  topText: currentTopText
   };
-
+  targetData.voting[vote] = 1;
+  var thisText = Polyanno.transcriptions.getById(targetID);
+  thisText.updateOne(targetData);
+  
+/*
   $.ajax({
     type: "PUT",
     url: theVote,
@@ -1416,6 +1468,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
         polyanno_voting_reload_editors(data.reloadText, editorID, targetID);
       }
   });
+  */
 
 };
 
@@ -1999,6 +2052,12 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
     this_parent = Polyanno.selected.transcription.parent;
   };
 
+  new Polyanno.transcription(theData);
+
+  Polyanno.editors.closeEditor(thisEditor);
+  polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);  
+
+/*
   $.ajax({
     type: "POST",
     url: findBaseURL(),
@@ -2011,6 +2070,8 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
         polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);
       }
   });
+
+*/
 
 };
 
@@ -2997,6 +3058,22 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
       "format": "image/jpg" 
   });
 
+  var data = new Polyanno.vector(annoData);
+
+    layer._leaflet_id = data.id;
+    Polyanno.selected.vector.id = layer._leaflet_id;
+    targetType = "vector";
+    Polyanno.selected.targets = [Polyanno.selected.vector.id];
+    polyanno_add_annotationdata(data, false, false, [false], [data.url], [false], [false]);
+
+    if (!Polyanno.selected.connectingEquals.status) { layer.bindPopup(popupVectorMenu).openPopup(); }
+    else {  updateVectorSelection(data); };
+
+    if (!isUseless(callback_function)) {  callback_function(data.id);  };
+
+
+
+/*
   $.ajax({
     type: "POST",
     url: Polyanno.urls.vector,
@@ -3017,6 +3094,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
         if (!isUseless(callback_function)) {  callback_function(data.url);  };
       }
   });
+*/
 
 };
 
