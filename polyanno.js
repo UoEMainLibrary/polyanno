@@ -117,16 +117,6 @@ var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML
 
 var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
 
-var Polyanno.HTML.buildingParentsTranscriptions = `
-                                    <div class="row">
-                                      <h2>The New Transcription:</h2>
-                                    </div>
-                                    <div id="polyanno_merging_transcription" class="row"></div>`;
-var Polyanno.HTML.buildingParentsTranslations = `
-                                    <div class="row">
-                                      <h2>The New Translation:</h2>
-                                    </div>
-                                    <div id="polyanno_merging_translation" class="row"></div>`;
 
 var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
                         <button type='button' class='btn btn-default polyanno-standard-btn voteBtn polyannoVotingUpButton'>
@@ -476,6 +466,19 @@ Polyanno.colours = {
 /////Methods
 
 ///////////////////HTML
+
+Polyanno.HTML.buildingParentsTranscriptions = `
+                                    <div class="row">
+                                      <h2>The New Transcription:</h2>
+                                    </div>
+                                    <div id="polyanno_merging_transcription" class="row"></div>`;
+Polyanno.HTML.buildingParentsTranslations = `
+                                    <div class="row">
+                                      <h2>The New Translation:</h2>
+                                    </div>
+                                    <div id="polyanno_merging_translation" class="row"></div>`;
+
+
 
 
 /////Methods
@@ -1218,16 +1221,9 @@ Polyanno.selected.buildingParents = {
   }
 };
 
-//merging variables
-
-var Polyanno.selected.buildingParents.translations = []; ///equal to the children array of parent anno
-
-
-
-
 ///////////////////Editors
 
-var Polyanno.editor = function(opts) {
+Polyanno.editor = function(opts) {
   this.id = opts.id;
   this.docs = [];
   /////canlink
@@ -1294,7 +1290,7 @@ Polyanno.editors.openEditor = function() {
 };
 
 
-var Polyanno.editors.ifOpen = function(fromType, textType) {
+Polyanno.editors.ifOpen = function(fromType, textType) {
   polyanno_text_type_selected = textType;
   if (isUseless(Polyanno.editors[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
   else {
@@ -1455,7 +1451,7 @@ var votingFunction = function(vote, votedID, currentTopText, editorID) {
   targetData.voting[vote] = 1;
   var thisText = Polyanno.transcriptions.getById(targetID);
   thisText.updateOne(targetData);
-  
+
 /*
   $.ajax({
     type: "PUT",
