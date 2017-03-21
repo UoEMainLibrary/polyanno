@@ -291,7 +291,25 @@ var isUseless = function(something) {
 
 var getTargetJSON = function(target, callback_function) {
 
+  alert("searching for "+target);
+
   if ( isUseless(target) ) { return null;  }
+  else if (target.includes(Polyanno.urls.annotation)) {
+    return Polyanno.annotations.getById(target);
+  }
+  else if (target.includes(Polyanno.urls.vector)) {
+    return Polyanno.vectors.getById(target);
+  }
+  else if (target.includes(Polyanno.urls.transcription)) {
+    return Polyanno.transcriptions.getById(target);
+  }
+  else if (target.includes(Polyanno.urls.translation)) {
+    return Polyanno.translations.getById(target);
+  };  
+
+/*
+  if ( isUseless(target) ) { return null;  }
+
   else {
     var targetJSON;
 
@@ -306,10 +324,19 @@ var getTargetJSON = function(target, callback_function) {
       }
     });
     return targetJSON;
+
   };
+  */
 };
 
 var updateAnno = function(targetURL, targetData, callback_function) {
+
+  var thisAnno = getTargetJSON(targetURL);
+  alert(JSON.stringify(thisAnno));
+  thisAnno.update(targetData);
+  if (!isUseless(callback_function)) {  callback_function();  };
+
+  /*
   $.ajax({
     type: "PUT",
     url: targetURL,
@@ -323,6 +350,7 @@ var updateAnno = function(targetURL, targetData, callback_function) {
         };
       }
   });
+  */
 };
 
 var fieldMatching = function(searchArray, field, fieldValue) {
@@ -383,9 +411,9 @@ var searchCookie = function(field) {
 };
 
 var findByID = function(array, id) {
-  if (isUseless(array[0])) {  return []  }
+  if (isUseless(array[0])) {  return [];  }
   else {
-    $.grep(array, function(item){
+    return $.grep(array, function(item){
       return item.id == id;
     });
   };
@@ -563,7 +591,9 @@ Polyanno.collections.prototype.replaceOne = function(anno) {
 };
 
 Polyanno.collections.prototype.getById = function(the_id) {
-  return findByID(this.array, the_id)[0];
+  var arr = this.array;
+  var thesearch = findByID(arr, the_id)[0];
+  return thesearch;
 };
 
 Polyanno.collections.prototype.deleteAll = function() {
@@ -626,7 +656,9 @@ Polyanno.annotation = function(value) {
     this._id = this.id = opts.id;
   }
   else {
-    console.error("Annotations need a URI for the id field.");
+    var newNum = Math.random().toString().substring(2);
+    this._id = newNum;
+    this.id = Polyanno.urls.annotation.concat(newNum);
   };
 
   this.type = "Annotation";
@@ -675,7 +707,7 @@ var settingTargets = function(value, oldArr) {
   for (var i=0; i < value.length; i++) {
     var this_target = subdocIDchecking(value[i]);
     if (this_target == false) { break; };
-    var existing = findByID(arr, this_target.id);
+    var existing = findByID(oldArr, this_target.id);
     if (existing.length > 0) {
       for (props in this_target) {
         existing[0][props] = this_target[props];
@@ -782,20 +814,6 @@ Polyanno.baseAnnotationObject = function(value) {
   this["@context"] = [
     "http://www.w3.org/ns/anno.jsonld"
     ];
-  if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
-    this._id = opts._id;
-    this.id = opts.id;
-  }
-  else if ((!isUseless(opts._id)) && (isUseless(opts.id))) {
-    this._id = opts._id;
-    this.id = Polyanno.urls.annotation.concat(opts._id);
-  }
-  else if ((isUseless(opts._id)) && (!isUseless(opts.id))) {
-    this._id = this.id = opts.id;
-  }
-  else {
-    console.error("Annotations need a URI for the id field.");
-  };
 
   this.type = opts.type;
   this.metadata = opts.metadata;
@@ -917,8 +935,23 @@ Polyanno.transcription = function(value) {
   this.translation = opts.translation;
   this.voting.rank = setInitialRank(Polyanno.transcriptions, this);
 
-  Polyanno.transcriptions.add(this);
-  Polyanno.annotations.add(opts);
+  if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = opts.id;
+  }
+  else if ((!isUseless(opts._id)) && (isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = Polyanno.urls.transcription.concat(opts._id);
+  }
+  else if ((isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = this.id = opts.id;
+  }
+  else {
+    var newNum = Math.random().toString().substring(2);
+    this._id = newNum;
+    this.id = Polyanno.urls.transcription.concat(newNum);
+  };
+
 };
 
 
@@ -1028,6 +1061,23 @@ Polyanno.vector = function(value) {
   this.parent = opts.parent;
   this.transcription_fragment = opts.transcription_fragment;
   this.translation_fragment = opts.translation_fragment;
+
+  if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = opts.id;
+  }
+  else if ((!isUseless(opts._id)) && (isUseless(opts.id))) {
+    this._id = opts._id;
+    this.id = Polyanno.urls.vector.concat(opts._id);
+  }
+  else if ((isUseless(opts._id)) && (!isUseless(opts.id))) {
+    this._id = this.id = opts.id;
+  }
+  else {
+    var newNum = Math.random().toString().substring(2);
+    this._id = newNum;
+    this.id = Polyanno.urls.vector.concat(newNum);
+  };
 
   //Polyanno.vectors.add(this);
   //var anno = new Polyanno.annotation(opts);
@@ -1198,8 +1248,8 @@ Polyanno.editor = function(opts) {
 
 
 Polyanno.editors.removeEditor = function(id) {
-  var this_editor = findByID(Polyanno.editors, id)[0];
-  Polyanno.editors.splice(Polyanno.editors.indexOf(this_editor), 1);
+  var this_editor = findByID(Polyanno.editors.array, id)[0];
+  Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
 };
 
 Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
@@ -1218,7 +1268,7 @@ Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_
 };
 
 Polyanno.editors.closeAll = function() {
-  for (item in Polyanno.editors) {
+  for (item in Polyanno.editors.array) {
     Polyanno.editors.closeEditor(item, false);
   };
 };
@@ -1230,10 +1280,10 @@ Polyanno.editors.openEditor = function() {
 
 Polyanno.editors.ifOpen = function(fromType, textType) {
   polyanno_text_type_selected = textType;
-  if (isUseless(Polyanno.editors[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
+  if (isUseless(Polyanno.editors.array[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
   else {
     var canOpen = true;
-    Polyanno.editors.forEach(function(editorOpen){
+    Polyanno.editors.array.forEach(function(editorOpen){
       if ( ( (  !isUseless(editorOpen["vector"]) && (editorOpen["vector"] == Polyanno.selected.vector.id)  )||( !isUseless(editorOpen["transcription.parent"]) && editorOpen["transcription.parent"] == Polyanno.selected.transcription.parent)) && (editorOpen["tTypeSelected"] == textType)){
         $(editorOpen.editor).effect("shake");
         canOpen = false;
@@ -1356,7 +1406,7 @@ var updateVectorSelection = function(the_vector_url) {
     updateAnno(child[0].body.id, textData);
   });
 
-  var editorID = fieldMatching(Polyanno.editors, "transcription.parent", Polyanno.selected.connectingEquals.parent_anno).editor;
+  var editorID = fieldMatching(Polyanno.editors.array, "transcription.parent", Polyanno.selected.connectingEquals.parent_anno).editor;
   //need to ensure asynchronicity here
   Polyanno.selected.connectingEquals.status = false;
   $(editorID).find(".polyanno-vector-link-row").css("display", "none");
@@ -1376,7 +1426,7 @@ var polyanno_voting_reload_editors = function(updatedTranscription, editorID, ta
   };
 
   ///////if the parent is open in an editor rebuild carousel with new transcription 
-  Polyanno.editors.forEach(function(editorOpen){
+  Polyanno.editors.array.forEach(function(editorOpen){
     editorOpen.children.forEach(function(eachChild){
       if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
         Polyanno.editors.closeEditor(editorOpen.editor, editorOpen.body.id);
@@ -1936,7 +1986,7 @@ var returnTextIcon = function(polyanno_text_type_selected){
 
 var checkingItself = function(searchField, searchFieldValue, theType) {
   if (theType == searchField) { return false }
-  else {  return fieldMatching(Polyanno.editors, searchField, searchFieldValue)[theType] };
+  else {  return fieldMatching(Polyanno.editors.array, searchField, searchFieldValue)[theType] };
 };
 
 var preBtnClosing = function(thisEditor) {
@@ -1952,6 +2002,9 @@ var findNewTextData = function(editorString) {
 };
 
 var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEditor, this_text, this_vec, this_parent, text_siblings, callback) {
+
+  var new_anno = new Polyanno.annotation(thisAnnoData);
+  Polyanno.annotations.add(new_anno);
 
   //refresh parent editor setup
   var closingTheParentMenu = function() {
@@ -2128,7 +2181,7 @@ var polyanno_set_and_open = function(fromType, callback_function, text_selected,
 
 var settingEditorVars = function(thisEditor) {
   if(!thisEditor.includes("#")) { thisEditor = "#" + thisEditor; };
-  Polyanno.editors.forEach(function(target){
+  Polyanno.editors.array.forEach(function(target){
     if(target.editor == thisEditor) {
       targetType = target.typesFor;
       Polyanno.selected.vector.id = target.vector;
@@ -2171,7 +2224,7 @@ var findAndHighlight = function(searchField, searchFieldValue, highlightColours)
 };
 
 var resetVectorHighlight = function(thisEditor) {
-  var thisVector = fieldMatching(Polyanno.editors, "editor", thisEditor).vector; 
+  var thisVector = fieldMatching(Polyanno.editors.array, "editor", thisEditor).vector; 
   if(!isUseless(thisVector)){ highlightVectorChosen(thisVector, Polyanno.colours.default.vector); };
 };
 
@@ -3015,17 +3068,20 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
   annoData._id = layer._leaflet_id;
 
   var data = new Polyanno.vector(annoData);
+  Polyanno.vectors.add(data);
 
-    layer._leaflet_id = data.id;
-    Polyanno.selected.vector = data;
-    targetType = "vector";
-    Polyanno.selected.targets = [Polyanno.selected.vector.id];
-    polyanno_add_annotationdata(data, false, false, [false], [data.url], [false], [false]);
+  Polyanno.selected.vector = data;
+  targetData.body = data;
+  layer._leaflet_id = data.id;
+  targetType = "vector";
+  Polyanno.selected.targets = [Polyanno.selected.vector.id];
 
-    if (!Polyanno.selected.connectingEquals.status) { layer.bindPopup(popupVectorMenu).openPopup(); }
-    else {  updateVectorSelection(data); };
+    polyanno_add_annotationdata(targetData, false, false, [false], [data.url], [false], [false]);
 
-    if (!isUseless(callback_function)) {  callback_function(data.id);  };
+  if (!Polyanno.selected.connectingEquals.status) { layer.bindPopup(popupVectorMenu).openPopup(); }
+  else {  updateVectorSelection(data); };
+
+  if (!isUseless(callback_function)) {  callback_function(data.id);  };
 
 
 
