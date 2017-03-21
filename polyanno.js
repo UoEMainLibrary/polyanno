@@ -545,13 +545,15 @@ Polyanno.collections = function(type) {
   this.array = [];
 };
 
+Polyanno.collections.prototype = new PolyannoEventEmitter();
+
 ///Methods
 
 Polyanno.collections.prototype.add = function(anno) {
   var oldArr = [].concat(this.array);
   oldArr.push(anno);
   this.array = annosCheckArray(oldArr, this.type);
-  //this.trigger('polyanno:added');
+  this.trigger('polyanno:added');
 };
 
 Polyanno.collections.prototype.replaceOne = function(anno) {
@@ -709,11 +711,6 @@ Polyanno.annotation.prototype.delete = function() {
 
 ////Events
 
-Polyanno.annotation.prototype.on('polyanno:created', function(e) {
-  Polyanno.annotations.add(this);
-  alert("all added okay");
-});
-
 Polyanno.annotation.prototype.onupdated = function(func) {
   this.on('polyanno:edited', function(e) {
     func.call(this, this, e);
@@ -765,7 +762,7 @@ Polyanno.getAnnotationsByTarget = function(target, type) {
         return types(arr, "translations");   
     }
   };
-  return type_arr(type);
+  return {"array": type_arr(type)};
 };
 
 
@@ -773,35 +770,10 @@ Polyanno.getAnnotationsByTarget = function(target, type) {
 
 
 
-//test cases
-
-var t1 = new Polyanno.annotation({
-  _id: 21376127467,
-  body: {
-    "id": "mooo"
-  },
-  target: [{
-    "id": "sheep"
-  }]
-});
-
-Polyanno.annotations.add(t1);
-
-var t2 = Polyanno.getAnnotationsByTarget("sheep");
-
-alert("getby targets returns"+JSON.stringify(t2));
-
-
-
-
-
-
 ////////////////////Base Annotations
 
 
 Polyanno.baseAnnotationObject = function(value) {
-
-  PolyannoEventEmitter.call(this);
 
   var opts = {};
   for (var prop in value) {
@@ -828,7 +800,9 @@ Polyanno.baseAnnotationObject = function(value) {
   this.type = opts.type;
   this.metadata = opts.metadata;
   this.format = opts.format;
-  this.textDirection = opts.textDirection;
+  if (["auto", "ltr", "rtl"].includes(opts.textDirection)) {
+    this.textDirection = opts.textDirection;
+  };
   this.language = opts.language;
   this.processingLanguage = opts.processingLanguage;
 
@@ -837,29 +811,11 @@ Polyanno.baseAnnotationObject = function(value) {
     motivation: "identifying"
   };
 
-  this.trigger('polyanno:created');
+  //this.trigger('polyanno:created');
 
 };
 
-Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "textDirection", {
-  set: function(value) {
-    if (["auto", "ltr", "rtl"].includes(value)) {
-      textDirection = value.textDirection;
-    };
-  }
-});
-
-Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "metadata", {
-  value: [],
-  writable: true,
-  enumerable: true,
-  configurable: true,
-  set: function(value) {
-    if (value instanceof Array) {
-      metadata = value;
-    };
-  }
-});
+Polyanno.baseAnnotationObject.prototype = new PolyannoEventEmitter();
 
 Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
   value: "application/json",
@@ -874,19 +830,15 @@ Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
 ////Events Setting Methods
 
 Polyanno.baseAnnotationObject.prototype.onupdated = function(func) {
-  var oldFunc = this.update;
-  this.update = function(opts) {
-    oldFunc.call(this, opts); 
-    func.call(this, this, opts); ///expecting function(annoUpdated, opts)
-  };
+  this.on('polyanno:edited', function(e) {
+    func.call(this, this, e);
+  });
 };
 
 Polyanno.baseAnnotationObject.prototype.ondeleted = function(func) {
-  var oldFunc = this.delete;
-  this.delete = function() {
-    oldFunc.call(this); 
-    func.call(this, this); ///expecting function(annoDeleted)
-  };
+  this.on('polyanno:deleted', function(e) {
+    func.call(this, this, e);
+  });
 };
 
 
@@ -899,20 +851,14 @@ Polyanno.baseTextObject = function(value) {
   };
   Polyanno.baseAnnotationObject.call(this, opts);
   this.text = opts.text;
-  this.vector = opts.vector;
+  if (opts.vector instanceof Polyanno.vector) {  this.vector = opts.vector;  }
+  else { console.error("TypeError");  };
   this.parent = opts.parent;
   this.voting = {
     up: 0,
     down: 0
   };
 };
-
-Object.defineProperty(Polyanno.baseTextObject.prototype, "vector", {
-  set: function(value) {
-    if (value instanceof Polyanno.vector) {  vector = value;  }
-    else { console.error("TypeError");  };
-  }
-});
 
 var sharedParentSearch = function(arr, item) {
   var array = $.grep(arr, function(a){
@@ -1053,11 +999,25 @@ Polyanno.vector = function(value) {
 
   Polyanno.baseAnnotationObject.call(this, opts);
 
+  ////Coordinates
+  var new_coords = [];
+  ATCarray = 0;
+  opts.geometry.coordinates[0].forEach(function(coordinatesPair){
+      new_coords.push([]);
+      var coordsNumbers = [];
+      coordinatesPair.forEach(function(number){
+          converted = Number(number);
+          coordsNumbers.push(converted);
+      });
+      new_coords[ATCarray] = coordsNumbers;
+      ATCarray += 1;      
+  });
+
   this.notFeature = {
     notType: "Feature",
     notGeometry: {
       notType: "Polygon",
-      notCoordinates: []
+      notCoordinates: new_coords
     },
     notCrs: {
       notType: "name",
@@ -1069,21 +1029,8 @@ Polyanno.vector = function(value) {
   this.transcription_fragment = opts.transcription_fragment;
   this.translation_fragment = opts.translation_fragment;
 
-  ////Coordinates
-  ATCarray = 0;
-  opts.geometry.coordinates[0].forEach(function(coordinatesPair){
-      this.notFeature.notGeometry.notCoordinates.push([]);
-      var coordsNumbers = [];
-      coordinatesPair.forEach(function(number){
-          converted = Number(number);
-          coordsNumbers.push(converted);
-      });
-      this.notFeature.notGeometry.notCoordinates[ATCarray] = coordsNumbers;
-      ATCarray += 1;      
-  });
-
-  Polyanno.vectors.add(this);
-  var anno = new Polyanno.annotation(opts);
+  //Polyanno.vectors.add(this);
+  //var anno = new Polyanno.annotation(opts);
 
 };
 
@@ -1146,9 +1093,9 @@ Polyanno.selected = {
 };
 
 Object.defineProperty(Polyanno.selected, "vector", {
-  get: function() { return Polyanno.selected.vector.ids[0] },
+  get: function() { return Polyanno.selected.vectors[0] },
   set: function(value) {
-    Polyanno.selected.vector.ids[0] = new PSelectedObject(value);
+    Polyanno.selected.vectors[0] = new PSelectedObject(value);
   }
 });
 
@@ -1181,7 +1128,7 @@ PSelectedObject.prototype.update = function(opts) {
 
 Polyanno.selected.getAll = function() {
   return {
-    vectors: Polyanno.selected.vector.getAll(),
+    vectors: Polyanno.selected.vectors.getAll(),
     transcriptions: Polyanno.selected.transcriptions.getAll(),
     translations: Polyanno.selected.translations.getAll(),
     targets: Polyanno.selected.targets.getAll(),
@@ -1189,7 +1136,7 @@ Polyanno.selected.getAll = function() {
 };
 
 Polyanno.selected.reset = function () {
-  Polyanno.selected.vector.deleteAll();
+  Polyanno.selected.vectors.deleteAll();
   Polyanno.selected.transcriptions.deleteAll();
   Polyanno.selected.translations.deleteAll();
   Polyanno.selected.targets.deleteAll();
@@ -1356,7 +1303,7 @@ var polyanno_annos_of_target = function(target, baseURL, callback_function) {
   var targetParam = encodeURIComponent(target);
   var aSearch = baseURL.concat("targets/"+targetParam);
 
-  var data = Polyanno.annotations.getByTarget(target, "vectors");
+  var data = Polyanno.getAnnotationsByTarget(target, "vectors");
 
     if (!isUseless(data[0])) {
       polyanno_search_annos_by_ids(data, callback_function);
@@ -1517,7 +1464,13 @@ var polyanno_new_anno_via_selection = function(baseURL) {
           ]
   };
   var thisEditorString = $("#"+Polyanno.selected.transcription.DOMid).closest(".textEditorPopup").attr("id");
-  
+
+  var data = new Polyanno.transcription(targetData);
+  Polyanno.transcriptions.add(data);
+  Polyanno.selected.transcription = data;
+  polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [Polyanno.selected.transcription.parent], Polyanno.selected.transcriptions);
+
+  /*
   $.ajax({
     type: "POST",
     url: baseURL,
@@ -1530,11 +1483,13 @@ var polyanno_new_anno_via_selection = function(baseURL) {
         polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [Polyanno.selected.transcription.parent], Polyanno.selected.transcriptions);
       }
   });
+  */
+
 
 };
 
 var polyanno_new_anno_for_child_of_merge = function(this_url, this_data, callback) {
-
+/*
   $.ajax({
     type: "POST",
     url: this_url,
@@ -1546,6 +1501,8 @@ var polyanno_new_anno_for_child_of_merge = function(this_url, this_data, callbac
         polyanno_add_annotationdata(data.text, false, false, [data.url], [false], [this_data.parent], [false], callback); ///giving the vector as false so it can be called with both the new anno AND the parent
       }
   });
+*/
+
 };
 
 var polyanno_new_annos_via_linking = function(merged_vector) {
@@ -1612,6 +1569,8 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
   };  
 
   var polyanno_new_translation_via_linking = function() {
+
+    /*
     $.ajax({
       type: "POST",
       url: Polyanno.urls.translation,
@@ -1623,8 +1582,9 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
           polyanno_add_annotationdata(data.text, false, false, [data.url], [merged_vector], [false], [false], polyanno_update_vector_children_iteratively ); 
         }
     });
+    */
   };
-
+  /*
   $.ajax({
     type: "POST",
     url: Polyanno.urls.transcription,
@@ -1636,7 +1596,7 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
         polyanno_add_annotationdata(data.text, false, false, [data.url], [merged_vector], [false], [false], polyanno_new_translation_via_linking);
       }
   });
-
+  */
 
 };
 
@@ -2046,7 +2006,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
     this_parent = Polyanno.selected.transcription.parent;
   };
 
-  new Polyanno.transcription(theData);
+  var data = new Polyanno.transcription(theData);
 
   Polyanno.editors.closeEditor(thisEditor);
   polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);  
@@ -3052,10 +3012,12 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
       "format": "image/jpg" 
   });
 
+  annoData._id = layer._leaflet_id;
+
   var data = new Polyanno.vector(annoData);
 
     layer._leaflet_id = data.id;
-    Polyanno.selected.vector.id = layer._leaflet_id;
+    Polyanno.selected.vector = data;
     targetType = "vector";
     Polyanno.selected.targets = [Polyanno.selected.vector.id];
     polyanno_add_annotationdata(data, false, false, [false], [data.url], [false], [false]);
@@ -3160,6 +3122,7 @@ var polyanno_vec_select = function() {
     ///check if vector has any annotations
     ///if it does then prevent deleting and alert that it has annotations and admin privileges needed to do that
     var theURL = Polyanno.urls.annotation +"/target/" + vector_url;
+    /*
     $.ajax({
       type: "GET",
       dataType: "json",
@@ -3176,6 +3139,7 @@ var polyanno_vec_select = function() {
           };
         }
     });
+    */
   });
   polyanno_map.on('draw:deletestop', function(){
     Polyanno.selected.currentlyDeleting = false;

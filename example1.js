@@ -14,3 +14,25 @@ var polyanno_setup_options = {
 
 polyanno_setup(polyanno_setup_options);
 
+//test cases
+
+var t1 = new Polyanno.annotation({
+  _id: 21376127467,
+  body: {
+    "id": "mooo"
+  },
+  target: [{
+    "id": "sheep"
+  }]
+});
+
+
+Polyanno.annotations.add(t1);
+
+
+var t2 = Polyanno.getAnnotationsByTarget("sheep");
+
+alert("getby targets returns"+JSON.stringify(t2));
+
+
+
