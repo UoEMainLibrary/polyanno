@@ -421,6 +421,7 @@ var annosCheckArray = function(value, type) {
   else {
     var check = false;
     for (var i=0; i < value.length; i++) {
+      alert("the value is "+value[i]+" and the type is "+type);
       if (!annoCheckType(value[i], type)){ check = true; };
     };
     if (!check) {  return value;  };
@@ -532,13 +533,17 @@ PolyannoEventEmitter.prototype.trigger = function(event) {
   return !event.defaultPrevented;
 };
 
+
+
+
+
+
 /////////////Collections (Plural)
 
 
 Polyanno.collections = function(type) {
-  PolyannoEventEmitter.call(this);
-  this.array = [];
   this.type = type;
+  this.array = [];
   this.get = function() {
     return this.array;
   };
@@ -547,7 +552,8 @@ Polyanno.collections = function(type) {
 
 Object.defineProperty(Polyanno.collections.prototype, "array", {
   set: function(value) {
-    array = annosCheckArray(value, this.type); 
+    var type = this.type;
+    array = annosCheckArray(value, type); 
   }
 });
 
@@ -557,7 +563,7 @@ Polyanno.collections.prototype.add = function(anno) {
   var oldArr = [].concat(this.array);
   oldArr.push(anno);
   this.array = oldArr;
-  this.trigger('polyanno:added');
+  //this.trigger('polyanno:added');
 };
 
 Polyanno.collections.prototype.replaceOne = function(anno) {
@@ -577,45 +583,6 @@ Polyanno.collections.prototype.deleteAll = function() {
 Polyanno.collections.prototype.getAll = function() {
   return this.array;
 };
-
-
-/////////////////// Annotations (plural)
-
-Polyanno.annotations = new Polyanno.collections(Polyanno.annotation);
-
-Polyanno.annotations.getByTarget = function(target, type) {
-  var search = function(targets, aim) {
-    var a = $.grep(targets, function(t){
-      return t.id = aim;
-    });
-    if (a.length > 0) {  return true;  }
-    else { return false };
-  };
-  var types = function(items, t) {
-
-  };
-  var arr = $.grep(Polyanno.annotations.array, function(anno){
-    return search(anno.target, target);
-  });
-
-  var type_arr = function(the_type) {
-    switch (the_type) {
-      default: 
-        return arr;
-      case "vectors":
-        return types(arr, "vectors");
-      case "transcriptions":
-        return types(arr, "transcriptions");
-      case "translations":
-        return types(arr, "translations");   
-    }
-  };
-  return type_arr(type);
-};
-
-
-///Events
-
 
 
 /////////////////Annotation (Singular)
@@ -649,8 +616,6 @@ var PAnnoSubDoc = function(value) {
 
 Polyanno.annotation = function(value) {
 
-  PolyannoEventEmitter.call(this);
-
   var opts = {};
   for (var prop in value) {
     opts[prop] = value[prop];
@@ -683,14 +648,11 @@ Polyanno.annotation = function(value) {
     motivation: "identifying"
   };
 
-  this.on = PolyannoEventEmitter.on;
-  this.trigger = PolyannoEventEmitter.trigger;
-
-  Polyanno.annotations.add(this);
-
   this.trigger('polyanno:created');
 
 };
+
+Polyanno.annotation.prototype = new PolyannoEventEmitter();
 
 ///
 
@@ -768,6 +730,11 @@ Polyanno.annotation.prototype.delete = function() {
 
 ////Events
 
+Polyanno.annotation.prototype.on('polyanno:created', function(e) {
+  Polyanno.annotations.add(this);
+  alert("all added okay");
+});
+
 Polyanno.annotation.prototype.onupdated = function(func) {
   this.on('polyanno:edited', function(e) {
     func.call(this, this, e);
@@ -788,6 +755,43 @@ Polyanno.annotation.prototype.oncreated = function(func) {
 
 ///////
 
+/////////////////// Annotations (plural)
+
+Polyanno.annotations = new Polyanno.collections(Polyanno.annotation);
+
+Polyanno.getAnnotationsByTarget = function(target, type) {
+  var search = function(targets, aim) {
+    var a = $.grep(targets, function(t){
+      return t.id = aim;
+    });
+    if (a.length > 0) {  return true;  }
+    else { return false };
+  };
+  var types = function(items, t) {
+
+  };
+  var arr = $.grep(Polyanno.annotations.array, function(anno){
+    return search(anno.target, target);
+  });
+
+  var type_arr = function(the_type) {
+    switch (the_type) {
+      default: 
+        return arr;
+      case "vectors":
+        return types(arr, "vectors");
+      case "transcriptions":
+        return types(arr, "transcriptions");
+      case "translations":
+        return types(arr, "translations");   
+    }
+  };
+  return type_arr(type);
+};
+
+
+///Events
+
 
 
 //test cases
@@ -802,7 +806,9 @@ var t1 = new Polyanno.annotation({
   }]
 });
 
-var t2 = Polyanno.annotation.getByTarget("sheep");
+alert(JSON.stringify(Polyanno.annotations));
+
+var t2 = Polyanno.getAnnotationsByTarget("sheep");
 
 alert(JSON.stringify(t2));
 
@@ -977,8 +983,6 @@ var voteChangeRank = function(arr, item, vote) {
 
 //////////////////Transcriptions
 
-Polyanno.transcriptions = new Polyanno.collections(Polyanno.transcription);
-
 Polyanno.transcription = function(value) {
   Polyanno.baseTextObject.call(this, value);
   var opts = {};
@@ -1042,7 +1046,9 @@ Polyanno.transcription.prototype.delete = function() {
 ////Events Setting Methods
 
 
+//////////Transcriptions (Plural)
 
+Polyanno.transcriptions = new Polyanno.collections(Polyanno.transcription);
 
 
 //////////////////Translations
@@ -1058,7 +1064,6 @@ Polyanno.transcription.prototype.delete = function() {
 
 ///////////////////Vectors
 
-Polyanno.vectors = new Polyanno.collections(Polyanno.vector);
 
 Polyanno.vector = function(value) {
 
@@ -1125,6 +1130,10 @@ Polyanno.vector.prototype.delete = function() {
 };
 
 
+////////
+
+Polyanno.vectors = new Polyanno.collections(Polyanno.vector);
+
 ///////////////////Image
 
 
@@ -1134,13 +1143,6 @@ Polyanno.vector.prototype.delete = function() {
 
 
 ///////////////////Selected
-
-Polyanno.selected = {
-  vectors: new Polyanno.collections(PSelectedObject),
-  transcriptions: new Polyanno.collections(PSelectedObject),
-  translations: new Polyanno.collections(PSelectedObject),
-  targets: new Polyanno.collections(Object)
-};
 
 var PSelectedObject = function(doc) {
   PolyannoEventEmitter.call(this);
@@ -1155,6 +1157,13 @@ var PSelectedObject = function(doc) {
   this.fragment = doc.fragment;
   this.DOMid = doc.DOMid;
   this.URI = this.parent + this.DOMid;
+};
+
+Polyanno.selected = {
+  vectors: new Polyanno.collections(PSelectedObject),
+  transcriptions: new Polyanno.collections(PSelectedObject),
+  translations: new Polyanno.collections(PSelectedObject),
+  targets: new Polyanno.collections(Object)
 };
 
 Object.defineProperty(Polyanno.selected, "vector", {
