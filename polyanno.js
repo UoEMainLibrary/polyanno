@@ -291,8 +291,6 @@ var isUseless = function(something) {
 
 var getTargetJSON = function(target, callback_function) {
 
-  alert("searching for "+target);
-
   if ( isUseless(target) ) { return null;  }
   else if (target.includes(Polyanno.urls.annotation)) {
     return Polyanno.annotations.getById(target);
@@ -307,50 +305,14 @@ var getTargetJSON = function(target, callback_function) {
     return Polyanno.translations.getById(target);
   };  
 
-/*
-  if ( isUseless(target) ) { return null;  }
-
-  else {
-    var targetJSON;
-
-    $.ajax({
-    type: "GET",
-    dataType: "json",
-    url: target,
-    async: false,
-    success: 
-      function (data) {
-        targetJSON = data;
-      }
-    });
-    return targetJSON;
-
-  };
-  */
 };
 
 var updateAnno = function(targetURL, targetData, callback_function) {
 
   var thisAnno = getTargetJSON(targetURL);
-  alert(JSON.stringify(thisAnno));
   thisAnno.update(targetData);
   if (!isUseless(callback_function)) {  callback_function();  };
 
-  /*
-  $.ajax({
-    type: "PUT",
-    url: targetURL,
-    async: false,
-    dataType: "json",
-    data: targetData,
-    success:
-      function (data) { 
-        if (!isUseless(callback_function)) {
-          callback_function();
-        };
-      }
-  });
-  */
 };
 
 var fieldMatching = function(searchArray, field, fieldValue) {
@@ -454,6 +416,49 @@ var annosCheckArray = function(value, type) {
     if (!check) {  return value;  };
   };
 };
+
+var searchingUnknownByID = function(id) {
+  var type;
+  for (url in Polyanno.urls) {  if (id.includes(Polyanno.urls[url])) { type = url; } };
+  var coll = type.concat("s");
+  var obj = Polyanno[coll].getById(id);
+};
+
+var replaceChildText = function(oldText, spanID, newInsert, oldInsert) {
+    var idIndex = oldText.indexOf(spanID);
+    var startIndex = oldText.indexOf(oldInsert, idIndex);
+    var startHTML = oldText.slice(0, startIndex);
+    var EndIndex = startIndex + oldInsert.length;
+    var endHTML = oldText.substring(EndIndex);
+    var newText = startHTML + newInsert+ endHTML;
+    return newText;
+};
+
+var findClassID = function(classString, IDstring) {
+  var IDindex = classString.search(IDstring) + IDstring.length;
+  var IDstart = classString.substring(IDindex);
+  var theID = IDstart.split(" ", 1);
+  return theID[0];
+};
+
+var checkForVectorTarget = function(theText) {
+
+  var theAnno = Polyanno.getAnnotationByBody(theText);
+  var targetSearch =  fieldMatching(theAnno.target, "format", 'image/SVG');
+    return targetSearch.id;  
+  };
+
+};
+
+var polyanno_annos_of_target = function(target, baseType, callback_function) {
+  var data = Polyanno.getAnnotationsByTarget(target, baseType, true);
+  var bodies = [];
+  for (var i=0; i< data.length; i++) {  bodies.push(data[i].body);  };
+  if (!isUseless(callback_function)) {    callback_function(bodies);  };  
+};
+
+
+
 
 //////////////////URLS
 
@@ -741,6 +746,21 @@ Polyanno.annotation.prototype.delete = function() {
   this.dispatchEvent(polyanno_obj_deleted);
 };
 
+Polyanno.annotation.prototype.getBody = function() {
+  var id = this.body.id;
+  return searchingUnknownByID(id);
+};
+
+Polyanno.annotation.prototype.getTargets = function() {
+  var targets = this.target;
+  var targetArr = [];
+  for (var i=0; i < targets.length; i++) {
+    var t = targets[i];
+    targetArr.push(searchingUnknownByID(t.id));
+  };
+  return targetArr;
+};
+
 ////Events
 
 Polyanno.annotation.prototype.onupdated = function(func) {
@@ -775,28 +795,40 @@ Polyanno.getAnnotationsByTarget = function(target, type) {
     if (a.length > 0) {  return true;  }
     else { return false };
   };
-  var types = function(items, t) {
-
+  var types = function(items) {
+    return $.grep(items, function (thing) {
+      return thing.body.id.includes(Polyanno.urls[type])
+    });
   };
   var arr = $.grep(Polyanno.annotations.array, function(anno){
     return search(anno.target, target);
   });
 
-  var type_arr = function(the_type) {
-    switch (the_type) {
-      default: 
-        return arr;
-      case "vectors":
-        return types(arr, "vectors");
-      case "transcriptions":
-        return types(arr, "transcriptions");
-      case "translations":
-        return types(arr, "translations");   
-    }
+  var type_arr = function() {
+    if (isUseless(type)) { return arr; }
+    else {   return types(arr);  }
   };
+
   return {"array": type_arr(type)};
 };
 
+Polyanno.getAnnotationByBody = function(target, expanded) {
+  var a = $.grep(Polyanno.annotations.array, function (anno) {
+    return anno.body.id == target
+  });
+  if (expanded) {
+    var bodyObj = searchingUnknownByID(a[0].body.id);
+    var targetArr = [];
+    for (var i=0; i < a[0].target.length; i++) {
+      var t = a[0].target[i];
+      targetArr.push(searchingUnknownByID(t.id));
+    };
+    return {"anno": a[0], "body": bodyObj, "target": targetArr};
+  }
+  else {
+    return {"anno": a[0] };
+  };
+};
 
 ///Events
 
@@ -844,6 +876,17 @@ Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
 
 /////Methods
 
+Polyanno.baseAnnotationObject.prototype.isAnnotationBody = function() {
+  var id = this.id;
+  var theAnno = Polyanno.getAnnotationByBody(id);
+  return theAnno;
+};
+
+Polyanno.baseAnnotationObject.prototype.isAnnotationTarget = function() {
+  var id = this.id;
+  var theAnnos = Polyanno.getAnnotationsByTarget(id);
+  return theAnnos;
+};
 
 ////Events Setting Methods
 
@@ -919,6 +962,54 @@ var voteChangeRank = function(arr, item, vote) {
   };
 };
 
+
+
+/////
+
+var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID) {
+  if (updatedTranscription) {    
+    Polyanno.selected.transcription.id = targetID;
+    Polyanno.editors.closeEditor(editorID, targetID);  
+  };
+  if (updatedTranscription && (!isUseless(Polyanno.selected.vector.id))) {
+    var updateTargetData = {};
+    updateTargetData[polyanno_text_type_selected] = targetID;
+    updateAnno(Polyanno.selected.vector.id, updateTargetData);
+  };
+
+  ///////if the parent is open in an editor rebuild carousel with new transcription 
+  Polyanno.editors.array.forEach(function(editorOpen){
+    editorOpen.children.forEach(function(eachChild){
+      if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
+        Polyanno.editors.closeEditor(editorOpen.editor, editorOpen.body.id);
+      };
+    });
+  });
+
+};
+
+
+var votingFunction = function(vote, votedID, currentTopText, editorID) {
+  var targetID = findBaseURL().concat(votedID); ///API URL of the annotation voted on
+  var votedTextBody = $("#"+votedID).html(); 
+  var targetData = {
+    parent: Polyanno.selected.transcription.parent, ///it is this that is updated containing the votedText within its body
+  };
+  targetData.voting[vote] = 1;
+  var thisText = Polyanno.transcriptions.getById(targetID);
+  thisText.updateOne(targetData);
+
+};
+
+var polyanno_find_highest_ranking_frag_child = function(location_json) {
+  var the_child = fieldMatching(location_json.fragments, "rank", 0); 
+  return findField(the_child, "id");
+};
+
+var findHighestRankingChild = function(the_parent_json_children, locationID) {
+  var theLocation = fieldMatching(the_parent_json_children, "id", locationID);
+  return polyanno_find_highest_ranking_frag_child(theLocation);
+};
 
 /////Methods
 
@@ -1200,7 +1291,7 @@ Polyanno.selected.setSelected = function (docs) {
   };
 };
 
-/////connectingEquals
+///////////////////connectingEquals
 
 Polyanno.selected.connectingEquals = {};
 Polyanno.selected.connectingEquals.status = false; //used to indicate if the user is currently searching for a vector to link or not
@@ -1210,10 +1301,37 @@ Polyanno.selected.connectingEquals.status = false; //used to indicate if the use
       parent_vector : checkForVectorTarget(parent_anno)
 }*/
 
+var updateVectorSelection = function(the_vector_url) {
+
+  var textData = {target: [{id: the_vector_url, format: "image/SVG"}]};
+  Polyanno.selected.connectingEquals.siblings.forEach(function(child){
+    updateAnno(child[0].body.id, textData);
+  });
+  Polyanno.selected.connectingEquals.status = false;
+
+  //Polyanno.selected.connectingEquals.editor;
+  //$().find(".polyanno-vector-link-row").css("display", "none");
+
+  ///update Polyanno.editors to activate highlighting
+
+};
+
+
+
+
+
+
+
 //editing
 
 Polyanno.selected.currentlyEditing = false;
 Polyanno.selected.currentlyDeleting = false;
+
+
+
+
+
+
 
 
 ////buildingParents
@@ -1230,328 +1348,8 @@ Polyanno.selected.buildingParents = {
   }
 };
 
-///////////////////Editors
-
-Polyanno.editors = new Polyanno.collections(Polyanno.editor);
-
-Polyanno.editor = function(opts) {
-  this.id = opts.id;
-  this.docs = new Polyanno.collections(PSelectedObject);
-  /////canlink
-  ////canvote
-  ////
-};
-
-
-
-/////Methods
-
-
-Polyanno.editors.removeEditor = function(id) {
-  var this_editor = findByID(Polyanno.editors.array, id)[0];
-  Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
-};
-
-Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
-  if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
-  var the_editor_gone = dragondrop_remove_pop(thisEditor);
-  if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
-    Polyanno.selected.transcription.id = reopen;
-    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
-    return the_editor_gone;
-  }
-  else {
-    resetVectorHighlight(thisEditor);
-    Polyanno.editors.removeEditor(thisEditor);
-    return the_editor_gone;
-  }
-};
-
-Polyanno.editors.closeAll = function() {
-  for (item in Polyanno.editors.array) {
-    Polyanno.editors.closeEditor(item, false);
-  };
-};
-
-Polyanno.editors.openEditor = function() {
-
-};
-
-
-Polyanno.editors.ifOpen = function(fromType, textType) {
-  polyanno_text_type_selected = textType;
-  if (isUseless(Polyanno.editors.array[0])) {    polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions);  }
-  else {
-    var canOpen = true;
-    Polyanno.editors.array.forEach(function(editorOpen){
-      if ( ( (  !isUseless(editorOpen["vector"]) && (editorOpen["vector"] == Polyanno.selected.vector.id)  )||( !isUseless(editorOpen["transcription.parent"]) && editorOpen["transcription.parent"] == Polyanno.selected.transcription.parent)) && (editorOpen["tTypeSelected"] == textType)){
-        $(editorOpen.editor).effect("shake");
-        canOpen = false;
-      };
-    });
-    if (canOpen == true) {  polyanno_set_and_open(fromType, false, Polyanno.selected.transcription.id, Polyanno.selected.vector.id, Polyanno.selected.transcription.parent, Polyanno.selected.transcriptions) };
-  };
-};
-
-var addEditorsOpen = function(popupIDstring) {
-
-  Polyanno.editors.add({
-    "id": popupIDstring,
-
-    "vector": Polyanno.selected.vector.id,
-    "transcription.parent": Polyanno.selected.transcription.parent,
-    "transcription.DOMid": Polyanno.selected.transcription.DOMid,
-    "transcription.URI": Polyanno.selected.transcription.URI,
-
-    "tTypeSelected": polyanno_text_type_selected,
-    "children": Polyanno.selected.transcriptions.getAll(),
-    "typesFor": targetType
-  });
-  return Polyanno.editors.getAll();
-};
-
-
-
-
-
-
-
-
-////GENERAL ANNOTATION FUNCTIONS
-
-var replaceChildText = function(oldText, spanID, newInsert, oldInsert) {
-    var idIndex = oldText.indexOf(spanID);
-    var startIndex = oldText.indexOf(oldInsert, idIndex);
-    var startHTML = oldText.slice(0, startIndex);
-    var EndIndex = startIndex + oldInsert.length;
-    var endHTML = oldText.substring(EndIndex);
-    var newText = startHTML + newInsert+ endHTML;
-    return newText;
-};
-
-var findClassID = function(classString, IDstring) {
-  var IDindex = classString.search(IDstring) + IDstring.length;
-  var IDstart = classString.substring(IDindex);
-  var theID = IDstart.split(" ", 1);
-  return theID[0];
-};
-
-var checkForVectorTarget = function(theText, the_target_type) {
-
-  var findByBodyURL = Polyanno.urls.annotation.concat("body/"+encodeURIComponent(theText));
-  //var the_regex = '/.*'+the_target_type+'.*/';
-  var theChecking = checkFor(findByBodyURL, "target");
-  if (  isUseless(theChecking[0])  ) { return false } 
-  else {   
-    return fieldMatching(theChecking, "format", 'image/SVG').id;  
-  };
-
-};
-
-var polyanno_annos_of_target = function(target, baseURL, callback_function) {
-
-  var targetParam = encodeURIComponent(target);
-  var aSearch = baseURL.concat("targets/"+targetParam);
-
-  var data = Polyanno.getAnnotationsByTarget(target, "vectors");
-
-    if (!isUseless(data[0])) {
-      polyanno_search_annos_by_ids(data, callback_function);
-    }
-    else if (!isUseless(callback_function)) {
-      callback_function();
-    };  
-
-/*
-  $.ajax({
-    type: "GET",
-    dataType: "json",
-    url: aSearch,
-    async: false,
-    success: 
-      function (data) {
-        if (!isUseless(data.list[0])) {
-          polyanno_search_annos_by_ids(data.list, callback_function);
-        }
-        else if (!isUseless(callback_function)) {
-          callback_function();
-        };
-      }
-  });
-*/
-};
-
-var polyanno_search_annos_by_ids = function(list, callback_function) {
-    
-  /*
-  list = [{
-    anno: {}
-    body: {}
-    target: {}
-  }]
-  */
-
-  var newlist = [];
-  for (var i=0; i <list.length; i++) {
-    newlist.push(list[i].body);
-  };
-  callback_function(newlist);
-    
-};
-
-var updateVectorSelection = function(the_vector_url) {
-  ///this is the process for linking vectors to text segments
-  var textData = {target: [{id: the_vector_url, format: "image/SVG"}]};
-  Polyanno.selected.connectingEquals.siblings.forEach(function(child){
-    updateAnno(child[0].body.id, textData);
-  });
-
-  var editorID = fieldMatching(Polyanno.editors.array, "transcription.parent", Polyanno.selected.connectingEquals.parent_anno).editor;
-  //need to ensure asynchronicity here
-  Polyanno.selected.connectingEquals.status = false;
-  $(editorID).find(".polyanno-vector-link-row").css("display", "none");
-  ///update Polyanno.editors to activate highlighting
-
-};
-
-var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID) {
-  if (updatedTranscription) {    
-    Polyanno.selected.transcription.id = targetID;
-    Polyanno.editors.closeEditor(editorID, targetID);  
-  };
-  if (updatedTranscription && (!isUseless(Polyanno.selected.vector.id))) {
-    var updateTargetData = {};
-    updateTargetData[polyanno_text_type_selected] = targetID;
-    updateAnno(Polyanno.selected.vector.id, updateTargetData);
-  };
-
-  ///////if the parent is open in an editor rebuild carousel with new transcription 
-  Polyanno.editors.array.forEach(function(editorOpen){
-    editorOpen.children.forEach(function(eachChild){
-      if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
-        Polyanno.editors.closeEditor(editorOpen.editor, editorOpen.body.id);
-      };
-    });
-  });
-
-};
-
-
-var votingFunction = function(vote, votedID, currentTopText, editorID) {
-  var targetID = findBaseURL().concat(votedID); ///API URL of the annotation voted on
-  var votedTextBody = $("#"+votedID).html(); 
-  var targetData = {
-    parent: Polyanno.selected.transcription.parent, ///it is this that is updated containing the votedText within its body
-  };
-  targetData.voting[vote] = 1;
-  var thisText = Polyanno.transcriptions.getById(targetID);
-  thisText.updateOne(targetData);
-
-/*
-  $.ajax({
-    type: "PUT",
-    url: theVote,
-    async: false,
-    dataType: "json",
-    data: targetData,
-    success:
-      function (data) {
-        polyanno_voting_reload_editors(data.reloadText, editorID, targetID);
-      }
-  });
-  */
-
-};
-
-var polyanno_find_highest_ranking_frag_child = function(location_json) {
-  var the_child = fieldMatching(location_json.fragments, "rank", 0); 
-  return findField(the_child, "id");
-};
-
-var findHighestRankingChild = function(the_parent_json_children, locationID) {
-  var theLocation = fieldMatching(the_parent_json_children, "id", locationID);
-  return polyanno_find_highest_ranking_frag_child(theLocation);
-};
-
-///// TEXT SELECTION
-
-var outerElementTextIDstring;
-var newContent;
-var newNodeInsertID;
-var startParentID;
-
-function getSelected() {
-  if(window.getSelection) { return window.getSelection() }
-  else if(document.getSelection) { return document.getSelection(); }
-  else {
-    var selection = document.selection && document.selection.createRange();
-    if(selection.text) { return selection.text; }
-    return false;
-  }
-  return false;
-};
-
-var insertSpanDivs = function() {
-  $(outerElementTextIDstring).html(newContent); 
-  Polyanno.selected.transcription.DOMid = newNodeInsertID;
-};
-
-var findBaseURL = function() {
-  if (polyanno_text_type_selected == "transcription") {  return Polyanno.urls.transcription;  }
-  else if (polyanno_text_type_selected == "translation") {  return Polyanno.urls.translation;  };
-};
-
-var polyanno_new_anno_via_selection = function(baseURL) {
-  //need to refer specifically to body text of that transcription - make body independent soon so no need for the ridiculously long values??
-  Polyanno.selected.transcription.URI = Polyanno.selected.transcription.parent.concat("#"+Polyanno.selected.transcription.DOMid); 
-  Polyanno.selected.targets = [Polyanno.selected.transcription.URI];
-  var targetData = {
-    text: Polyanno.selected.transcription.fragment, metadata: imageSelectedMetadata, parent: Polyanno.selected.transcription.parent,
-    target: [
-          {id: Polyanno.selected.transcription.URI, format: "text/html"}, 
-          {id: Polyanno.selected.transcription.parent, format: "application/json"}, 
-          {id: imageSelected,  format: "application/json"  } 
-          ]
-  };
-  var thisEditorString = $("#"+Polyanno.selected.transcription.DOMid).closest(".textEditorPopup").attr("id");
-
-  var data = new Polyanno.transcription(targetData);
-  Polyanno.transcriptions.add(data);
-  Polyanno.selected.transcription = data;
-  polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [Polyanno.selected.transcription.parent], Polyanno.selected.transcriptions);
-
-  /*
-  $.ajax({
-    type: "POST",
-    url: baseURL,
-    async: false,
-    data: targetData,
-    success: 
-      function (data) {
-        var createdText = data.url;
-        Polyanno.selected.transcription.id = createdText;
-        polyanno_add_annotationdata(data.text, false, thisEditorString, [data.url], [false], [Polyanno.selected.transcription.parent], Polyanno.selected.transcriptions);
-      }
-  });
-  */
-
-
-};
-
 var polyanno_new_anno_for_child_of_merge = function(this_url, this_data, callback) {
-/*
-  $.ajax({
-    type: "POST",
-    url: this_url,
-    async: false,
-    data: this_data,
-    success: 
-      function (data) {
-        var createdText = data.url;
-        polyanno_add_annotationdata(data.text, false, false, [data.url], [false], [this_data.parent], [false], callback); ///giving the vector as false so it can be called with both the new anno AND the parent
-      }
-  });
-*/
+
 
 };
 
@@ -1618,37 +1416,336 @@ var polyanno_new_annos_via_linking = function(merged_vector) {
       };
   };  
 
-  var polyanno_new_translation_via_linking = function() {
-
-    /*
-    $.ajax({
-      type: "POST",
-      url: Polyanno.urls.translation,
-      async: false,
-      data: translation_data,
-      success: 
-        function (data) {
-          createdTranslation = data.url;
-          polyanno_add_annotationdata(data.text, false, false, [data.url], [merged_vector], [false], [false], polyanno_update_vector_children_iteratively ); 
-        }
-    });
-    */
-  };
-  /*
-  $.ajax({
-    type: "POST",
-    url: Polyanno.urls.transcription,
-    async: false,
-    data: transcription_data,
-    success: 
-      function (data) {
-        createdTranscription = data.url;
-        polyanno_add_annotationdata(data.text, false, false, [data.url], [merged_vector], [false], [false], polyanno_new_translation_via_linking);
-      }
-  });
-  */
 
 };
+
+
+
+
+
+
+
+
+
+
+///////////////////Editors
+
+Polyanno.editors = new Polyanno.collections(Polyanno.editor);
+
+Polyanno.editor = function(opts) {
+  this.id = opts.id;
+  this.docs = new Polyanno.collections(PSelectedObject);
+  /////canlink
+  ////canvote
+  ////
+};
+
+
+
+/////Methods
+
+
+Polyanno.editors.removeEditor = function(id) {
+  var this_editor = findByID(Polyanno.editors.array, id)[0];
+  Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
+};
+
+Polyanno.editors.closeEditor = function(thisEditor, reopen, text_selected, this_vector, text_parent, text_siblings) {
+  if (thisEditor.includes("#")) { thisEditor = thisEditor.split("#")[1]; };
+  var the_editor_gone = dragondrop_remove_pop(thisEditor);
+  if (!isUseless(the_editor_gone) && (!isUseless(reopen))) {
+    Polyanno.selected.transcription.id = reopen;
+    polyanno_set_and_open("refresh", false, text_selected, this_vector, text_parent, text_siblings);
+    return the_editor_gone;
+  }
+  else {
+    resetVectorHighlight(thisEditor);
+    Polyanno.editors.removeEditor(thisEditor);
+    return the_editor_gone;
+  }
+};
+
+Polyanno.editors.closeAll = function() {
+  for (item in Polyanno.editors.array) {
+    Polyanno.editors.closeEditor(item, false);
+  };
+};
+
+Polyanno.editors.openEditor = function() {
+
+  addEditorsOpen();
+
+};
+
+Polyanno.editors.ifOpen = function(fromType, textType) {
+
+  polyanno_text_type_selected = textType;
+
+  var comparison = Polyanno.selected.getAll();
+  if (isUseless(Polyanno.editors.array[0])) {    polyanno_set_and_open(fromType, false);  }
+  else {
+    var opened = $.grep( Polyanno.editors.array, function(ed) {
+      return ed.docs == comparison;
+    });
+    if (opened.length == 0) {
+      polyanno_set_and_open(fromType, false)
+    }
+    else {
+      $(opened[0].id).effect("shake");
+    };
+  };
+};
+
+var addEditorsOpen = function(popupIDstring) {
+  var thisEd = new PSelectedObject({
+    "id": popupIDstring,
+    "docs": Polyanno.selected.getAll(),
+    "tTypeSelected": polyanno_text_type_selected,
+    "children": Polyanno.selected.transcriptions.getAll(),
+    "typesFor": targetType
+  });
+  Polyanno.editors.add(thisEd);
+  return Polyanno.editors.getAll();
+};
+
+///// VIEWER WINDOWS
+
+var polyanno_shake_the_popups = function() {
+  $(".annoPopup").effect("shake", {
+    direction: "right",
+    distance: 10,
+    times: 2
+  });
+};
+
+var createEditorPopupBox = function() {
+
+  var dragon_opts = {
+    "minimise": polyanno_minimising,
+    "initialise_min_bar": false,
+    "beforeclose": preBtnClosing
+  };
+  var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
+  var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
+  $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups)
+  $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
+  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change");
+  $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
+  $(popupIDstring).find(".dragondrop-title").html(returnTextIcon(polyanno_text_type_selected));
+  $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text");
+
+  return popupIDstring;
+
+};
+
+var polyanno_can_link = function(popupIDstring) {
+  if ((!isUseless(targetType))&&(targetType.includes("vector") == false)){ 
+    $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
+    //add event listener for this
+  };
+};
+
+var polyanno_can_vote_add = function(popupIDstring) {
+  if ( targetType.includes(polyanno_text_type_selected) ) {
+    $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
+
+    //enable listening event for voting display   
+    ////improve to hover because otherwise flickering for small text displays!!
+    $(popupIDstring).on("mouseenter", ".polyanno-text-display", function(event){
+      //$(event.target).find(".polyanno-voting-overlay").css("display", "block");
+      $(event.target).find(".polyanno-voting-overlay").show("swing");
+    });
+    $(popupIDstring).on("mouseleave", ".polyanno-text-display", function(event){
+      //$(event.target).find(".polyanno-voting-overlay").css("display", "none");
+      $(event.target).find(".polyanno-voting-overlay").hide("swing");
+    });
+
+  };
+};
+
+var polyanno_is_new = function(popupIDstring, theSiblingArray) {
+  if ( isUseless(theSiblingArray) || isUseless(theSiblingArray[0]) ) {
+
+    $(popupIDstring).find(".polyanno-add-new-row")
+    .css("display", "block")
+    .attr("id", "addBox"+popupIDstring);
+
+    return true;
+  }
+  else {
+    return false;
+  };
+};
+
+var polyanno_build_text_display_row = function(polyannoTextAnno) {
+  var paragraphHTML = " <p id='";
+  var middleHTML = "' class='content-area' title=' '>";
+  var closingHTML1 = "</p>"
+  var itemText = polyannoTextAnno.text;
+  var itemID = polyannoTextAnno._id;
+  var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
+  return itemHTML;
+};
+
+var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring) {
+
+  $(popupIDstring).find(".polyanno-alternatives-toggle-row").css("display", "block");
+  var openingHTML1 = "<div class='col-md-12'><div class='polyanno-text-display row  ";
+  var openingHTML2 = "'>"
+  var closingHTML2 = `</div></div>`;
+
+  existingTextAnnos.forEach(function(subarray) {
+
+    var theParagraphHTML = polyanno_build_text_display_row(subarray[0]);
+    var thisItemID = subarray[0]._id;
+    var thisItemURL = findBaseURL() + thisItemID;
+
+    if (thisItemURL == Polyanno.selected.transcription.id){
+      $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
+    }
+    else {
+      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + polyannoVoteOverlayHTML + closingHTML2;
+      $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
+    };
+
+    if ( !isUseless(subarray[1]) )  {
+      var votesUp = subarray[1].votesUp;
+      $("."+thisItemID).find(".polyanno-voting-overlay").find(".polyannoVotesUpBadge").find(".badge").html(votesUp); 
+    }; 
+ 
+  });
+};
+
+var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
+
+  $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
+
+  if (existingTextAnnos.length == 1) {
+    //[[ {} ]]
+    var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0][0]);
+    $(popupIDstring).find(".polyanno-top-voted").append(itemHTML);
+  }
+  else {
+    polyanno_build_alternatives_list(existingTextAnnos, popupIDstring);
+  };
+
+};
+
+var polyanno_populate_tags = function(theAnno, popupIDstring) {
+  var tagHTML1 = "<a class='polyanno-tag' >";
+  var tagHTML2 = "</a>";
+  if (!isUseless(theAnno.metadata)) {
+    var polyanno_searching = $.grep(theAnno.metadata, function(e){ 
+        if (!isUseless(e.label)) {  return e.label == "Tag";   };
+    });
+    polyanno_searching.forEach(function(theTagSpan){
+      var polyannoTagHTML = tagHTML1 + theTagSpan + tagHTML2;
+      $(popupIDstring).find(".polyanno-metadata-tags-row").append(polyannoTagHTML);
+    });
+  };
+};
+
+var openEditorMenu = function(thisSiblingArray) {
+
+  var popupIDstring = createEditorPopupBox();
+
+  polyanno_can_link(popupIDstring);
+  polyanno_can_vote_add(popupIDstring);
+
+  var checkIfNew = polyanno_is_new(popupIDstring, thisSiblingArray);
+  if (!checkIfNew) {
+    polyanno_display_editor_texts(thisSiblingArray, popupIDstring);
+    polyanno_populate_tags(thisSiblingArray[0][0], popupIDstring);
+  };
+
+  addEditorsOpen(popupIDstring); 
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///// TEXT SELECTION
+
+Polyanno.textSelection = {};
+
+var outerElementTextIDstring;
+var newContent;
+var newNodeInsertID;
+var startParentID;
+
+function getSelected() {
+  if(window.getSelection) { return window.getSelection() }
+  else if(document.getSelection) { return document.getSelection(); }
+  else {
+    var selection = document.selection && document.selection.createRange();
+    if(selection.text) { return selection.text; }
+    return false;
+  }
+  return false;
+};
+
+var insertSpanDivs = function() {
+  $(outerElementTextIDstring).html(newContent); 
+  Polyanno.selected.transcription.DOMid = newNodeInsertID;
+};
+
+var findBaseURL = function() {
+  if (polyanno_text_type_selected == "transcription") {  return Polyanno.urls.transcription;  }
+  else if (polyanno_text_type_selected == "translation") {  return Polyanno.urls.translation;  };
+};
+
+var polyanno_new_anno_via_selection = function(baseURL) {
+
+  var base;
+  if (isUseless(Polyanno.selected.transcriptions[0])) { base = "translation"; }
+  else { base = "transcription"; };
+
+  Polyanno.selected[base].URI = Polyanno.selected[base].parent.concat("#"+Polyanno.selected[base].DOMid); 
+
+
+  Polyanno.selected.targets = [{"id": Polyanno.selected[base].URI}];
+
+
+  var targetData = {
+    text: Polyanno.selected[base].fragment, metadata: imageSelectedMetadata, parent: Polyanno.selected[base].parent,
+    target: [
+          {id: Polyanno.selected[base].URI, format: "text/html"}, 
+          {id: Polyanno.selected[base].parent, format: "application/json"}, 
+          {id: imageSelected,  format: "application/json"  } 
+          ]
+  };
+
+  var thisEditorString = $("#"+Polyanno.selected.transcription.DOMid).closest(".textEditorPopup").attr("id");
+
+  var data = new Polyanno.transcription(targetData);
+  Polyanno.transcriptions.add(data);
+  Polyanno.selected.transcription.doc = data;
+  polyanno_add_annotationdata(data, false, thisEditorString );
+
+
+};
+
+
 
 Polyanno.selected.setDOMid  = function(theText) {
 
@@ -1818,159 +1915,10 @@ var setNewTextVariables = function(selection, classCheck) {
   };
 };
 
-///// VIEWER WINDOWS
 
-var polyanno_shake_the_popups = function() {
-  $(".annoPopup").effect("shake", {
-    direction: "right",
-    distance: 10,
-    times: 2
-  });
-};
 
-var createEditorPopupBox = function() {
 
-  var dragon_opts = {
-    "minimise": polyanno_minimising,
-    "initialise_min_bar": false,
-    "beforeclose": preBtnClosing
-  };
-  var polyannoEditorHTML = polyannoEditorHTML_partone + polyannoEditorHTML_options + polyannoEditorHTML_partfinal;
-  var popupIDstring = add_dragondrop_pop("textEditorPopup", polyannoEditorHTML, "polyanno-page-body", dragon_opts, polyannoEditorHandlebarHTML);
-  $(popupIDstring).show("drop", null, null,polyanno_shake_the_popups)
-  $(popupIDstring).find(".dragondrop-handlebar").addClass("polyanno-colour-change");
-  $(popupIDstring).find(".dragondrop-handlebar-obj").addClass("polyanno-colour-change");
-  $(popupIDstring).find(".dragondropbox").addClass("textEditorBox");
-  $(popupIDstring).find(".dragondrop-title").html(returnTextIcon(polyanno_text_type_selected));
-  $(popupIDstring).find(".textEditorMainBox").find('*').addClass(polyanno_text_type_selected+"-text");
 
-  return popupIDstring;
-
-};
-
-var polyanno_can_link = function(popupIDstring) {
-  if ((!isUseless(targetType))&&(targetType.includes("vector") == false)){ 
-    $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
-    //add event listener for this
-  };
-};
-
-var polyanno_can_vote_add = function(popupIDstring) {
-  if ( targetType.includes(polyanno_text_type_selected) ) {
-    $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
-
-    //enable listening event for voting display   
-    ////improve to hover because otherwise flickering for small text displays!!
-    $(popupIDstring).on("mouseenter", ".polyanno-text-display", function(event){
-      //$(event.target).find(".polyanno-voting-overlay").css("display", "block");
-      $(event.target).find(".polyanno-voting-overlay").show("swing");
-    });
-    $(popupIDstring).on("mouseleave", ".polyanno-text-display", function(event){
-      //$(event.target).find(".polyanno-voting-overlay").css("display", "none");
-      $(event.target).find(".polyanno-voting-overlay").hide("swing");
-    });
-
-  };
-};
-
-var polyanno_is_new = function(popupIDstring, theSiblingArray) {
-  if ( isUseless(theSiblingArray) || isUseless(theSiblingArray[0]) ) {
-
-    $(popupIDstring).find(".polyanno-add-new-row")
-    .css("display", "block")
-    .attr("id", "addBox"+popupIDstring);
-
-    return true;
-  }
-  else {
-    return false;
-  };
-};
-
-var polyanno_build_text_display_row = function(polyannoTextAnno) {
-  var paragraphHTML = " <p id='";
-  var middleHTML = "' class='content-area' title=' '>";
-  var closingHTML1 = "</p>"
-  var itemText = polyannoTextAnno.text;
-  var itemID = polyannoTextAnno._id;
-  var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
-  return itemHTML;
-};
-
-var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring) {
-
-  $(popupIDstring).find(".polyanno-alternatives-toggle-row").css("display", "block");
-  var openingHTML1 = "<div class='col-md-12'><div class='polyanno-text-display row  ";
-  var openingHTML2 = "'>"
-  var closingHTML2 = `</div></div>`;
-
-  existingTextAnnos.forEach(function(subarray) {
-
-    var theParagraphHTML = polyanno_build_text_display_row(subarray[0]);
-    var thisItemID = subarray[0]._id;
-    var thisItemURL = findBaseURL() + thisItemID;
-
-    if (thisItemURL == Polyanno.selected.transcription.id){
-      $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
-    }
-    else {
-      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + polyannoVoteOverlayHTML + closingHTML2;
-      $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
-    };
-
-    if ( !isUseless(subarray[1]) )  {
-      var votesUp = subarray[1].votesUp;
-      $("."+thisItemID).find(".polyanno-voting-overlay").find(".polyannoVotesUpBadge").find(".badge").html(votesUp); 
-    }; 
- 
-  });
-};
-
-var polyanno_display_editor_texts = function(existingTextAnnos, popupIDstring) {
-
-  $(popupIDstring).find(".polyanno-top-voted").css("display", "block");
-
-  if (existingTextAnnos.length == 1) {
-    //[[ {} ]]
-    var itemHTML = polyanno_build_text_display_row(existingTextAnnos[0][0]);
-    $(popupIDstring).find(".polyanno-top-voted").append(itemHTML);
-  }
-  else {
-    polyanno_build_alternatives_list(existingTextAnnos, popupIDstring);
-  };
-
-};
-
-var polyanno_populate_tags = function(theAnno, popupIDstring) {
-  var tagHTML1 = "<a class='polyanno-tag' >";
-  var tagHTML2 = "</a>";
-  if (!isUseless(theAnno.metadata)) {
-    var polyanno_searching = $.grep(theAnno.metadata, function(e){ 
-        if (!isUseless(e.label)) {  return e.label == "Tag";   };
-    });
-    polyanno_searching.forEach(function(theTagSpan){
-      var polyannoTagHTML = tagHTML1 + theTagSpan + tagHTML2;
-      $(popupIDstring).find(".polyanno-metadata-tags-row").append(polyannoTagHTML);
-    });
-  };
-};
-
-var openEditorMenu = function(thisSiblingArray) {
-
-  var popupIDstring = createEditorPopupBox();
-
-  polyanno_can_link(popupIDstring);
-  polyanno_can_vote_add(popupIDstring);
-
-  var checkIfNew = polyanno_is_new(popupIDstring, thisSiblingArray);
-  if (!checkIfNew) {
-    polyanno_display_editor_texts(thisSiblingArray, popupIDstring);
-    polyanno_populate_tags(thisSiblingArray[0][0], popupIDstring);
-  };
-
-  addEditorsOpen(popupIDstring); 
-
-};
 
 //////////////////////////////////////////////////////////////////
 
@@ -2038,6 +1986,10 @@ var polyanno_add_annotationdata = function(thisAnnoData, thisEditor, parentEdito
 
 };
 
+
+
+
+
 var polyanno_new_anno_via_text_box = function(thisEditor){
 
   var editorString = "#" + thisEditor;
@@ -2061,26 +2013,17 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
 
   var data = new Polyanno.transcription(theData);
 
+
+
   Polyanno.editors.closeEditor(thisEditor);
-  polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);  
+  polyanno_add_annotationdata(data.text, thisEditor);  
 
-/*
-  $.ajax({
-    type: "POST",
-    url: findBaseURL(),
-    async: false,
-    data: theData,
-    success: 
-      function (data) {
-
-        Polyanno.editors.closeEditor(thisEditor);
-        polyanno_add_annotationdata(data.text, thisEditor, false, [data.url], this_vec, this_parent, Polyanno.selected.transcriptions);
-      }
-  });
-
-*/
 
 };
+
+
+
+
 
 var polyanno_setting_global_variables = function(fromType, text_selected, this_vector_selected, text_parent) {
 
@@ -2171,7 +2114,7 @@ var polyanno_setting_global_variables = function(fromType, text_selected, this_v
 var polyanno_set_and_open = function(fromType, callback_function, text_selected, this_vector, text_parent, text_siblings) {
   var the_targets = polyanno_setting_global_variables(fromType, text_selected, this_vector, text_parent);
   if (!isUseless(the_targets) && (isUseless(text_siblings))) {
-    polyanno_annos_of_target(Polyanno.selected.targets[0], findBaseURL(), openEditorMenu);
+    polyanno_annos_of_target(Polyanno.selected.targets[0], null, openEditorMenu);
     if (!isUseless(callback_function)) { callback_function()  };
   }
   else {
@@ -2197,7 +2140,6 @@ var settingEditorVars = function(thisEditor) {
 ////HIGHLIGHTING 
 
 var highlightVectorChosen = function(chosenVector, colourChange) {
-  alert("the vector to highlight is "+chosenVector);
   var this_layer = allDrawnItems.getLayer(chosenVector);
   this_layer.setStyle({color: colourChange});
 };
@@ -2992,7 +2934,7 @@ var polyanno_leaflet_basic_setup = function() {
 
   polyanno_map.whenReady(function(){
     mapset = true;
-    polyanno_annos_of_target(imageSelected, Polyanno.urls.vector, polyanno_load_existing_vectors);
+    polyanno_annos_of_target(imageSelected, "vector", polyanno_load_existing_vectors);
     polyanno_creating_vec();
     polyanno_vec_select();
     polyanno_vector_edit_setup();
