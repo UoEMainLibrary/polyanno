@@ -421,7 +421,6 @@ var annosCheckArray = function(value, type) {
   else {
     var check = false;
     for (var i=0; i < value.length; i++) {
-      alert("the value is "+value[i]+" and the type is "+type);
       if (!annoCheckType(value[i], type)){ check = true; };
     };
     if (!check) {  return value;  };
@@ -544,25 +543,14 @@ PolyannoEventEmitter.prototype.trigger = function(event) {
 Polyanno.collections = function(type) {
   this.type = type;
   this.array = [];
-  this.get = function() {
-    return this.array;
-  };
-
 };
-
-Object.defineProperty(Polyanno.collections.prototype, "array", {
-  set: function(value) {
-    var type = this.type;
-    array = annosCheckArray(value, type); 
-  }
-});
 
 ///Methods
 
 Polyanno.collections.prototype.add = function(anno) {
   var oldArr = [].concat(this.array);
   oldArr.push(anno);
-  this.array = oldArr;
+  this.array = annosCheckArray(oldArr, this.type);
   //this.trigger('polyanno:added');
 };
 
@@ -640,9 +628,9 @@ Polyanno.annotation = function(value) {
   };
 
   this.type = "Annotation";
-  this.body = new PAnnoSubDoc(opts.body);
-  this.target = opts.target;
-
+  this.body = subdocIDchecking(opts.body);
+  if (opts.target instanceof Array) {  this.target = settingTargets(opts.target, []);  }
+  else {  console.error("TypeError: Annotation.target must be of Type Array.");  };
   this.creator = {
     name: polyanno_current_username,
     motivation: "identifying"
@@ -680,34 +668,25 @@ var subdocIDchecking = function(value) {
     };
 };
 
-Object.defineProperty(Polyanno.annotation.prototype, "body", {
-  set: function(value) {
-    body = subdocIDchecking(value);
-  }
-});
-
-Object.defineProperty(Polyanno.annotation.prototype, "target", {
-  set: function(value) {
-    var arr = [].concat(this.target);
-    if (value instanceof Array) {
-      for (var i=0; i < value.length; i++) {
-        var this_target = subdocIDchecking(value[i]);
-        if (this_target == false) { break; };
-        var existing = findByID(arr, this_target.id);
-        if (existing.length > 0) {
-          for (props in this_target) {
-            existing[0][props] = this_target[props];
-          };
-          arraySearchReplace(arr, existing);
-        }
-        else {
-          arr.push(this_target);
-        };
-      }
+var settingTargets = function(value, oldArr) {
+  var arr = [];
+  for (var i=0; i < value.length; i++) {
+    var this_target = subdocIDchecking(value[i]);
+    if (this_target == false) { break; };
+    var existing = findByID(arr, this_target.id);
+    if (existing.length > 0) {
+      for (props in this_target) {
+        existing[0][props] = this_target[props];
+      };
+      arraySearchReplace(arr, existing);
     }
-    else {  console.error("TypeError: Annotation.target must be of Type Array.");  };
-  }
-});
+    else {
+      arr.push(this_target);
+    };
+  };
+  if (!isUseless(oldArr[0])) {    arr.concat(oldArr);  };
+  return arr;
+};
 
 
 /////Methods
@@ -806,11 +785,11 @@ var t1 = new Polyanno.annotation({
   }]
 });
 
-alert(JSON.stringify(Polyanno.annotations));
+Polyanno.annotations.add(t1);
 
 var t2 = Polyanno.getAnnotationsByTarget("sheep");
 
-alert(JSON.stringify(t2));
+alert("getby targets returns"+JSON.stringify(t2));
 
 
 
