@@ -1448,9 +1448,9 @@ Polyanno.editor = function(textType) {
   this.DOM = $(popupIDstring);
   this.id = $(popupIDstring).attr("id");
   this.docs = {
-    vectors: Polyanno.selected.vectors,
-    transcriptions: Polyanno.selected.transcriptions,
-    translations: Polyanno.selected.translations
+    vectors: Polyanno.selected.vectors.array,
+    transcriptions: Polyanno.selected.transcriptions.array,
+    translations: Polyanno.selected.translations.array
   };
   this.targets = Polyanno.selected.targets;
   this.type = textType;
@@ -1714,38 +1714,26 @@ var strangeTrimmingFunction = function(thetext) {
 
 var newTextPopoverOpen = function() {
   $('#polyanno-page-body').on("click", function(event) {
+    alert($(event.target).attr("class"));
     if ($(event.target).hasClass("popupAnnoMenu") == false) {
-      Polyanno.selected.textHighlighting.parentDOM.popover("hide");
+      Polyanno.selected.textHighlighting.DOM.popover("hide");
+      Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.oldContent); 
     }
   });
 
   $('.openTranscriptionMenuNew').on("click", function(event) {
+    Polyanno.selected.textHighlighting.DOM.popover("hide");
     polyanno_new_anno_via_selection("transcription");   
   });
 
   $('.openTranslationMenuNew').on("click", function(event) {
+    Polyanno.selected.textHighlighting.DOM.popover("hide");
     polyanno_new_anno_via_selection("translation");  
   });
 
-  $('.closeThePopover').on("click", function(event){
-    Polyanno.selected.textHighlighting.parentDOM.popover("hide");
-  });
-};
-
-var initialiseNewTextPopovers = function(base) {
-  var this_base = base;
-  ///dynamically change HTML
-  Polyanno.selected.textHighlighting.parentDOM.popover({ 
-    trigger: 'manual',
-    placement: 'top',
-    html : true,
-    container: 'body',
-    title: closeButtonHTML,
-    content: popupTranscriptionNewMenuHTML
-  });
-  Polyanno.selected.textHighlighting.parentDOM.popover('show');
-  Polyanno.selected.textHighlighting.parentDOM.on("shown.bs.popover", function(ev) {
-    newTextPopoverOpen();
+  $('.closePopoverMenuBtn').on("click", function(event){
+    Polyanno.selected.textHighlighting.DOM.popover("hide");
+    Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.oldContent); 
   });
 };
 
@@ -1753,9 +1741,10 @@ var initialiseOldTextPopovers = function() {
   ///need to change content selection
   Polyanno.selected.textHighlighting.parentDOM.popover({ 
     trigger: 'manual', //////
-    placement: 'top',
     html : true,
     title: closeButtonHTML,
+    placement: "auto top",
+    viewport: "#polyanno-page-body",
     content: popupTranscriptionChildrenMenuHTML
   });
   Polyanno.selected.textHighlighting.parentDOM.popover('show');
@@ -1784,27 +1773,35 @@ var setOEEC = function(outerElementHTML, nextSpanContent, nextSpan) {
 
 var setNewTextVariables = function(selection, classCheck) {
 
-  var base;
-  if (isUseless(Polyanno.selected.transcriptions[0])) { base = "translation"; }
-  else { base = "transcription"; };
-
   var startNode = selection.anchorNode; // the text type Node that the beginning of the selection was in
+
   var startNodeText = startNode.textContent; // the actual textual body of the startNode - removes all html element tags contained
   var startNodeTextEndIndex = startNodeText.toString().length;
   var startParentID = startNode.parentElement.id;
   var startParentClass = startNode.parentElement.parentElement.className;
 
+  ////////***** Selections ends depend on which way aorund the text is selected NOT which way around in the text the positions are ******
   var nodeLocationStart = selection.anchorOffset; //index from within startNode text where selection starts
   var nodeLocationEnd = selection.focusOffset; //index from within endNode text where selection ends
+  if (nodeLocationStart < nodeLocationEnd) {
+    nodeLocationStart = selection.focusOffset;
+    nodeLocationEnd = selection.anchorOffset;
+  };
 
   var endNode = selection.focusNode; //the text type Node that end of the selection was in 
+
   var endNodeText = endNode.textContent;
   var endParentID = endNode.parentElement.id; //the ID of the element type Node that the text ends in
 
   var outerElementTextIDstring = "#" + startParentID; //will be encoded URI of API?
   Polyanno.selected.textHighlighting.parentDOM = $(outerElementTextIDstring);
 
-  Polyanno.selected.textHighlighting.parent = Polyanno.selected[base];
+  var edID = $(outerElementTextIDstring).closest(".textEditorPopup").attr("id");
+  var ed = Polyanno.editors.getById(edID);
+  var base = ed.type;
+  var plural = base.concat("s");
+
+  Polyanno.selected.textHighlighting.parent = ed.docs[plural][0].id;
 
   if (classCheck.includes('opentranscriptionChildrenPopup')) { 
     Polyanno.selected.textHighlighting.type = "transcription";
@@ -1843,12 +1840,29 @@ var setNewTextVariables = function(selection, classCheck) {
     var outerElementEndContent = setOEEC(outerElementHTML, nextSpanContent, nextSpan );
 
     Polyanno.selected.textHighlighting.DOMid = newNodeInsertID;
-    Polyanno.selected.textHighlighting.DOM = $("#"+newNodeInsertID);
     Polyanno.selected.textHighlighting.URI = Polyanno.selected.textHighlighting.parent.concat("#"+Polyanno.selected.textHighlighting.DOMid);
+    Polyanno.selected.textHighlighting.oldContent = Polyanno.selected.textHighlighting.parentDOM.html();
     Polyanno.selected.textHighlighting.newContent = outerElementStartContent + newSpan + outerElementEndContent;
     Polyanno.selected.textHighlighting.fragment = strangeTrimmingFunction(selection);
 
-    initialiseNewTextPopovers(base);
+    Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.newContent); 
+    Polyanno.selected.textHighlighting.DOM = $("#"+newNodeInsertID);
+
+    Polyanno.selected.textHighlighting.DOM.css("background-color", "yellow");
+    ///need to dynamically change HTML
+    Polyanno.selected.textHighlighting.DOM.popover({ 
+      trigger: 'manual',
+      html : true,
+      container: 'body',
+      placement: "auto top",
+      title: closeButtonHTML,
+      viewport: "#polyanno-page-body",
+      content: popupTranscriptionNewMenuHTML
+    });
+    Polyanno.selected.textHighlighting.DOM.popover('show');
+    Polyanno.selected.textHighlighting.DOM.on("shown.bs.popover", function(ev) {
+      newTextPopoverOpen();
+    });
 
   };
 };
@@ -1857,24 +1871,20 @@ var setNewTextVariables = function(selection, classCheck) {
 //////////////////////////////////////////////////////////////////
 
 var polyanno_new_anno_via_selection = function(base) {
-
-  //popover
-  Polyanno.selected.textHighlighting.parentDOM.popover('hide'); 
-
+  var plural = base.concat("s");
+  var parent = Polyanno[plural].getById(Polyanno.selected.textHighlighting.parent);
 
   ///objects
   var targetData = {
     text: Polyanno.selected.textHighlighting.fragment, 
     metadata: imageSelectedMetadata, 
-    parent: Polyanno.selected.textHighlighting.parent,
+    parent: parent,
     target: [
           {id: Polyanno.selected.textHighlighting.URI, format: "text/html"}, 
           {id: Polyanno.selected.textHighlighting.parent, format: "application/json"}, 
           {id: imageSelected,  format: "application/json"  } 
           ]
   };
-
-  var plural = base.concat("s");
 
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
@@ -1883,13 +1893,10 @@ var polyanno_new_anno_via_selection = function(base) {
   var new_anno = new Polyanno.annotation(targetData);
   Polyanno.annotations.add(new_anno);
 
-  var parent = Polyanno[plural].findByID(Polyanno.selected.textHighlighting.parent);
   parent.update({text: Polyanno.selected.textHighlighting.newContent});
 
 
   ///editors and selected
-
-  Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.newContent); 
 
   Polyanno.selected.reset();
   Polyanno.selected[plural].add(data);
@@ -1936,6 +1943,7 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   Polyanno.annotations.add(new_anno);
 
   Polyanno.selected[plural].add(data);
+  thisEditor.docs[plural] = Polyanno.selected[plural].array;
 
   ///HTML
 
@@ -2710,9 +2718,6 @@ var polyanno_open_existing_text_transcription_menu = function() {
 
   var selection = getSelected(); 
 
-  ///not sure entirely about synchronicity of this but meh
-  Polyanno.selected.reset();
-
   Polyanno.selected.transcription.DOMid = startParentID;
   if (  !isUseless(Polyanno.selected.textHighlighting.parentDOM.parent().attr('id')) ){
     Polyanno.selected.transcription.parent = Polyanno.urls.transcription + Polyanno.selected.textHighlighting.parentDOM.parent().attr('id'); 
@@ -2741,9 +2746,6 @@ var polyanno_open_existing_text_translation_menu = function() {
 };
 
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
-
-  ///not sure entirely about synchronicity of this but meh
-  Polyanno.selected.reset();
 
   var selection = getSelected(); 
   var classCheck;
@@ -3115,20 +3117,24 @@ var polyanno_setup_highlighting = function() {
 
   $('#polyanno-page-body').on("mouseover", ".textEditorBox", function(event){
 
-    var thisEditor = "#" + $(event.target).closest(".textEditorPopup").attr("id");
+    var thisEditorDOM = $(event.target).closest(".textEditorPopup");
+    var id = thisEditorDOM.attr("id");
+    var thisEditor = Polyanno.editors.getById(id);
+    thisEditor.setSelected();
+
     //////////
-    $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.highlight.editor);
+    thisEditorDOM.find(".polyanno-colour-change").css("background-color", Polyanno.colours.highlight.editor);
     findAndHighlight("editor", thisEditor, Polyanno.colours.highlight);
     //////////
-    $(thisEditor).on("mouseenter", ".opentranscriptionChildrenPopup", function(event){
-      $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.default.editor);
+    thisEditorDOM.on("mouseenter", ".opentranscriptionChildrenPopup", function(event){
+      thisEditorDOM.find(".polyanno-colour-change").css("background-color", Polyanno.colours.default.editor);
       findAndHighlight("editor", thisEditor, Polyanno.colours.default);
       var thisSpan = $(event.target).attr("id");
       $("#"+thisSpan).css("background-color", Polyanno.colours.highlight.span);
       findAndHighlight("transcription.DOMid", thisSpan, Polyanno.colours.highlight);
     });
 
-    $(thisEditor).on("mouseleave", ".opentranscriptionChildrenPopup", function(event){
+    thisEditorDOM.on("mouseleave", ".opentranscriptionChildrenPopup", function(event){
       var thisSpan = $(event.target).attr("id");
       $("#"+thisSpan).css("background-color", Polyanno.colours.default.span);
       findAndHighlight("transcription.DOMid", thisSpan, Polyanno.colours.default);
@@ -3137,6 +3143,7 @@ var polyanno_setup_highlighting = function() {
   });
 
   $('#polyanno-page-body').on("mouseout", ".textEditorBox", function(event){
+    Polyanno.selected.reset();
     var thisEditor = "#" + $(event.target).closest(".textEditorPopup").attr("id");
     $(thisEditor).find(".polyanno-colour-change").css("background-color", Polyanno.colours.default.editor);
     findAndHighlight("editor", thisEditor, Polyanno.colours.default);
