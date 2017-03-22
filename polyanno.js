@@ -33,10 +33,10 @@ var temp_merge_shape = new L.FeatureGroup();
 var controlOptions = {
     draw: {
         polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
-        marker: false,
+        marker: false
     },
     edit: {
-        featureGroup: allDrawnItems, //passes draw controlOptions to the FeatureGroup of editable layers
+        featureGroup: allDrawnItems //passes draw controlOptions to the FeatureGroup of editable layers
     }
 };
 
@@ -272,10 +272,10 @@ var Polyanno =  {
   HTML : {}
 };
 
-var polyanno_obj_added = new Event('polyanno:added');
-var polyanno_obj_created = new Event('polyanno:created');
-var polyanno_obj_deleted = new Event('polyanno:removed');
-var polyanno_obj_edited = new Event('polyanno:edited');
+var polyanno_obj_added = new Event("polyanno:added");
+var polyanno_obj_created = new Event("polyanno:created");
+var polyanno_obj_deleted = new Event("polyanno:removed");
+var polyanno_obj_edited = new Event("polyanno:edited");
 
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
 var findingcookies = document.cookie;
@@ -286,7 +286,7 @@ var $imeSelector = false;
 
 var isUseless = function(something) {
   if (rejectionOptions.has(something) || rejectionOptions.has(typeof something)) {  return true;  }
-  else {  return false;  };
+  else {  return false;  }
 };
 
 var getTargetJSON = function(target, callback_function) {
@@ -316,7 +316,7 @@ var updateAnno = function(targetURL, targetData, callback_function) {
 };
 
 var fieldMatching = function(searchArray, field, fieldValue) {
-  if (isUseless(searchArray) || isUseless(field) || isUseless(fieldValue)) {  return false  }
+  if (isUseless(searchArray) || isUseless(field) || isUseless(fieldValue)) {  return false;  }
   else {
     var theMatch = false; 
     searchArray.forEach(function(childDoc){
@@ -445,8 +445,7 @@ var checkForVectorTarget = function(theText) {
 
   var theAnno = Polyanno.getAnnotationByBody(theText);
   var targetSearch =  fieldMatching(theAnno.target, "format", 'image/SVG');
-    return targetSearch.id;  
-  };
+  return targetSearch.id;  
 
 };
 
