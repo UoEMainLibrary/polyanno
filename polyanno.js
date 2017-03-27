@@ -344,10 +344,13 @@ var annoCheckType = function(anno, type) {
 
 var searchingUnknownByID = function(id) {
   var type;
-  for (url in Polyanno.urls) {  if (id.includes(Polyanno.urls[url])) { type = url; } };
-  var coll = type.concat("s");
-  var obj = Polyanno[coll].getById(id);
-  return obj;
+  for (url in Polyanno.urls) {  if (id.includes(Polyanno.urls[url])) { 
+    type = url; 
+    var coll = type.concat("s");
+    var obj = Polyanno[coll].getById(id);
+    return obj;
+  } };
+  return false;
 };
 
 var replaceChildText = function(oldText, spanID, newInsert, oldInsert) {
@@ -379,7 +382,7 @@ var polyanno_annos_of_target = function(target, baseType, callback_function) {
   var data = Polyanno.getAnnotationsByTarget(target, baseType, true);
 
   var bodies = [];
-  for (var i=0; i< data.array.length; i++) {  
+  for (var i=0; i< data.array.length; i++) { 
     bodies.push(data.array[i].body); 
   };
   if (!isUseless(callback_function)) {    callback_function(bodies);  }
@@ -590,14 +593,8 @@ Polyanno.HTML.connectingEquals = {
 
 Polyanno.HTML.buildingParents = {
     Transcriptions : `
-                                      <div class="row polyanno-building-parents-title">
-                                        <h3>The New Transcription:</h3>
-                                      </div>
                                       <div id="polyanno_merging_transcription" class="row"></div>`,
     Translations : `
-                                      <div class="row polyanno-building-parents-title">
-                                        <h3>The New Translation:</h3>
-                                      </div>
                                       <div id="polyanno_merging_translation" class="row"></div>`
 };
 
@@ -902,7 +899,7 @@ var expandingAnnotation = function (obj) {
 Polyanno.getAnnotationsByTarget = function(target, type, expanded) {
   var search = function(targets, aim) {
     var a = $.grep(targets, function(t){
-      return t.id = aim;
+      return t.id == aim;
     });
     if (a.length > 0) {  return true;  }
     else { return false };
@@ -2041,7 +2038,6 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   theData.body = data;
   var new_anno = new Polyanno.annotation(theData);
   Polyanno.annotations.add(new_anno);
-
   Polyanno.selected[plural].add(data);
   thisEditor.docs[plural] = Polyanno.selected[plural].array;
 
@@ -2622,15 +2618,14 @@ var polyanno_create_merging_anno_span = function(this_json, text_type) {
   var this_class = text_type.concat("-text");
   var the_new_span = "<a class='" + newSpanClass(this_class) + " ' id='" + new_frag_id + "' >" + this_json.text + "</a>";
   var new_text = old_text.concat(the_new_span);
-  alert("the json is "+JSON.stringify(this_json));
   $(this_display_id).html(new_text);
   $("#"+new_frag_id).css("background-color", Polyanno.colours.processing.span);
   return new_text; 
 };
 
 var polyanno_merging_anno_json = function(new_vec, textType) {
-  var targets = Polyanno.selected[plural].array;
   var plural = textType.concat("s");
+  var targets = Polyanno.selected[plural].array;
   if (targets.length == 0) {
     var newID = Math.random().toString().substring(2);
     var id = Polyanno.urls[textType].concat(newID);
@@ -2690,7 +2685,7 @@ var polyanno_new_anno_via_building = function(merged_vector, textType) {
   var createdText = new Polyanno[textType](data);
   Polyanno[plural].add(createdText);
   data.body = createdText;
-  var newAnno = Polyanno.annotation(data);
+  var newAnno = new Polyanno.annotation(data);
   Polyanno.annotations.add(newAnno);
   return createdText;
 };
