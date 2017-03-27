@@ -378,7 +378,8 @@ var polyanno_annos_of_target = function(target, baseType, callback_function) {
   var data = Polyanno.getAnnotationsByTarget(target, baseType, true);
   var bodies = [];
   for (var i=0; i< data.length; i++) {  bodies.push(data[i].body);  };
-  if (!isUseless(callback_function)) {    callback_function(bodies);  }; 
+  if (!isUseless(callback_function)) {    callback_function(bodies);  }
+  else { return bodies; };
 };
 
 
@@ -450,7 +451,7 @@ Polyanno.colours.connectColours = function(object, type, action) {
 
       var transcriptionSpan = object.docs.transcriptions[0];
       if (!isUseless(transcriptionSpan)) { 
-        var targets = check.getAnnosTargetingThis("translation");
+        var targets = polyanno_annos_of_target(transcriptionSpan.id, "translation");
         for (var i=0; i < targets.length; i++) {
           var o = document.getElementById(targets[i]._id);
           if (o != null) { Polyanno.colours.highlightThis.span($(o), Polyanno.colours[action]["span"]); };
@@ -459,7 +460,7 @@ Polyanno.colours.connectColours = function(object, type, action) {
 
       var translationSpan = object.docs.translations[0];
       if (!isUseless(translationSpan)) { 
-        var targets = check.getAnnosTargetingThis("transcription");
+        var targets = polyanno_annos_of_target(translationSpan.id, "transcription");
         for (var i=0; i < targets.length; i++) {
           var o = document.getElementById(targets[i]._id);
           if (o != null) { Polyanno.colours.highlightThis.span($(o), Polyanno.colours[action]["span"]); };
@@ -472,7 +473,7 @@ Polyanno.colours.connectColours = function(object, type, action) {
       var ed = Polyanno.editors.findOneByDoc(object, "vectors");
       if (!isUseless(ed)) { Polyanno.colours.highlightThis.editor(ed, Polyanno.colours[action]["editor"]); };
 
-      var targets = Polyanno.vectors.getById(object).getAnnosTargetingThis();
+      var targets = polyanno_annos_of_target(object);
       for (var i=0; i < targets.length; i++) {
         var o = document.getElementById(targets[i]._id);
         if (o != null) { Polyanno.colours.highlightThis.span($(o), Polyanno.colours[action]["span"]); };
@@ -494,7 +495,7 @@ Polyanno.colours.connectColours = function(object, type, action) {
 
       var check = Polyanno[plural].getById(id);
       if (!isUseless(check)) {
-        var targets = check.getAnnosTargetingThis(opp);
+        var targets = polyanno_annos_of_target(id, opp);
         for (var i=0; i < targets.length; i++) {
           var o = document.getElementById(targets[i]._id);
           if (o != null) { Polyanno.colours.highlightThis.span($(o), Polyanno.colours[action]["span"]); };
