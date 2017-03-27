@@ -214,13 +214,16 @@
 	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+.polyanno-building-parents-title {
+
+}
+
 .polyanno-merging-buttons {
 	display: none;
 }
 
 #polyanno_merging_transcription {
   	text-align: center;
-  	font-size: 1.5em;
    white-space: pre-wrap;      /* Webkit */    
    white-space: -moz-pre-wrap; /* Firefox */     
    white-space: -pre-wrap;     /* Opera <7 */    
@@ -231,7 +234,6 @@
 
 #polyanno_merging_translation {
   	text-align: center;
-  	font-size: 1.5em;
    white-space: pre-wrap;      /* Webkit */    
    white-space: -moz-pre-wrap; /* Firefox */     
    white-space: -pre-wrap;     /* Opera <7 */    
