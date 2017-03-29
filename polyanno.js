@@ -2265,8 +2265,8 @@ var check_this_shape_for_overlapping = function(shape, theItems, justOverlap, co
   //completeParent -- (false) returns the layer that the new shape is entirely inside as soon as found, (true) keeps running checks before returning full details
   //completeChildren -- (false) returns the first layer inside the new shape that is found, (true) keeps running checks before returning full details
 
-  //[number, children_array, parent_array]
-  //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
+  //[number, overlap_array, parent_array, children_array]
+  //where number: 0 = no overlap, 1 = overlap, 2 = new shape is child, 3 = new shape is parent
 
   var children_vectors = [];
   var parent_vectors = [];
@@ -2276,13 +2276,13 @@ var check_this_shape_for_overlapping = function(shape, theItems, justOverlap, co
     var drawnItem = layer.toGeoJSON();
     var checking_overlapping_inside = check_this_geoJSON(shape, drawnItem, justOverlap);
     if (checking_overlapping_inside == 1) {
-      return [1, [layer]];
+      return [1, [layer._leaflet_id]];
     }
     else if (completeParent && (checking_overlapping_inside == 2)) {
       parent_vectors.push(layer);
     }
     else if (checking_overlapping_inside == 2) {
-      return [2, [layer]];
+      return [2, [], [layer]];
     }
     else {
       ///check the reverse to see if any of the existing drawnItems are entirely inside the new shape
@@ -2291,16 +2291,16 @@ var check_this_shape_for_overlapping = function(shape, theItems, justOverlap, co
         children_vectors.push(layer);
       }
       else if (checking_enclosing == 2){
-        return [3, [layer]];
+        return [3, [], [], [layer]];
       };
     };    
   };
 
   if (children_vectors.length > 0) {
-    return [3, children_vectors, parent_vectors];
+    return [3, [], parent_vectors, children_vectors];
   }
   else if (parent_vectors.length > 0) {
-    return [2, children_vectors, parent_vectors];
+    return [2, [], parent_vectors, children_vectors];
   }
   else {
     return [0];
@@ -3110,9 +3110,10 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
 var polyanno_linking_annos_to_vector_checks = function(layer) {
   var shape = layer.toGeoJSON();
+  //[number, overlap_array, parent_array, children_array]
   var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, false); //don't complete children array, do complete parent array
   allDrawnItems.addLayer(layer);
-  if ((checkingOverlapping[0] == 2) && (checkingOverlapping[1].includes(Polyanno.selected.connectingEquals.parent_vector))) {  ///inside the correct vector
+  if ((checkingOverlapping[0] == 2) && (checkingOverlapping[2].includes(Polyanno.selected.connectingEquals.parent_vector))) {  ///inside the correct vector
     layer.bindPopup(Polyanno.HTML.popups.connectingEquals).openPopup();
   }
   else { 
@@ -3133,9 +3134,10 @@ var polyanno_creating_vec = function() {
     else {
 
       var shape = layer.toGeoJSON();
-      //[number, shape_array]
-      //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
+      //[number, overlap_array, parent_array, children_array]
+      //where number: 0 = no overlap, 1 = overlap, 2 = new shape is a child, 3 = new shape is a parent
       var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, true);
+
       allDrawnItems.addLayer(layer);
 
       if (checkingOverlapping[0] == 1) {  
@@ -3144,13 +3146,13 @@ var polyanno_creating_vec = function() {
         overlappingShapesPopup.setLatLng(mapCentre).openOn(polyanno_map);
         setTimeout(function(){
           polyanno_map.closePopup();
-        }, 3000);
+        }, 2000);
       }
       else if (checkingOverlapping[0] == 2)  {   
         allDrawnItems.removeLayer(layer);
 
         Polyanno.selected.reset();
-        var parentLayer = checkingOverlapping[1][0][0];
+        var parentLayer = checkingOverlapping[2][0];
         Polyanno.selected.vectors.add(Polyanno.vectors.getById(parentLayer._leaflet_id));
         var transcriptions_ids = polyanno_annos_of_target(parentLayer._leaflet_id, "transcription");
         var translations_ids = polyanno_annos_of_target(parentLayer._leaflet_id, "translation");
@@ -3161,17 +3163,25 @@ var polyanno_creating_vec = function() {
         newShapeIsChildPopup.setLatLng(popLtLngs).openOn(polyanno_map);
         setTimeout(function(){
           parentLayer.openPopup();
-        }, 5000);
+        }, 3000);
       }
       else if (checkingOverlapping[0] == 3)  { 
         var popLtLngs = layer.getBounds().getCenter();  
         allDrawnItems.removeLayer(layer);
+        for (var t=0; t < checkingOverlapping[3].length; t++) {
+          checkingOverlapping[3][t].setStyle({color: Polyanno.colours.processing.vector});
+        };
         newShapeIsParentPopup.setLatLng(popLtLngs).openOn(polyanno_map);
         $("#polyanno-merge-shapes-enable").removeClass("btn-default").addClass("btn-warning", 500);
         setTimeout(function(){
-          $("#polyanno-merge-shapes-enable").removeClass("btn-warning").addClass("btn-default", 500);
           polyanno_map.closePopup();
-        }, 5000);
+        }, 2000);
+        setTimeout(function(){
+          $("#polyanno-merge-shapes-enable").removeClass("btn-warning").addClass("btn-default", 500);
+          for (var t=0; t < checkingOverlapping[3].length; t++) {
+            checkingOverlapping[3][t].setStyle({color: Polyanno.colours.default.vector});
+          };
+        }, 4000);
         
       }
 
