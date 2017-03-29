@@ -14,31 +14,6 @@ var imageSelected; //info.json format URL
 var imageSelectedMetadata = []; ////???
 
 
-//URLs
-
-var targetType; 
-
-
-
-////leaflet
-
-var polyanno_map;
-var baseLayer;
-var allDrawnItems = new L.FeatureGroup();
-var temp_merge_shape = new L.FeatureGroup();
-var controlOptions = {
-    draw: {
-        polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
-        marker: false
-    },
-    edit: {
-        featureGroup: allDrawnItems //passes draw controlOptions to the FeatureGroup of editable layers
-    }
-};
-
-var popupVectorMenu;
-
-
 ////HTML VARIABLES
 
 var polyanno_select_fragment_symbol = "<span class='glyphicon glyphicon-scissors'></span> <span class='glyphicon glyphicon-text-background'></span>";
@@ -51,9 +26,6 @@ var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon gly
 var polyanno_show_alternatives_symbol = "<span class='glyphicon glyphicon-chevron-down'></span> <span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>";
 
 var polyanno_top_bar_HTML = `
-  <div class="col-md-6 polyanno-bar-buttons">
-
-    <div class="row">
 
       <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
 
@@ -71,8 +43,6 @@ var polyanno_top_bar_HTML = `
 
         </div>
 
-        <!-- <button class="btn btn-default polyanno-image-open"><span class="glyphicon glyphicon-picture"></span></button> -->
-
         <button class="btn btn-default polyanno-add-keyboard" type="button">
           <span class="glyphicon glyphicon-plus"></span>
           <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
@@ -83,19 +53,39 @@ var polyanno_top_bar_HTML = `
           <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
         </button> <!--add IME options-->
 
+        <button class="btn btn-default atu-custom-keyboard-btn" type="button">
+          <span class="glyphicon glyphicon-asterisk"></span>
+          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
+        </button>
+
+        <div class="btn-group atu-custom-keyboard-buttons" role="group" aria-label="polyanno-merging-buttons" >
+
+              <button class="btn btn-primary atu-custom-keyboard-new-btn">          
+                <span class="glyphicon glyphicon-plus"></span>
+                <span class="glyphicon glyphicon-asterisk"></span>
+              </button>
+
+              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn disabled" disabled>
+                <span class="glyphicon glyphicon-asterisk"></span>
+                <span class="glyphicon glyphicon-triangle-bottom"></span>
+              </button>
+
+        </div>
+
       </div>
 
       <div class="polyanno-enable-IME">
 
       </div>
 
+  </div>
+
+  <!-- The end of the first row containing buttons and start of new -->
+
+  <div class="row">
+    <div class="col-md-12 dragondrop-min-bar">
+
     </div>
-
-  </div>
-
-  <div class="col-md-6 dragondrop-min-bar">
-
-  </div>
 
 `;
 
@@ -199,9 +189,6 @@ var polyannoEditorHTML_partfinal = `
   </div>
 `;
 
-atu_the_input = $("#polyanno-dummy-textarea");
-
-
 
 
 ////POLYANNO OBJECTS
@@ -210,7 +197,8 @@ var Polyanno =  {
   image : {},
   urls : {},
   colours : {},
-  HTML : {}
+  HTML : {},
+  map: {}
 };
 
 var polyanno_obj_added = new Event("polyanno:added");
@@ -219,9 +207,33 @@ var polyanno_obj_deleted = new Event("polyanno:removed");
 var polyanno_obj_edited = new Event("polyanno:edited");
 
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
-var findingcookies = document.cookie;
 var $langSelector = false;
 var $imeSelector = false;
+atu_the_input = $("#polyanno-dummy-textarea");
+
+///LEAFLET
+
+////leaflet
+
+var polyanno_map;
+var baseLayer;
+var allDrawnItems = new L.FeatureGroup();
+var temp_merge_shape = new L.FeatureGroup();
+var controlOptions = {
+    draw: {
+        polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
+        marker: false
+    },
+    edit: {
+        featureGroup: allDrawnItems //passes draw controlOptions to the FeatureGroup of editable layers
+    }
+};
+
+var popupVectorMenu;
+var overlappingShapesPopup;
+var newShapeIsChildPopup;
+var newShapeIsParentPopup;
+var connectingEqualsWrongParentPopup;
 
 /////GENERIC FUNCTIONS
 
@@ -303,10 +315,10 @@ var checkFor = function(target, field) {
 };
 
 var searchCookie = function(field) {
-  var fieldIndex = findingcookies.lastIndexOf(field);
+  var fieldIndex = document.cookie.lastIndexOf(field);
   if (fieldIndex == -1) {  return false;  }
   else {
-    var postField = findingcookies.substring(fieldIndex+field.length);
+    var postField = document.cookie.substring(fieldIndex+field.length);
     var theValueEncoded = postField.split(";", 1);
     var theValue = theValueEncoded[0];
     return theValue;
@@ -1821,7 +1833,6 @@ var strangeTrimmingFunction = function(thetext) {
 
 var newTextPopoverOpen = function() {
   $('#polyanno-page-body').on("click", function(event) {
-    alert($(event.target).attr("class"));
     if ($(event.target).hasClass("popupAnnoMenu") == false) {
       Polyanno.selected.textHighlighting.DOM.popover("hide");
       Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.oldContent); 
@@ -2154,6 +2165,8 @@ var check_for_concavity = function(coordinates) {
 //so if a vector axis is created along the edge then the perpendicular measurement taken from each vertex of the other shape to that axis
 //if it is on the 180 degrees side interior to the shape then it is overlapping
 
+//---> if there is at least one side for which the vertex has a positive y value then it is not overlapping
+
 var rotate_axes_coordinates = function(vertex, rotating_vertex) {
   var axes_rotation_angle = Math.atan2(rotating_vertex[1],rotating_vertex[0]); //atan2 takes (y,x), deals with segments, and output in radians
   var old_v_angle = Math.atan2(vertex[1],vertex[0]); 
@@ -2175,18 +2188,13 @@ var find_y_dash_value = function(vertex, first_point, second_point) {
 };
 
 var check_if_overlapping = function(vertex, coordinates) {
-  var overlapping = true;
+  var is_y_positive = [];
   for (var i = 0; i < coordinates.length; i++) {
-    var is_y_positive;
-    if (i == (coordinates.length - 1)) {
-      is_y_positive = find_y_dash_value(vertex, coordinates[i], coordinates[0]);
-    }
-    else {
-      is_y_positive = find_y_dash_value(vertex, coordinates[i], coordinates[i+1]);
+    if (i != (coordinates.length - 1)) {
+      is_y_positive.push(find_y_dash_value(vertex, coordinates[i], coordinates[i+1]));
     };
-    if (is_y_positive) { overlapping = false; };
   };
-  return overlapping;
+  return !(is_y_positive.includes(true));
 };
 
 var check_inside_another_shape = function(new_shape, old_shape) {
@@ -2194,31 +2202,16 @@ var check_inside_another_shape = function(new_shape, old_shape) {
   for (var a=0; a < new_shape.length; a++) {
     var this_vertex = new_shape[a];
     var is_overlapping = check_if_overlapping(this_vertex, old_shape);
-    if (is_overlapping) {
-      overlapping_coords.push(new_shape);
-    };
+    if (is_overlapping) {  overlapping_coords.push(this_vertex);  };
   };
   return overlapping_coords;
 };
 
-var check_this_geoJSON = function(shape, drawnItem, justOverlap) {
-  var overlapping_coords = [];
-  if ((!isUseless(drawnItem.properties))&&(!isUseless(drawnItem.properties.OCD))) {
-    for (var a = 0; a < drawnItem.properties.OCD.length; a++) {
-      var convex_shape = drawnItem.properties.OCD[a];
-      var is_new_inside = check_inside_another_shape(shape.geometry.coordinates[0], convex_shape);
-      if ((is_new_inside.length > 0) && (justOverlap)) {
-        return 1;
-      }
-      else if (is_new_inside.length > 0) {
-        overlapping_coords.push(is_new_inside);
-      };
-    };
-  }
-  else {
-    overlapping_coords = check_inside_another_shape(shape.geometry.coordinates[0], drawnItem.geometry.coordinates[0]);
-  };
-  if (overlapping_coords.length == shape.length) {
+var check_this_shape_inside = function(new_shape, old_shape) {
+
+  var overlapping_coords = check_inside_another_shape(new_shape, old_shape);
+
+  if (overlapping_coords.length == new_shape.length) {
     return 2; //new shape is entirely inside old one
   }
   else if (overlapping_coords.length > 0) {
@@ -2229,33 +2222,80 @@ var check_this_geoJSON = function(shape, drawnItem, justOverlap) {
   };
 };
 
+var check_this_geoJSON = function(shape, drawnItem, justOverlap) {
+  var new_shape_coordinates = shape.geometry.coordinates[0];
+  var old_shape_coordinates = drawnItem.geometry.coordinates[0];
+
+  if ((!isUseless(drawnItem.properties))&&(!isUseless(drawnItem.properties.OCD))) {
+
+    var overlapping_shapes = 0;
+    for (var a = 0; a < drawnItem.properties.OCD.length; a++) {
+      var convex_shape = drawnItem.properties.OCD[a];
+      var is_new_inside = check_this_shape_inside(new_shape_coordinates, convex_shape);
+      if ((is_new_inside == 1) && (justOverlap)) {
+        return 1;
+      }
+      else if (is_new_inside == 1) {
+        overlapping_shapes += 1;
+      };
+    };
+
+    if (overlapping_shapes == drawnItem.properties.OCD.length) {
+      return 2;
+    }
+    else if (overlapping_shapes > 0) {
+      return 1;
+    }
+    else {
+      return 0
+    };
+
+  }
+  else {
+    return check_this_shape_inside(new_shape_coordinates, old_shape_coordinates);
+  };
+
+};
+
 var check_this_shape_for_overlapping = function(shape, theItems, justOverlap, completeParent, completeChildren) {
+
+  //shape -- the new shape drawn
+  //theItems -- the existing shapes
+  //justOverlap -- Boolean to decide if interested in full details (false) or just return as soon as anything overlaps at all (true)
+  //completeParent -- (false) returns the layer that the new shape is entirely inside as soon as found, (true) keeps running checks before returning full details
+  //completeChildren -- (false) returns the first layer inside the new shape that is found, (true) keeps running checks before returning full details
+
   //[number, children_array, parent_array]
   //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
+
   var children_vectors = [];
   var parent_vectors = [];
-  theItems.eachLayer(function(layer){
-      var drawnItem = layer.toGeoJSON();
-      var checking_overlapping_inside = check_this_geoJSON(shape, drawnItem, justOverlap);
-      if (checking_overlapping_inside == 1) {
-        return [1, [layer]];
+
+  for (var i in theItems._layers) {
+    var layer = theItems._layers[i];
+    var drawnItem = layer.toGeoJSON();
+    var checking_overlapping_inside = check_this_geoJSON(shape, drawnItem, justOverlap);
+    if (checking_overlapping_inside == 1) {
+      return [1, [layer]];
+    }
+    else if (completeParent && (checking_overlapping_inside == 2)) {
+      parent_vectors.push(layer);
+    }
+    else if (checking_overlapping_inside == 2) {
+      return [2, [layer]];
+    }
+    else {
+      ///check the reverse to see if any of the existing drawnItems are entirely inside the new shape
+      var checking_enclosing = check_this_geoJSON(drawnItem, shape);
+      if (completeChildren && (checking_enclosing == 2)){
+        children_vectors.push(layer);
       }
-      else if (completeParent && (checking_overlapping_inside == 2)) {
-        parent_vectors.push(layer);
-      }
-      else if (checking_overlapping_inside == 2) {
-        return [2, [layer]];
-      }
-      else {
-        var checking_enclosing = check_this_geoJSON(drawnItem, shape);
-        if (completeChildren && (checking_enclosing == 2)){
-          children_vectors.push(layer);
-        }
-        else if (checking_enclosing == 2){
-          return [3, [layer]];
-        };
+      else if (checking_enclosing == 2){
+        return [3, [layer]];
       };
-  });
+    };    
+  };
+
   if (children_vectors.length > 0) {
     return [3, children_vectors, parent_vectors];
   }
@@ -2631,8 +2671,11 @@ var polyanno_create_merging_anno_span = function(this_json, text_type) {
   var new_text = old_text.concat(the_new_span);
   $(this_display_id).html(new_text);
   $("#"+new_frag_id).css("background-color", Polyanno.colours.processing.span).css("color", "black");
-  setInterval(function() {
-    $("#"+new_frag_id).effect('bounce', {distance: 2}, 1100)
+  var texteffects = setInterval(function() {
+    $("#"+new_frag_id).effect('bounce', {distance: 2}, 1100);
+    if (Polyanno.selected.buildingParents.status == false) {
+      clearInterval(texteffects);
+    };
   }, 1100);
   return new_text; 
 };
@@ -2940,9 +2983,14 @@ $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 /////////LEAFLET SETUP
 
 var polyanno_leaflet_basic_setup = function() {
-  popupVectorMenu = L.popup()
-      .setContent(popupVectorMenuHTML); /////
 
+  popupVectorMenu = L.popup().setContent(popupVectorMenuHTML);
+
+  overlappingShapesPopup = L.popup().setContent("<p>You cannot draw overlapping shapes.</p>");
+  newShapeIsChildPopup = L.popup().setContent("<p>Highlight the text first and then draw a smaller shape for it.</p>");
+  newShapeIsParentPopup = L.popup().setContent("<p>To make a larger shape you must connect the smaller shapes in order using the connecting button.</p>");
+  connectingEqualsWrongParentPopup = L.popup().setContent("<p>Please draw inside the correct larger shape!</p>");
+  
   polyanno_map = L.map('polyanno_map');
   polyanno_map.options.crs = L.CRS.Simple;
   polyanno_map.setView(
@@ -3068,7 +3116,8 @@ var polyanno_linking_annos_to_vector_checks = function(layer) {
     layer.bindPopup(Polyanno.HTML.popups.connectingEquals).openPopup();
   }
   else { 
-    alert("Please draw inside the correct larger shape!");
+    var popLtLngs = Polyanno.selected.connectingEquals.parent_vector.getBounds().getCenter(); 
+
     polyanno_map.fitBounds(Polyanno.selected.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
   };
 };
@@ -3076,38 +3125,54 @@ var polyanno_linking_annos_to_vector_checks = function(layer) {
 var polyanno_creating_vec = function() {
   polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
 
-    ////assuming not triggered event when the merge shape is added manually
-
     var layer = evt.layer;
 
     if (Polyanno.selected.connectingEquals.status)   {      ///drawing a new vector for a smaller text fragment
       polyanno_linking_annos_to_vector_checks(layer);
     }
     else {
+
       var shape = layer.toGeoJSON();
       //[number, shape_array]
       //where number: 0 = no overlap, 1 = overlap, 2 = shape_array is parent, 3 = shape_array is children
-      var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, false, false);
+      var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, true);
       allDrawnItems.addLayer(layer);
 
-      ///////just overlapping with shapes - never acceptable practice tsk!
       if (checkingOverlapping[0] == 1) {  
-        alert("You cannot draw overlapping shapes.");
         allDrawnItems.removeLayer(layer);
+        var mapCentre = polyanno_map.getCenter();
+        overlappingShapesPopup.setLatLng(mapCentre).openOn(polyanno_map);
+        setTimeout(function(){
+          polyanno_map.closePopup();
+        }, 3000);
       }
-      ///////inside another shape but not whilst Polyanno.selected.connectingEquals
       else if (checkingOverlapping[0] == 2)  {   
         allDrawnItems.removeLayer(layer);
-        Polyanno.selected.vector.id = checkingOverlapping[1][0];
-        alert("Highlight the text first and then draw a smaller shape for it.");
-        //open the relevant parent editor and make it glow??
+
+        Polyanno.selected.reset();
+        var parentLayer = checkingOverlapping[1][0][0];
+        Polyanno.selected.vectors.add(Polyanno.vectors.getById(parentLayer._leaflet_id));
+        var transcriptions_ids = polyanno_annos_of_target(parentLayer._leaflet_id, "transcription");
+        var translations_ids = polyanno_annos_of_target(parentLayer._leaflet_id, "translation");
+        if (transcriptions_ids.length != 0) { Polyanno.selected.transcriptions.add(transcriptions_ids[0]);  };
+        if (translations_ids.length != 0) { Polyanno.selected.translations.add(translations_ids[0]); };
+
+        var popLtLngs = parentLayer.getBounds().getCenter();
+        newShapeIsChildPopup.setLatLng(popLtLngs).openOn(polyanno_map);
+        setTimeout(function(){
+          parentLayer.openPopup();
+        }, 5000);
       }
-      ////containing other smaller shapes but not actually merging in order
-      else if (checkingOverlapping[0] == 3)  {      
+      else if (checkingOverlapping[0] == 3)  { 
+        var popLtLngs = layer.getBounds().getCenter();  
         allDrawnItems.removeLayer(layer);
-        alert("Link these shapes in order please!");
-        //make #polyanno-merge-shapes-enable glow
-        $("#polyanno-merge-shapes-enable").effect("highlight");
+        newShapeIsParentPopup.setLatLng(popLtLngs).openOn(polyanno_map);
+        $("#polyanno-merge-shapes-enable").removeClass("btn-default").addClass("btn-warning", 500);
+        setTimeout(function(){
+          $("#polyanno-merge-shapes-enable").removeClass("btn-warning").addClass("btn-default", 500);
+          polyanno_map.closePopup();
+        }, 5000);
+        
       }
 
       else {
@@ -3231,10 +3296,16 @@ var animate_moving_image_box_focus_start = function(callback_function) {
 var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
+
       Polyanno.selected.buildingParents.status = true;
-      ///add class "active" to button to stay pressed??
+
       var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Transcriptions, "polyanno-page-body", true, "<span class='glyphicon glyphicon-list-alt'></span> + <span class='glyphicon glyphicon-list-alt'></span>", true);
       var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Translations, "polyanno-page-body", true, "<span class='glyphicon glyphicon-globe'></span> + <span class='glyphicon glyphicon-globe'></span>", true);
+      
+      var ivh = $("#imageViewer").css("height");
+      $(this_transcription_display).css("height", ivh);
+      $(this_translation_display).css("height", ivh);
+
       $(".polyanno-merging-buttons").toggle("swing");
       animate_moving_image_box_focus_start(function() {
         $(".polyanno_merging_annos").hide().css("opacity", 0.9).removeClass(function (index, className) {
@@ -3480,6 +3551,93 @@ var polyanno_setup_editor_events = function() {
 
 };
 
+////////custom keys
+
+var atu_blank_custom_keyboard_HTML = `
+  <div class="col-md-6">
+    <div class="row ui-droppable atu-keyboard-droppable" style="height: 90%;">
+
+    </div>
+    <div class="row">
+      <button style="width: 100%;">
+        Save
+      </button>
+    </div>
+  </div>
+`;
+
+var atu_custom_keyboard_HTML = `
+  <div class="row">
+    <div id="newKeyboardForCloning" class="col-md-6 atu-cloning-keyboard">`
+    + atu_main_HTML +`
+    </div>`
+    +atu_blank_custom_keyboard_HTML+`
+  </div>
+`;
+
+var atu_custom_keyboard_handlebar_HTML = `
+  <textarea style="height: 20px; width: 70%; background-color: buttonface; border-style: hidden;"></textarea>
+`;
+
+var atu_custom_keyboards = [];
+
+var createCustomKeyboard = function() {
+
+  var atu_custom_keyboard_box_id = add_dragondrop_pop("keyboardPopup", atu_custom_keyboard_HTML, $(".atu-keyboard-parent").attr("id"), false,  atu_custom_keyboard_handlebar_HTML);
+  $(atu_custom_keyboard_box_id).removeClass(function (index, className) {
+      return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
+  }).addClass("col-md-12");
+
+  var total_width = $(atu_custom_keyboard_box_id).find(".atu-mapPopupBody").css("width");
+  var key_width = (total_width / 16).toString().concat("px");
+  $(atu_custom_keyboard_box_id).find(".c")
+    .css("min-width", key_width)
+    .css("cursor", "pointer");
+
+  if (!atu_has_setup_initialised) { atu_initialise_setup(); };
+
+  new_body_id = Math.random().toString().substring(2);
+  $("#newKeyboardForCloning").find(".atu-mapPopupBody").attr("id", new_body_id );
+  buildMap(new_body_id, '0000', null, false);
+
+  $("#newKeyboardForCloning").on("mousenter", ".c", function(event) {
+    $(event.target).animate(
+      {  top: "+=5px"  }, 
+      {  duration: 400  }
+    );
+  });
+  $("#newKeyboardForCloning").on("mouseleave", ".c", function(event) {
+    $(event.target).animate(
+      {  top: "-=5px"  }, 
+      {  duration: 400  }
+    );
+  });
+
+  ///handlebar has to allow keyboard renaming
+
+  $("#newKeyboardForCloning").find(".sameWidth").draggable({
+    revert: true,
+    helper: function() {
+      var container = $('<div/>');
+      var clonedKey = $(this).clone().css("opacity", 0.7);
+      container.append(clonedKey);
+      return container;
+    }
+  });
+
+  $( ".atu-keyboard-droppable" ).droppable({
+      drop: function( event, ui ) {
+        var thisKey = $(ui.helper.children());
+        var keyCodePoint = thisKey.attr("data-codepoint");
+        var onclicked = "clicked(" + keyCodePoint + ")";
+        thisKey.attr("onclick", onclicked);
+        $( this ).append(thisKey);
+      }
+  });
+
+};
+
+
 
 
 ////SETUP
@@ -3518,6 +3676,16 @@ var polyanno_setup = function(opts) {
 
   polyanno_setup_editor_events();
 
-};
+  $(".atu-custom-keyboard-buttons").toggle();
+  $(".atu-custom-keyboard-btn").on("click", function(event){
+    $(".atu-custom-keyboard-buttons").toggle("swing");
+  });
 
+  $(".atu-custom-keyboard-new-btn").on("click", function(event){
+    createCustomKeyboard();
+  });
+
+  ///attach a popover to the listing existing keyboards button
+
+};
 
