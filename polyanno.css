@@ -50,7 +50,7 @@
 
 
 .annoPopup {
-  	border: 1px solid grey;
+  border: 1px solid grey;
 	border-radius: 5px;
 }
 
@@ -240,4 +240,13 @@
    white-space: -o-pre-wrap;   /* Opera 7 */     
    word-wrap: break-word;      /* IE */ 
    	background-color: buttonface;	
+}
+
+.ui-effects-wrapper {
+    text-align: center;
+   white-space: pre-wrap;      /* Webkit */    
+   white-space: -moz-pre-wrap; /* Firefox */     
+   white-space: -pre-wrap;     /* Opera <7 */    
+   white-space: -o-pre-wrap;   /* Opera 7 */     
+   word-wrap: break-word;      /* IE */  
 }
