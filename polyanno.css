@@ -3,6 +3,13 @@
 	height: 500px;
 }
 
+.polyanno-resize-s {
+  height: 10px;
+  width: 100%;
+  border-radius: 5px;
+  background-color: buttonface;
+}
+
 
 #polyanno-top-bar {
 	/*height: 5%;*/
@@ -222,7 +229,13 @@
 	display: none;
 }
 
+.polyanno_merging_annos {
+  border: 3px dotted yellow;
+}
+
 #polyanno_merging_transcription {
+  overflow-y:scroll;
+  height: 100%;
   	text-align: center;
    white-space: pre-wrap;      /* Webkit */    
    white-space: -moz-pre-wrap; /* Firefox */     
@@ -233,6 +246,8 @@
 }
 
 #polyanno_merging_translation {
+  overflow-y:scroll;
+  height: 100%;
   	text-align: center;
    white-space: pre-wrap;      /* Webkit */    
    white-space: -moz-pre-wrap; /* Firefox */     

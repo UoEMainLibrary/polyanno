@@ -16,6 +16,8 @@ var imageSelectedMetadata = []; ////???
 
 ////HTML VARIABLES
 
+
+
 var polyanno_select_fragment_symbol = "<span class='glyphicon glyphicon-scissors'></span> <span class='glyphicon glyphicon-text-background'></span>";
 var polyanno_discuss_symbol = "<span class='glyphicon glyphicon-comment'></span>";
 var polyanno_new_anno_symbol = "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-plus'></span>";
@@ -25,73 +27,13 @@ var polyanno_linking_transcription_to_vectors_symbol = "<span class='glyphicon g
 var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-globe'></span></span> <span class='glyphicon glyphicon-stop'></span>";
 var polyanno_show_alternatives_symbol = "<span class='glyphicon glyphicon-chevron-down'></span> <span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>";
 
-var polyanno_top_bar_HTML = `
-
-      <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
-
-        <button class="btn btn-default polyanno-discussion-btn"><span class="glyphicon glyphicon-comment"></span></button>
-
-        <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn">
-          `+polyanno_merging_vectors_symbol+`
-        </button>
-
-        <div class="btn-group polyanno-merging-buttons" role="group" aria-label="polyanno-merging-buttons">
-
-              <button class="btn btn-primary polyanno-merge-shapes-submit-btn">Submit</button>
-
-              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn">Cancel</button>
-
-        </div>
-
-        <button class="btn btn-default polyanno-add-keyboard" type="button">
-          <span class="glyphicon glyphicon-plus"></span>
-          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
-        </button> <!--add keyboard characters-->
-
-        <button class="btn btn-default polyanno-add-ime polyanno-IME-options-closed" type="button">
-          <span class="glyphicon glyphicon-transfer"></span>
-          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
-        </button> <!--add IME options-->
-
-        <button class="btn btn-default atu-custom-keyboard-btn" type="button">
-          <span class="glyphicon glyphicon-asterisk"></span>
-          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
-        </button>
-
-        <div class="btn-group atu-custom-keyboard-buttons" role="group" aria-label="polyanno-merging-buttons" >
-
-              <button class="btn btn-primary atu-custom-keyboard-new-btn">          
-                <span class="glyphicon glyphicon-plus"></span>
-                <span class="glyphicon glyphicon-asterisk"></span>
-              </button>
-
-              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn disabled" disabled>
-                <span class="glyphicon glyphicon-asterisk"></span>
-                <span class="glyphicon glyphicon-triangle-bottom"></span>
-              </button>
-
-        </div>
-
-      </div>
-
-      <div class="polyanno-enable-IME">
-
-      </div>
-
-  </div>
-
-  <!-- The end of the first row containing buttons and start of new -->
-
-  <div class="row">
-    <div class="col-md-12 dragondrop-min-bar">
-
-    </div>
-
-`;
 
 
 
-var polyanno_image_viewer_HTML = `<div id='polyanno_map' class="row"></div>`;
+var polyanno_image_viewer_HTML = `
+  <div id='polyanno_map' class="row"></div>
+  <div class="polyanno-resize-s ui-resizable-s ui-resizable-handle"></div>
+  `;
 
 
 var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
@@ -543,6 +485,10 @@ Polyanno.HTML.symbols = {
     textHighlightingOthers: "<span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>",
     newAnnotation: "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-plus'></span>",
     buildingParents: "<span class='glyphicon glyphicon-map-marker'></span> <span class='glyphicon glyphicon-stop'></span> <span class='glyphicon glyphicon-object-align-horizontal'></span>",
+    buildingParent: {
+      transcription: "<span class='glyphicon glyphicon-list-alt'></span> <span class='glyphicon glyphicon-plus'> </span><span class='glyphicon glyphicon-list-alt'></span>",
+      translation: "<span class='glyphicon glyphicon-globe'></span> <span class='glyphicon glyphicon-plus'> </span><span class='glyphicon glyphicon-globe'></span>"
+    },
     connectingEquals:{
       transcription: "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-list-alt'></span> <span class='glyphicon glyphicon-stop'></span>",
       translation: "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-globe'></span></span> <span class='glyphicon glyphicon-stop'></span>"
@@ -620,6 +566,73 @@ var translationOpenHTML = `<a class="openTranslationMenu polyanno-standard-btn b
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
 
+var polyanno_top_bar_HTML = `
+
+      <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
+
+        <button class="btn btn-default polyanno-discussion-btn"><span class="glyphicon glyphicon-comment"></span></button>
+
+        <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn">
+          `+Polyanno.HTML.symbols.buildingParents+`
+        </button>
+
+        <div class="btn-group polyanno-merging-buttons" role="group" aria-label="polyanno-merging-buttons">
+
+              <button class="btn btn-primary polyanno-merge-shapes-submit-btn">Submit</button>
+
+              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn">Cancel</button>
+
+              <button class="btn btn-default polyanno-merge-transcriptions-btn">`+Polyanno.HTML.symbols.buildingParent.transcription+`</button>
+
+              <button class="btn btn-default polyanno-merge-translations-btn">`+Polyanno.HTML.symbols.buildingParent.translation+`</button>
+
+        </div>
+
+        <button class="btn btn-default polyanno-add-keyboard" type="button">
+          <span class="glyphicon glyphicon-plus"></span>
+          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
+        </button> <!--add keyboard characters-->
+
+        <button class="btn btn-default polyanno-add-ime polyanno-IME-options-closed" type="button">
+          <span class="glyphicon glyphicon-transfer"></span>
+          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
+        </button> <!--add IME options-->
+
+        <button class="btn btn-default atu-custom-keyboard-btn" type="button">
+          <span class="glyphicon glyphicon-asterisk"></span>
+          <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
+        </button>
+
+        <div class="btn-group atu-custom-keyboard-buttons" role="group" aria-label="polyanno-merging-buttons" >
+
+              <button class="btn btn-primary atu-custom-keyboard-new-btn">          
+                <span class="glyphicon glyphicon-plus"></span>
+                <span class="glyphicon glyphicon-asterisk"></span>
+              </button>
+
+              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn disabled" disabled>
+                <span class="glyphicon glyphicon-asterisk"></span>
+                <span class="glyphicon glyphicon-triangle-bottom"></span>
+              </button>
+
+        </div>
+
+      </div>
+
+      <div class="polyanno-enable-IME">
+
+      </div>
+
+  </div>
+
+  <!-- The end of the first row containing buttons and start of new -->
+
+  <div class="row">
+    <div class="col-md-12 dragondrop-min-bar">
+
+    </div>
+
+`;
 
 
 /////Methods
@@ -2637,6 +2650,7 @@ var polyanno_closing_merging = function() {
   $(".polyanno-add-keyboard").removeClass("disabled").prop('disabled', false);
   $(".polyanno-add-ime").removeClass("disabled").prop('disabled', false);
   $(".polyanno-discussion-btn").removeClass("disabled").prop('disabled', false);
+  $(".atu-custom-keyboard-btn").removeClass("disabled").prop('disabled', false);
   $(".polyanno-merging-buttons").toggle("swing");
   var transcription_id = $("#polyanno_merging_transcription").closest(".annoPopup").attr("id");
   var translation_id = $("#polyanno_merging_translation").closest(".annoPopup").attr("id");
@@ -2662,6 +2676,20 @@ var polyanno_posted_merge_shape = function(vector) {
 
 ////merging annos
 
+var polyanno_start_span_bouncing = function(JQUIspan) {
+  var texteffects = setInterval(function() {
+    JQUIspan.effect('bounce', {distance: 2}, 1100);
+    JQUIspan.on("mouseleave", function(event){
+      JQUIspan
+      .css("background-color", Polyanno.colours.default.span)
+      .css("opacity", 0.7)
+      .css("border", "none");
+      clearInterval(texteffects);
+    });
+  }, 1100);
+  return texteffects;
+};
+
 var polyanno_create_merging_anno_span = function(this_json, text_type) {
   var this_display_id = "#polyanno_merging_"+text_type;
   var old_text = $(this_display_id).html();
@@ -2670,14 +2698,15 @@ var polyanno_create_merging_anno_span = function(this_json, text_type) {
   var the_new_span = "<a class='" + newSpanClass(this_class) + " ' id='" + new_frag_id + "' >" + this_json.text + "</a>";
   var new_text = old_text.concat(the_new_span);
   $(this_display_id).html(new_text);
-  $("#"+new_frag_id).css("background-color", Polyanno.colours.processing.span).css("color", "black");
-  var texteffects = setInterval(function() {
-    $("#"+new_frag_id).effect('bounce', {distance: 2}, 1100);
-    if (Polyanno.selected.buildingParents.status == false) {
-      clearInterval(texteffects);
-    };
-  }, 1100);
-  return new_text; 
+  $("#"+new_frag_id).on("mousenter", function(event){
+    $("#"+new_frag_id)
+    .css("background-color", Polyanno.colours.processing.span)
+    .css("opacity", 1.0)
+    .css("border", "1px dotted grey");
+    var te = polyanno_start_span_bouncing($("#"+new_frag_id));
+  });
+
+  return $("#"+new_frag_id); 
 };
 
 var polyanno_merging_anno_json = function(new_vec, textType) {
@@ -2701,12 +2730,23 @@ var polyanno_add_merge_annos = function(new_vec_obj) {
 
   var transcriptionJSON = polyanno_merging_anno_json(new_vec, "transcription");
   Polyanno.selected.buildingParents.transcriptions.push(transcriptionJSON);
-  polyanno_create_merging_anno_span(transcriptionJSON, "transcription");
+  var transcriptionSpan = polyanno_create_merging_anno_span(transcriptionJSON, "transcription");
 
   var translationJSON = polyanno_merging_anno_json(new_vec, "translation");
   Polyanno.selected.buildingParents.translations.push(translationJSON);
-  polyanno_create_merging_anno_span(translationJSON, "translation"); 
+  var translationSpan = polyanno_create_merging_anno_span(translationJSON, "translation"); 
   
+  var te1;
+  var te2;
+  new_vec_obj.on("mouseover", function(e){
+    //new_vec_obj.setStyle();
+    te1 = polyanno_start_span_bouncing(transcriptionSpan);
+    te2 = polyanno_start_span_bouncing(translationSpan);
+  });
+  new_vec_obj.on("mouseout", function(e){
+    clearInterval(te1);
+    clearInterval(te2);
+  }); 
 };
 
 var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
@@ -3163,7 +3203,7 @@ var polyanno_creating_vec = function() {
         newShapeIsChildPopup.setLatLng(popLtLngs).openOn(polyanno_map);
         setTimeout(function(){
           parentLayer.openPopup();
-        }, 3000);
+        }, 2000);
       }
       else if (checkingOverlapping[0] == 3)  { 
         var popLtLngs = layer.getBounds().getCenter();  
@@ -3280,27 +3320,24 @@ var polyanno_vector_edit_setup = function() {
 
 var animate_restore_image_box_focus = function(callback_function) {
   $(".annoPopup").css("opacity", 1.0);
-  $("#imageViewer").css("opacity", 1.0).removeClass(function (index, className) {
+  $("#imageViewer")
+  .removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
-  }).addClass("col-md-4");
+  })
+  .addClass("col-md-4");
+  callback_function();
 };
 
 var animate_moving_image_box_focus_end = function(callback_function) {
   $(".annoPopup").css("opacity", 0.3); ///animate this??
-  $("#imageViewer").css("opacity", 1.0).removeClass(function (index, className) {
+  $("#imageViewer")
+  .css("opacity", 1.0)
+  .removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
-  }).addClass("col-md-6").prependTo($("#polyanno-page-body")).show("slide", null, null, callback_function);
-};
-
-var animate_moving_image_box_focus_start = function(callback_function) {
-  if ($("#imageViewer").index() == 0) {  $("#imageViewer").hide(null, null, null, function() {
-      animate_moving_image_box_focus_end(callback_function);
-    }); 
-  }
-  else {  $("#imageViewer").hide("slide", null, null, function() {
-      animate_moving_image_box_focus_end(callback_function);
-    }); 
-  };
+  })
+  .addClass("col-md-6")
+  .show("slide");
+  callback_function();
 };
 
 var polyanno_leaflet_merge_polyanno_button_setup = function() {
@@ -3309,28 +3346,37 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
       Polyanno.selected.buildingParents.status = true;
 
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Transcriptions, "polyanno-page-body", true, "<span class='glyphicon glyphicon-list-alt'></span> + <span class='glyphicon glyphicon-list-alt'></span>", true);
-      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Translations, "polyanno-page-body", true, "<span class='glyphicon glyphicon-globe'></span> + <span class='glyphicon glyphicon-globe'></span>", true);
-      
-      var ivh = $("#imageViewer").css("height");
-      $(this_transcription_display).css("height", ivh);
-      $(this_translation_display).css("height", ivh);
-
-      $(".polyanno-merging-buttons").toggle("swing");
-      animate_moving_image_box_focus_start(function() {
-        $(".polyanno_merging_annos").hide().css("opacity", 0.9).removeClass(function (index, className) {
-            return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
-        }).addClass("col-md-3");
-        $(this_translation_display).show("fold", null, null, function() {
-          $(this_transcription_display).show("fold");
+      $("#imageViewer").hide(null, null, null, function() {
+        animate_moving_image_box_focus_end(function() {
+          $(".polyanno_merging_annos")
+          .hide()
+          .css("opacity", 0.9).removeClass(function (index, className) {
+              return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
+          }).addClass("col-md-3");
         });
       });
+
+      ///annos being merged
+      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Transcriptions, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.transcription, true);
+      $(this_transcription_display).toggle().insertAfter($("#imageViewer"));
+      var ivh = $("#imageViewer").css("height");
+      $(this_transcription_display).css("height", ivh);
+      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Translations, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.translation, true);
+      $(this_translation_display).toggle().insertAfter($("#imageViewer"));
+      var ivh = $("#imageViewer").css("height");
+      $(this_translation_display).css("height", ivh);
+      $(".polyanno-merge-transcriptions-btn").on("click", function(event){  $(this_transcription_display).toggle("fold");  });
+      $(".polyanno-merge-translations-btn").on("click", function(event){  $(this_translation_display).toggle("fold");  });
+
+      $(".polyanno-merging-buttons").toggle("swing");
+      
       $(".polyanno-add-keyboard").addClass("disabled").prop('disabled', true);
       $(".polyanno-add-ime").addClass("disabled").prop('disabled', true);
       $(".polyanno-discussion-btn").addClass("disabled").prop('disabled', true);
+      $(".atu-custom-keyboard-btn").addClass("disabled").prop('disabled', true);
+
 
   });
-
 
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
     if (Polyanno.selected.buildingParents.vectors.length > 1) {
@@ -3664,8 +3710,6 @@ var polyanno_setup = function(opts) {
   ///this is currently compulsory and synchronous but should use a local storage in parallel soon too like Leaflet Draw?
   polyanno_setup_storage(opts.storage);
 
-  if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
-
   if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
   //var polyanno_image_title = polyanno_findLUNAimage_title(imageSelectedMetadata);
@@ -3675,12 +3719,17 @@ var polyanno_setup = function(opts) {
   $("#polyanno-page-body").addClass("row atu-keyboard-parent");
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
-  $(image_viewer_id).removeClass(function (index, className) {
+  $(image_viewer_id)
+  .removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
-  }).addClass("col-md-8");
-  $(image_viewer_id).attr("id", "imageViewer");
+  })
+  .addClass("col-md-8")
+  .resizable( "option", "handles", {"e": ".dragondrop-resize-e", "w": ".dragondrop-resize-w", "s": ".polyanno-resize-s" } )
+  .attr("id", "imageViewer");
 
   polyanno_leaflet_basic_setup();
+
+  if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
 
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
 
