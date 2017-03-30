@@ -12,11 +12,10 @@
 
 
 #polyanno-top-bar {
-	/*height: 5%;*/
 	background-color: grey;
 	border-radius: 5px;
 	position: relative;
-	/*z-index: -1000;*/
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .popover {
@@ -231,6 +230,28 @@
 
 .polyanno_merging_annos {
   border: 3px dotted yellow;
+  color: black;
+}
+
+.polyanno_merging_annos a {
+  color: black;
+  text-decoration: none;
+}
+
+.polyanno_merging_annos a:hover {
+  color: black;
+  text-decoration: none;
+  cursor: grab;
+}
+
+.polyanno_merging_annos a:active {
+  color: black;
+  text-decoration: none;
+  cursor: grabbing;
+}
+
+.polyanno_merging_annos .ui-resizable-handle {
+  border: 3px dotted yellow;
 }
 
 #polyanno_merging_transcription {
@@ -242,7 +263,6 @@
    white-space: -pre-wrap;     /* Opera <7 */    
    white-space: -o-pre-wrap;   /* Opera 7 */     
    word-wrap: break-word;      /* IE */ 
-   background-color: buttonface;
 }
 
 #polyanno_merging_translation {
@@ -254,7 +274,6 @@
    white-space: -pre-wrap;     /* Opera <7 */    
    white-space: -o-pre-wrap;   /* Opera 7 */     
    word-wrap: break-word;      /* IE */ 
-   	background-color: buttonface;	
 }
 
 .ui-effects-wrapper {
@@ -264,4 +283,8 @@
    white-space: -pre-wrap;     /* Opera <7 */    
    white-space: -o-pre-wrap;   /* Opera 7 */     
    word-wrap: break-word;      /* IE */  
+}
+
+#polyanno_merging_cursor {
+  position: absolute;
 }

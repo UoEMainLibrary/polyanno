@@ -140,7 +140,8 @@ var Polyanno =  {
   urls : {},
   colours : {},
   HTML : {},
-  map: {}
+  map: {},
+  intEffects: {}
 };
 
 var polyanno_obj_added = new Event("polyanno:added");
@@ -344,6 +345,16 @@ var polyanno_annos_of_target = function(target, baseType, callback_function) {
 };
 
 
+/////////////////Interval Storage
+
+Polyanno.intEffects.buildingParents = {
+  transcription: null,
+  translation: null,
+  vector: {
+    mouseover: {},
+    mouseout: {}
+  }
+};
 
 
 //////////////////URLS
@@ -575,6 +586,11 @@ var polyanno_top_bar_HTML = `
         <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn">
           `+Polyanno.HTML.symbols.buildingParents+`
         </button>
+
+        <!--this is here to be cloned-->
+        <div class="polyanno_merging_cursor" style="background-color: black; color: white; opacity: 0.8; display: none;">
+          <p>Select each shape in order.</p>
+        </div>
 
         <div class="btn-group polyanno-merging-buttons" role="group" aria-label="polyanno-merging-buttons">
 
@@ -2638,14 +2654,18 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
 
 var polyanno_closing_merging = function() {
   for (var i=0; i < Polyanno.selected.buildingParents.vectors.length; i++) {
-    Polyanno.selected.buildingParents.vectors[i].unbindTooltip();
+    var this_vec = Polyanno.selected.buildingParents.vectors[i];
+    this_vec.unbindTooltip();
+    this_vec.off("mouseover", Polyanno.intEffects.buildingParents.vector.mouseover[this_vec._leaflet_id.toString()]);
+    this_vec.off("mouseout", Polyanno.intEffects.buildingParents.vector.mouseout[this_vec._leaflet_id.toString()]);
   };
   Polyanno.selected.buildingParents.status = false;
   Polyanno.selected.buildingParents.parent.vector = false;
   Polyanno.selected.buildingParents.transcriptions = [];
   Polyanno.selected.buildingParents.translations = [];
   Polyanno.selected.buildingParents.vectors = [];
-  $(".leaflet-draw-toolbar-top").css("color", "#333");
+  $("#polyanno_merging_cursor").remove();
+  $("#imageViewer").off("mousemove", polyanno_merging_cursor_move);
   $(".annoPopup").css("opacity", 1.0);
   $(".polyanno-add-keyboard").removeClass("disabled").prop('disabled', false);
   $(".polyanno-add-ime").removeClass("disabled").prop('disabled', false);
@@ -2676,18 +2696,31 @@ var polyanno_posted_merge_shape = function(vector) {
 
 ////merging annos
 
-var polyanno_start_span_bouncing = function(JQUIspan) {
-  var texteffects = setInterval(function() {
-    JQUIspan.effect('bounce', {distance: 2}, 1100);
-    JQUIspan.on("mouseleave", function(event){
+var polyanno_start_span_bouncing = function(JQUIspan, text_type) {
+  return setInterval(function() {
+
+    clearInterval(Polyanno.intEffects.buildingParents[text_type]);
+    var sibs = JQUIspan.siblings();
+    sibs
+    .css("background-color", Polyanno.colours.default.span)
+    .css("opacity", 0.7)
+    .css("border", "none");
+    jQuery.effects.removePlaceholder(sibs);
+
+    jQuery.effects.createPlaceholder(JQUIspan);
+    JQUIspan.effect('bounce', {distance: 2}, 500);
+
+    JQUIspan.parent().on("mouseleave", function(event){
       JQUIspan
       .css("background-color", Polyanno.colours.default.span)
       .css("opacity", 0.7)
       .css("border", "none");
-      clearInterval(texteffects);
+      jQuery.effects.removePlaceholder(JQUIspan);
+      clearInterval(Polyanno.intEffects.buildingParents[text_type]);
     });
-  }, 1100);
-  return texteffects;
+
+  }, 500);
+
 };
 
 var polyanno_create_merging_anno_span = function(this_json, text_type) {
@@ -2703,7 +2736,8 @@ var polyanno_create_merging_anno_span = function(this_json, text_type) {
     .css("background-color", Polyanno.colours.processing.span)
     .css("opacity", 1.0)
     .css("border", "1px dotted grey");
-    var te = polyanno_start_span_bouncing($("#"+new_frag_id));
+    var te = polyanno_start_span_bouncing($("#"+new_frag_id), text_type);
+    Polyanno.intEffects.buildingParents[text_type] = te;
   });
 
   return $("#"+new_frag_id); 
@@ -2725,6 +2759,18 @@ var polyanno_merging_anno_json = function(new_vec, textType) {
   };
 };
 
+var polyanno_merging_mousemove_HTML = `
+    <p>Select each shape in order to join them.</p>
+`;
+
+var polyanno_merging_added_shape_HTML = `
+    <p>Click to unselect this shape.</p>
+`;
+
+var polyanno_merging_new_shape_HTML = `
+    <p>Click to link this shape next.</p>
+`;
+
 var polyanno_add_merge_annos = function(new_vec_obj) {
   var new_vec = new_vec_obj.toGeoJSON();
 
@@ -2735,18 +2781,54 @@ var polyanno_add_merge_annos = function(new_vec_obj) {
   var translationJSON = polyanno_merging_anno_json(new_vec, "translation");
   Polyanno.selected.buildingParents.translations.push(translationJSON);
   var translationSpan = polyanno_create_merging_anno_span(translationJSON, "translation"); 
-  
-  var te1;
-  var te2;
-  new_vec_obj.on("mouseover", function(e){
+
+  var this_mouseover_listener = function(e){
     //new_vec_obj.setStyle();
-    te1 = polyanno_start_span_bouncing(transcriptionSpan);
-    te2 = polyanno_start_span_bouncing(translationSpan);
-  });
-  new_vec_obj.on("mouseout", function(e){
-    clearInterval(te1);
-    clearInterval(te2);
-  }); 
+    transcriptionSpan
+    .css("background-color", Polyanno.colours.processing.span)
+    .css("opacity", 1.0)
+    .css("border", "1px dotted grey");
+
+    translationSpan
+    .css("background-color", Polyanno.colours.processing.span)
+    .css("opacity", 1.0)
+    .css("border", "1px dotted grey");
+
+    $("#polyanno_merging_cursor").html(polyanno_merging_added_shape_HTML);
+
+    var te1 = polyanno_start_span_bouncing(transcriptionSpan, "transcription");
+    var te2 = polyanno_start_span_bouncing(translationSpan, "translation");
+    Polyanno.intEffects.buildingParents.transcription = te1;
+    Polyanno.intEffects.buildingParents.translation = te2;
+  };
+
+  var this_mouseout_listener = function(e){
+    clearInterval(Polyanno.intEffects.buildingParents.transcription);
+    clearInterval(Polyanno.intEffects.buildingParents.translation);
+
+    transcriptionSpan
+    .css("background-color", Polyanno.colours.default.span)
+    .css("opacity", 0.7)
+    .css("border", "none");
+
+    translationSpan
+    .css("background-color", Polyanno.colours.default.span)
+    .css("opacity", 0.7)
+    .css("border", "none");
+
+    $("#polyanno_merging_cursor").html(polyanno_merging_mousemove_HTML);
+
+  };
+
+  new_vec_obj.off("mouseover", Polyanno.intEffects.buildingParents.vector.mouseover[new_vec_obj._leaflet_id.toString()]);
+  new_vec_obj.off("mouseout", Polyanno.intEffects.buildingParents.vector.mouseout[new_vec_obj._leaflet_id.toString()]); 
+
+  Polyanno.intEffects.buildingParents.vector.mouseover[new_vec_obj._leaflet_id.toString()](this_mouseover_listener);
+  Polyanno.intEffects.buildingParents.vector.mouseout[new_vec_obj._leaflet_id.toString()](this_mouseout_listener);
+
+  new_vec_obj.on("mouseover", this_mouseover_listener);
+  new_vec_obj.on("mouseout", this_mouseout_listener);
+
 };
 
 var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
@@ -3335,45 +3417,71 @@ var animate_moving_image_box_focus_end = function(callback_function) {
   .removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
   })
-  .addClass("col-md-6")
-  .show("slide");
+  .addClass("col-md-6");
   callback_function();
+};
+
+var polyanno_merging_cursor_move = function(e) {
+  $("#polyanno_merging_cursor").css({left:e.pageX, top:e.pageY});
+};
+
+var polyanno_enable_merging_listeners = function() {
+
+  var this_mouseover_listener = function(e){
+    $("#polyanno_merging_cursor").html(polyanno_merging_new_shape_HTML);
+  };
+  var this_mouseout_listener = function(e){
+    $("#polyanno_merging_cursor").html(polyanno_merging_mousemove_HTML);
+  };
+
+  allDrawnItems.eachLayer(function(layer){
+    Polyanno.intEffects.buildingParents.vector.mouseover[layer._leaflet_id.toString()](this_mouseover_listener);
+    Polyanno.intEffects.buildingParents.vector.mouseout[layer._leaflet_id.toString()](this_mouseout_listener);
+    layer.on("mouseover", this_mouseover_listener);
+    layer.on("mouseout", this_mouseout_listener);
+  });
+ 
 };
 
 var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $("#polyanno-merge-shapes-enable").on("click", function(event){
 
-      Polyanno.selected.buildingParents.status = true;
+    Polyanno.selected.buildingParents.status = true;
 
-      $("#imageViewer").hide(null, null, null, function() {
-        animate_moving_image_box_focus_end(function() {
-          $(".polyanno_merging_annos")
-          .hide()
-          .css("opacity", 0.9).removeClass(function (index, className) {
-              return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
-          }).addClass("col-md-3");
-        });
-      });
+    var cl = $(".polyanno_merging_cursor").clone();
+    cl.css("display", "block").attr("id", "polyanno_merging_cursor");
+    $("#imageViewer").append(cl);
+    $(document).on("mousemove", function(e) {
+      $("#polyanno_merging_cursor").css({left:e.pageX, top:e.pageY});
+    });
 
-      ///annos being merged
-      var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Transcriptions, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.transcription, true);
-      $(this_transcription_display).toggle().insertAfter($("#imageViewer"));
-      var ivh = $("#imageViewer").css("height");
-      $(this_transcription_display).css("height", ivh);
-      var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Translations, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.translation, true);
-      $(this_translation_display).toggle().insertAfter($("#imageViewer"));
-      var ivh = $("#imageViewer").css("height");
-      $(this_translation_display).css("height", ivh);
-      $(".polyanno-merge-transcriptions-btn").on("click", function(event){  $(this_transcription_display).toggle("fold");  });
-      $(".polyanno-merge-translations-btn").on("click", function(event){  $(this_translation_display).toggle("fold");  });
+    animate_moving_image_box_focus_end(function() {
+      $(".polyanno_merging_annos")
+      .hide()
+      .css("opacity", 0.9).removeClass(function (index, className) {
+          return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
+      }).addClass("col-md-3");
+    });
 
-      $(".polyanno-merging-buttons").toggle("swing");
-      
-      $(".polyanno-add-keyboard").addClass("disabled").prop('disabled', true);
-      $(".polyanno-add-ime").addClass("disabled").prop('disabled', true);
-      $(".polyanno-discussion-btn").addClass("disabled").prop('disabled', true);
-      $(".atu-custom-keyboard-btn").addClass("disabled").prop('disabled', true);
+    ///annos being merged
+    var this_transcription_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Transcriptions, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.transcription, true);
+    $(this_transcription_display).toggle().insertAfter($("#imageViewer"));
+    var ivh = $("#imageViewer").css("height");
+    $(this_transcription_display).css("height", ivh);
+    var this_translation_display = add_dragondrop_pop("polyanno_merging_annos", Polyanno.HTML.buildingParents.Translations, "polyanno-page-body", true, Polyanno.HTML.symbols.buildingParent.translation, true);
+    $(this_translation_display).toggle().insertAfter($("#imageViewer"));
+    var ivh = $("#imageViewer").css("height");
+    $(this_translation_display).css("height", ivh);
+    $(".polyanno-merge-transcriptions-btn").on("click", function(event){  $(this_transcription_display).toggle("fold");  });
+    $(".polyanno-merge-translations-btn").on("click", function(event){  $(this_translation_display).toggle("fold");  });
+
+    $(".polyanno-merging-buttons").toggle("swing");
+    
+    $(".polyanno-add-keyboard").addClass("disabled").prop('disabled', true);
+    $(".polyanno-add-ime").addClass("disabled").prop('disabled', true);
+    $(".polyanno-discussion-btn").addClass("disabled").prop('disabled', true);
+    $(".atu-custom-keyboard-btn").addClass("disabled").prop('disabled', true);
 
 
   });
@@ -3459,11 +3567,15 @@ var polyanno_setup_highlighting = function() {
 
   ///the vector highlights are not working??
 
-  allDrawnItems.on('mousenter', function(vec) {
-    Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "highlight");
+  allDrawnItems.on('mouseover', function(vec) {
+    if (!Polyanno.selected.buildingParents.status) {
+      Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "highlight");
+    };
   });
-  allDrawnItems.on('mouseleave', function(vec) {
-    Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "default");
+  allDrawnItems.on('mouseout', function(vec) {
+    if (!Polyanno.selected.buildingParents.status) {
+      Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "default");
+    };
   });
 
 };
