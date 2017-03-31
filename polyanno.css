@@ -35,7 +35,11 @@
 
 
 .polyanno-language-buttons {
-	display: inline-block;
+	display: none;
+}
+
+.polyanno-other-top-buttons {
+  display: inline-block;
 }
 
 .polyanno-other-button {
@@ -285,6 +289,38 @@
    word-wrap: break-word;      /* IE */  
 }
 
-#polyanno_merging_cursor {
-  position: absolute;
+.polyanno_outer_merging_cursor {
+  display: none;
 }
+
+#polyanno_merging_cursor {
+  position: absolute; 
+  color: white; 
+  display: block;
+  font-size: 0.9em;
+  z-index: 100000;
+}
+
+.arrow-left {
+  width: 0; 
+  height: 0; 
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent; 
+  border-right:8px solid black; 
+  position: absolute;
+  right: 100%;
+  opacity: 0.7;
+}
+
+.polyanno_merging_cursor {
+  bottom: 100%;
+  position: absolute;
+  height: 30px;
+  width: 180px;
+  margin-top: 5px;
+  border-radius: 3px; 
+  text-align: center;
+  background-color: black;
+  opacity: 0.7;
+}
+
