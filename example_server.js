@@ -5,7 +5,7 @@ var express    = require('express');
 var bodyParser = require('body-parser');
 var mongoose   = require('mongoose');
 var cors = require('cors');
-var polyanno = require('polyanno_storage');
+//var polyanno = require('polyanno_storage');
 
 var thisWebsitePort = polyanno.setup.config.app.port;
 
@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 
 var port = process.env.PORT || thisWebsitePort; 
 
-app.use('/api', polyanno.router);
+//app.use('/api', polyanno.router);
 
 app.listen(thisWebsitePort);
 

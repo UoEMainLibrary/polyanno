@@ -458,6 +458,7 @@ Polyanno.colours.connectColours = function(object, type, action) {
 
 var polyanno_start_span_bouncing = function(JQUIspan, text_type) {
   return setInterval(function() {
+    /////still resulting in moving location!!
     JQUIspan.effect('bounce', {distance: 2}, 500);
   }, 500);
 
@@ -719,7 +720,7 @@ var polyanno_top_bar_HTML = `
       <div class="polyanno_outer_merging_cursor">
         <div class="arrow-left"></div>
         <div class="polyanno_merging_cursor">
-          <p>Select each shape in order.</p>
+          <span>Drag and drop keys to the new keyboard.</span>
         </div>
       </div>
 
@@ -1809,6 +1810,8 @@ Polyanno.buildingParents = {
 };
 
 Polyanno.buildingParents.clicked = function(vec) {
+
+  vec.layer.closePopup();
     ///need to introduce parents checks??
     if (Polyanno.buildingParents.vectors.includes(vec.layer)) {
       //unclick and remove this vector
@@ -3122,7 +3125,8 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  var this_frag_dom = document.getElementById(this_child._id);
+  alert(JSON.stringify(this_child));
+  var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
   var the_array_index = children_array.indexOf(this_child);
@@ -3231,13 +3235,6 @@ var animate_moving_image_box_focus_end = function(callback_function) {
   callback_function();
 };
 
-var polyanno_merging_cursor_move = function() {
-  var cl = $(".polyanno_outer_merging_cursor").clone();
-  cl.attr("id", "polyanno_merging_cursor");
-  $("#imageViewer").append(cl);
-  $("#polyanno_merging_cursor").css({left:e.pageX - 50, top:e.pageY + 50});
-};
-
 var polyanno_enable_merging_listeners = function() {
 
   var this_mouseover_listener = function(){
@@ -3338,7 +3335,6 @@ var polyanno_building_parents_disabled = function() {
   Polyanno.buildingParents.translations = [];
   Polyanno.buildingParents.vectors = [];
 
-  $("#imageViewer").off("mousemove", polyanno_merging_cursor_move);
   $(".annoPopup").css("opacity", 1.0);
   polyanno_enable_keyboards();
   $("#polyanno-merge-shapes-enable").removeClass("active");
@@ -3780,7 +3776,11 @@ $("#polyanno-top-bar").on("click", ".polyanno-add-keyboard", function(event){
 
 var atu_blank_custom_keyboard_HTML = `
   <div class="col-md-6">
-    <div class="row ui-droppable atu-keyboard-droppable" style="height: 90%;">
+    <div class="row">
+      <span>Keyboard Name:</span>
+      <textarea style="height: 20px; width: 70%; background-color: buttonface; opacity: 0.5; border-style: hidden;"></textarea>
+    </div>
+    <div class="row ui-droppable atu-keyboard-droppable" style="height: 100px; background-color: yellow; border: 5px dotted grey;">
 
     </div>
     <div class="row">
@@ -3801,7 +3801,7 @@ var atu_custom_keyboard_HTML = `
 `;
 
 var atu_custom_keyboard_handlebar_HTML = `
-  <textarea style="height: 20px; width: 70%; background-color: buttonface; border-style: hidden;"></textarea>
+  
 `;
 
 var polyanno_disable_keyboards = function() {
@@ -3820,39 +3820,56 @@ var polyanno_enable_keyboards = function() {
 
 var atu_custom_keyboards = [];
 
+var polyanno_keyboard_cursor_move = function() {
+  var cl = $(".polyanno_outer_merging_cursor").clone();
+  cl.attr("id", "polyanno_merging_cursor");
+  $("#newKeyboardForCloning").append(cl);
+  $("#polyanno_merging_cursor").css({left:e.pageX - 50, top:e.pageY + 50});
+};
+
 var createCustomKeyboard = function() {
 
-  var atu_custom_keyboard_box_id = add_dragondrop_pop("keyboardPopup", atu_custom_keyboard_HTML, $(".atu-keyboard-parent").attr("id"), false,  atu_custom_keyboard_handlebar_HTML);
+  var atu_custom_keyboard_box_id = add_dragondrop_pop("boop", atu_custom_keyboard_HTML, $(".atu-keyboard-parent").attr("id"), false,  atu_custom_keyboard_handlebar_HTML);
   $(atu_custom_keyboard_box_id).removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
   }).addClass("col-md-12");
 
-  var total_width = $(atu_custom_keyboard_box_id).find(".atu-mapPopupBody").css("width");
-  var key_width = (total_width / 16).toString().concat("px");
-  $(atu_custom_keyboard_box_id).find(".c")
-    .css("min-width", key_width)
-    .css("cursor", "pointer");
-
-  if (!atu_has_setup_initialised) { atu_initialise_setup(); };
+  //if (!atu_has_setup_initialised) { atu_initialise_setup(); };
 
   new_body_id = Math.random().toString().substring(2);
-  $("#newKeyboardForCloning").find(".atu-mapPopupBody").attr("id", new_body_id );
-  buildMap(new_body_id, '0000', null, false);
+  $("#newKeyboardForCloning").find(".atu-mapPopupBody").attr("id", new_body_id);
 
-  $("#newKeyboardForCloning").on("mousenter", ".c", function(event) {
+  var total_width = $("#newKeyboardForCloning").find(".atu-mapPopupBody").css("width");
+  var key_width = parseInt(total_width / 16);
+  var keys = $("#newKeyboardForCloning").find(".c");
+  keys[0].onclick = null;
+
+  $("#newKeyboardForCloning").find(".sameWidth")
+  .css("cursor", "grab")
+  .css("opacity", 0.5);
+
+  var cl = $(".polyanno_outer_merging_cursor").clone();
+  cl.attr("id", "polyanno_merging_cursor");
+  $("#newKeyboardForCloning").append(cl);
+
+  $("#newKeyboardForCloning").on("mousemove", function(e) {
+    $("#polyanno_merging_cursor").css({left:e.pageX - 50, top:e.pageY - 50});
+  });
+
+  $("#newKeyboardForCloning").on("mousenter", ".sameWidth", function(event) {
+    $(event.target).css("opacity", 1.0);
     $(event.target).animate(
       {  top: "+=5px"  }, 
       {  duration: 400  }
     );
   });
-  $("#newKeyboardForCloning").on("mouseleave", ".c", function(event) {
+  $("#newKeyboardForCloning").on("mouseleave", ".sameWidth", function(event) {
+    $(event.target).css("opacity", 0.5);
     $(event.target).animate(
       {  top: "-=5px"  }, 
       {  duration: 400  }
     );
   });
-
-  ///handlebar has to allow keyboard renaming
 
   $("#newKeyboardForCloning").find(".sameWidth").draggable({
     revert: true,
@@ -3869,10 +3886,20 @@ var createCustomKeyboard = function() {
         var thisKey = $(ui.helper.children());
         var keyCodePoint = thisKey.attr("data-codepoint");
         var onclicked = "clicked(" + keyCodePoint + ")";
-        thisKey.attr("onclick", onclicked);
+        thisKey[0].onclick = onclicked;
         $( this ).append(thisKey);
+        thisKey.css("opacity", 1.0)
+        .css("background-color", "white");
       }
   });
+
+  ////!!!resulting in not able to find by id and get children...?
+  //buildMap(new_body_id, '0000', null, false); 
+
+  ///on save button save new keyboard
+  ///load list in popover from * button
+
+  ///generate new custom map with up to 
 
 };
 
@@ -3982,7 +4009,8 @@ var polyanno_setup_editor_events = function() {
     var thisEditorID = $(event.target).closest(".textEditorPopup").attr("id"); 
     var thisEditor = Polyanno.editors.getById(thisEditorID);
     thisEditor.setSelected();
-    var parent_vector_id = checkForVectorTarget(parent_anno);
+    alert(JSON.stringify(Polyanno.selected.transcriptions[0]));
+    var parent_vector_id = checkForVectorTarget(Polyanno.selected.transcriptions[0].parent.id);
     var the_parent_vector = allDrawnItems.getLayer(parent_vector_id);
     Polyanno.connectingEquals = {
       status: true,

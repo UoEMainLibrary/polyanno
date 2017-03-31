@@ -308,19 +308,20 @@
   border-bottom: 8px solid transparent; 
   border-right:8px solid black; 
   position: absolute;
-  right: 100%;
-  opacity: 0.7;
+  opacity: 0.5;
+  bottom: 100%;
+  left: 5px;
 }
 
 .polyanno_merging_cursor {
+  left: 13px;
   bottom: 100%;
   position: absolute;
   height: 30px;
-  width: 180px;
-  margin-top: 5px;
+  width: 275px;
   border-radius: 3px; 
   text-align: center;
   background-color: black;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
