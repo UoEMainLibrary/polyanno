@@ -7,7 +7,7 @@ var mongoose   = require('mongoose');
 var cors = require('cors');
 //var polyanno = require('polyanno_storage');
 
-var thisWebsitePort = polyanno.setup.config.app.port;
+var thisWebsitePort = 8080;
 
 // GET APPLICATION RUNNING
 
