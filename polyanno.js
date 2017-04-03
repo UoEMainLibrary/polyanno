@@ -689,7 +689,7 @@ var polyanno_top_bar_HTML = `
                 <span class="glyphicon glyphicon-asterisk"></span>
               </button>
 
-              <button class="btn btn-primary polyanno-merge-shapes-cancel-btn disabled" disabled>
+              <button class="btn btn-primary atu-display-custom-keyboards-btn disabled" disabled>
                 <span class="glyphicon glyphicon-asterisk"></span>
                 <span class="glyphicon glyphicon-triangle-bottom"></span>
               </button>
@@ -1169,12 +1169,19 @@ Polyanno.baseTextObject = function(value) {
   this.text = opts.text;
   if (opts.vector instanceof Polyanno.vector) {  this.vector = opts.vector;  }
   else if (!isUseless(opts.vector)) { console.error("TypeError");  };
-  if (!isUseless(opts.parent)) {  this.parent = opts.parent;  };
+  if (!isUseless(opts.parent)) {  this.parent = opts.parent; };
   this.voting = {
     up: 0,
     down: 0
   };
 };
+
+Object.defineProperty(Polyanno.baseTextObject.prototype, "vector", {
+  set: function(value) {
+    if (value instanceof Polyanno.vector) {  vector = value.id;  }
+    else { console.error("TypeError: Vector need to be of type Polyanno.vector.");  };
+  }
+});
 
 var sharedParentSearch = function(arr, item) {
   var array = $.grep(arr, function(a){
@@ -1311,15 +1318,17 @@ Polyanno.transcription = function(value) {
 
 
 Object.defineProperty(Polyanno.transcription.prototype, "parent", {
+  enumerable: true,
   set: function(value) {
-    if (value instanceof Polyanno.transcription) {  parent = value;  }
+    if (value instanceof Polyanno.transcription) {  alert("here the parent is "+value.id); parent = value.id;  }
     else { console.error("TypeError: Parents should be of same type as child.");  };
   }
 });
 
 Object.defineProperty(Polyanno.transcription.prototype, "translation", {
+  enumerable: true,
   set: function(value) {
-    if (value instanceof Polyanno.translation) {  translation = value;  }
+    if (value instanceof Polyanno.translation) {  translation = value.id;  }
     else { console.error("TypeError");  };
   }
 });
@@ -1513,8 +1522,8 @@ var polyanno_load_existing_vectors = function(existingVectors) {
       var oldData = tempGeoJSON;
       oldData.geometry.type = vector.notFeature.notGeometry.notType;
       oldData.geometry.coordinates = [vector.notFeature.notGeometry.notCoordinates];
-      oldData.properties.transcription = findField(vector, "transcription");
-      oldData.properties.translation = findField(vector, "translation");
+      oldData.properties.transcription_fragment = findField(vector, "transcription_fragment");
+      oldData.properties.translation_fragment = findField(vector, "translation_fragment");
       oldData.properties.parent = findField(vector, "parent");
       oldData.properties.children = findField(vector, "children");
       oldData.properties.OCD = findField(vector, "OCD");
@@ -1826,14 +1835,15 @@ Polyanno.buildingParents.clicked = function(vec) {
       Polyanno.buildingParents.vectors.push(vec.layer);
       polyanno_add_merge_annos(vec.layer);
       polyanno_update_merge_shape(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
-      polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors);
+      alert(Polyanno.buildingParents.vectors.length);
+      polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors.length);
     }
     else {
       //click and start the new merge shape
       Polyanno.buildingParents.vectors.push(vec.layer);
       polyanno_add_merge_annos(vec.layer);
       polyanno_add_first_merge_shape(vec.layer);
-      polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors);
+      polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors.length);
     };
 };
 
@@ -2160,7 +2170,7 @@ var strangeTrimmingFunction = function(thetext) {
 
 var newTextPopoverOpen = function() {
   $('#polyanno-page-body').on("click", function(event) {
-    if ($(event.target).hasClass("popupAnnoMenu") == false) {
+    if (!$(event.target).hasClass("popupAnnoMenu") && (!isUseless(Polyanno.selected.textHighlighting.DOMid))) {
       Polyanno.selected.textHighlighting.DOM.popover("hide");
       Polyanno.selected.textHighlighting.parentDOM.html(Polyanno.selected.textHighlighting.oldContent); 
     }
@@ -2332,6 +2342,8 @@ var polyanno_new_anno_via_selection = function(base) {
 
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
+
+  alert(JSON.stringify(data)); ///undefined parent????
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
@@ -2993,9 +3005,9 @@ var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
 
 };
 
-var polyanno_add_merge_numbers = function(new_vec, merge_array) {
+var polyanno_add_merge_numbers = function(new_vec, number) {
 
-  var the_number_label = "<span> "+merge_array.length+"</span>";
+  var the_number_label = "<span> "+number+"</span>";
   var the_number_label_options = {
     direction: "center",
     permanent: true,
@@ -3022,13 +3034,27 @@ var polyanno_remove_merge_number = function(vec_removed, merge_array, array_inde
     });
   var affected_array = merge_array.splice(array_index+1);
   for (var i=0; i < affected_array.length; i++) {
-    var this_vec = merge_array[i];
-    var the_number_label = "<span> "+(i-1)+"</span>";
-    this_vec.setTooltipContent(the_number_label);
+    var this_vec = affected_array[i];
+    this_vec.unbindTooltip();
+    polyanno_add_merge_numbers(this_vec, i+1);
   };
 };
 
-
+var polyanno_rearrange_merge_number = function(old_array_index, new_array_index) {
+  var arr = Polyanno.buildingParents.vectors;
+  var vec = arr[old_array_index];
+  vec_removed.unbindTooltip();
+  polyanno_add_merge_numbers(vec, new_array_index+1);
+  var arr2 = arr.splice(old_array_index, 1);
+  var merge_array = arr.splice(new_array_index, 0, vec);
+  for (var i=0; i < merge_array.length; i++) {
+    var this_vec = merge_array[i];
+      this_vec.unbindTooltip();
+    polyanno_add_merge_numbers(this_vec, i+1);  
+  };
+  Polyanno.buildingParents.vectors = merge_array;
+  
+};
 
 
 
@@ -3125,7 +3151,7 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  alert(JSON.stringify(this_child));
+  alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -3286,6 +3312,28 @@ var polyanno_building_parents_enabled = function() {
   $(this_translation_display).toggle().insertAfter($("#imageViewer"));
   var ivh = $("#imageViewer").css("height");
   $(this_translation_display).css("height", ivh);
+
+  $("#polyanno_merging_transcription").sortable({
+    start: function(event, ui) {
+      var s = ui.item.id;
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id = s;
+      });
+      var vec = allDrawnItems.getLayer(arr[0].vector);
+      ////
+
+    },
+    update: function(event, ui) {
+      var s = ui.item.id;
+       var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id = s;
+      });
+      var old = Polyanno.buildingParents.transcriptions.indexOf(arr[0]);
+      var newIndex = ui.item.index();
+      polyanno_rearrange_merge_number(old, newIndex);      
+    }
+  });
+  $("#polyanno_merging_translation").sortable();
 
   $(".polyanno-merge-transcriptions-btn").on("click", function(event){  $(this_transcription_display).toggle("fold");  });
   $(".polyanno-merge-translations-btn").on("click", function(event){  $(this_translation_display).toggle("fold");  });
@@ -3777,14 +3825,14 @@ $("#polyanno-top-bar").on("click", ".polyanno-add-keyboard", function(event){
 var atu_blank_custom_keyboard_HTML = `
   <div class="col-md-6">
     <div class="row">
-      <span>Keyboard Name:</span>
+      <span id="atu-custom-keyboard-name">Keyboard Name:</span>
       <textarea style="height: 20px; width: 70%; background-color: buttonface; opacity: 0.5; border-style: hidden;"></textarea>
     </div>
-    <div class="row ui-droppable atu-keyboard-droppable" style="height: 100px; background-color: yellow; border: 5px dotted grey;">
+    <div id="atu-custom-keyboard-keys" class="row ui-droppable atu-keyboard-droppable" style="height: 100px; background-color: yellow; border: 5px dotted grey;">
 
     </div>
     <div class="row">
-      <button style="width: 100%;">
+      <button id="atu-custom-keyboard-save" style="width: 100%;">
         Save
       </button>
     </div>
@@ -3830,7 +3878,9 @@ var polyanno_keyboard_cursor_move = function() {
 var createCustomKeyboard = function() {
 
   var atu_custom_keyboard_box_id = add_dragondrop_pop("boop", atu_custom_keyboard_HTML, $(".atu-keyboard-parent").attr("id"), false,  atu_custom_keyboard_handlebar_HTML);
-  $(atu_custom_keyboard_box_id).removeClass(function (index, className) {
+  $(atu_custom_keyboard_box_id)
+  .toggle()
+  .removeClass(function (index, className) {
       return (className.match (/(^|\s)col-\S+/g) || []).join(' ');
   }).addClass("col-md-12");
 
@@ -3898,6 +3948,38 @@ var createCustomKeyboard = function() {
 
   ///on save button save new keyboard
   ///load list in popover from * button
+
+  var atu_custom_keyboards_list = {};
+
+  $("#atu-custom-keyboard-save").on("click", function(event) {
+    if (atu_custom_keyboards_list == {}) {
+      $(".atu-display-custom-keyboards-btn").removeClass("disabled").prop('disabled', false);
+    };
+    var n = $("#atu-custom-keyboard-name").value();
+    atu_custom_keyboards_list[n] = [];
+    for (var i=0; i < $("#atu-custom-keyboard-keys").length; i++) {
+      var keyDOM = document.getElementById("atu-custom-keyboard-keys").children[i];
+      atu_custom_keyboards_list[n].push(keyDOM);
+    };
+    $("#atu-custom-keyboard-keys").html(" ");
+    $(atu_custom_keyboard_box_id).toggle();
+    var nameHTML = "";
+    for (names in atu_custom_keyboards_list) {
+      nameHTML.concat("<ul>"+names+"</ul>");
+    };
+    var popHTML = "<li id='atu-display-custom-keyboards'>"+nameHTML+"</li>";
+    $(".atu-display-custom-keyboards-btn").popover("content", popHTML);
+  });
+
+  $(".atu-custom-keyboard-new-btn").on("click", function(event){
+    $(atu_custom_keyboard_box_id).toggle();
+  });
+
+  $(".atu-display-custom-keyboards-btn").popover({
+    html : true,
+    placement: "auto bottom",
+    content: "<li id='atu-display-custom-keyboards'></li>"
+  });
 
   ///generate new custom map with up to 
 
@@ -4009,13 +4091,13 @@ var polyanno_setup_editor_events = function() {
     var thisEditorID = $(event.target).closest(".textEditorPopup").attr("id"); 
     var thisEditor = Polyanno.editors.getById(thisEditorID);
     thisEditor.setSelected();
-    alert(JSON.stringify(Polyanno.selected.transcriptions[0]));
-    var parent_vector_id = checkForVectorTarget(Polyanno.selected.transcriptions[0].parent.id);
+    var parent_anno = Polyanno.transcriptions.getById(Polyanno.selected.transcriptions.array[0].parent.id);
+    var parent_vector_id = checkForVectorTarget(null);
     var the_parent_vector = allDrawnItems.getLayer(parent_vector_id);
     Polyanno.connectingEquals = {
       status: true,
-      siblings: Polyanno.selected.transcriptions,
-      parent_anno : Polyanno.selected.transcriptions[0].parent,
+      siblings: Polyanno.selected.transcriptions.array,
+      parent_anno : Polyanno.selected.transcriptions.array[0].parent,
       parent_vector : the_parent_vector
     };
   
@@ -4094,9 +4176,8 @@ var polyanno_setup = function(opts) {
     $(".atu-custom-keyboard-buttons").toggle("swing");
   });
 
-  $(".atu-custom-keyboard-new-btn").on("click", function(event){
-    createCustomKeyboard();
-  });
+  createCustomKeyboard();
+
 
   ///attach a popover to the listing existing keyboards button
 
