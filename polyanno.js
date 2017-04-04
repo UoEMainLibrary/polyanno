@@ -76,7 +76,7 @@ var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEd
 
 var polyannoEditorHTML_partfinal = `
       <div class="row polyanno-vector-link-row">
-        <button type='button' class='btn polyannoEditorDropdownBtn polyannoLinkVectorBtn'>
+        <button type="button" class="btn polyannoEditorDropdownBtn polyannoLinkVectorBtn">
           Draw a Shape For This Text On the Image!
         </button> 
       </div>
@@ -573,6 +573,10 @@ Polyanno.HTML.symbols = {
     discussion: "<span class='glyphicon glyphicon-comment'></span>",
     textHighlightingCut: "<span class='glyphicon glyphicon-scissors'></span> <span class='glyphicon glyphicon-text-background'></span>",
     textHighlightingOthers: "<span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>",
+    textHighlighting: {
+      transcription: "<span class='glyphicon glyphicon-align-left'></span> <span class='glyphicon glyphicon-list-alt'></span>",
+      translation: "<span class='glyphicon glyphicon-align-left'></span> <span class='glyphicon glyphicon-globe'></span>"
+    },
     newAnnotation: "<span class='glyphicon glyphicon-pencil'></span> <span class='glyphicon glyphicon-plus'></span>",
     buildingParents: "<span class='glyphicon glyphicon-stop'></span> <span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-stop'></span>",
     buildingParent: {
@@ -618,7 +622,7 @@ Polyanno.HTML.popups = {
       transcription: `
         <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
             <div data-role="main" class="ui-content">
-              <a class="openTranscriptionMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="polyanno_open_existing_text_transcription_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
+              <a class="openTranscriptionMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="Polyanno.editors.ifOpen('transcription');" >`+Polyanno.HTML.symbols.textHighlighting.transcription+`</a>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
             </div>
         </div>
@@ -626,7 +630,7 @@ Polyanno.HTML.popups = {
       translation: `
         <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
             <div data-role="main" class="ui-content">
-              <a class="openTranslationMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="polyanno_open_existing_text_translation_menu();">`+polyanno_fragment_alternatives_symbol+`</a>
+              <a class="openTranslationMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="Polyanno.editors.ifOpen('translation');" >`+Polyanno.HTML.symbols.textHighlighting.translation+`</a>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
             </div>
         </div>
@@ -659,7 +663,7 @@ var polyanno_top_bar_HTML = `
 
       <div class="btn-group polyanno-other-top-buttons" role="group" aria-label="...">
 
-        <button class="btn btn-default polyanno-discussion-btn"><span class="glyphicon glyphicon-comment"></span></button>
+        <button data-hypothesis-trigger class="btn btn-default polyanno-discussion-btn"><span class="glyphicon glyphicon-comment"></span></button>
 
         <button id="polyanno-merge-shapes-enable" class="btn btn-default polyanno-merge-shapes-btn disabled" disable>
           `+Polyanno.HTML.symbols.buildingParents+`
@@ -1167,21 +1171,13 @@ Polyanno.baseTextObject = function(value) {
   };
   Polyanno.baseAnnotationObject.call(this, opts);
   this.text = opts.text;
-  if (opts.vector instanceof Polyanno.vector) {  this.vector = opts.vector;  }
-  else if (!isUseless(opts.vector)) { console.error("TypeError");  };
+  if (!isUseless(opts.vector)) { this.vector = opts.vector;  };
   if (!isUseless(opts.parent)) {  this.parent = opts.parent; };
   this.voting = {
     up: 0,
     down: 0
   };
 };
-
-Object.defineProperty(Polyanno.baseTextObject.prototype, "vector", {
-  set: function(value) {
-    if (value instanceof Polyanno.vector) {  vector = value.id;  }
-    else { console.error("TypeError: Vector need to be of type Polyanno.vector.");  };
-  }
-});
 
 var sharedParentSearch = function(arr, item) {
   var array = $.grep(arr, function(a){
@@ -1317,22 +1313,6 @@ Polyanno.transcription = function(value) {
 };
 
 
-Object.defineProperty(Polyanno.transcription.prototype, "parent", {
-  enumerable: true,
-  set: function(value) {
-    if (value instanceof Polyanno.transcription) {  alert("here the parent is "+value.id); parent = value.id;  }
-    else { console.error("TypeError: Parents should be of same type as child.");  };
-  }
-});
-
-Object.defineProperty(Polyanno.transcription.prototype, "translation", {
-  enumerable: true,
-  set: function(value) {
-    if (value instanceof Polyanno.translation) {  translation = value.id;  }
-    else { console.error("TypeError");  };
-  }
-});
-
 Object.defineProperty(Polyanno.transcription.prototype, "voting.up", {
   enumerable: true,
   set: function() {
@@ -1411,6 +1391,10 @@ Polyanno.translation = function(value) {
 
 ////Events Setting Methods
 
+
+////Translations (plural)
+
+Polyanno.translations = new Polyanno.collections(Polyanno.translation);
 
 
 ///////////////////Vectors
@@ -1908,6 +1892,8 @@ Polyanno.editor = function(textType) {
 
     polyanno_display_editor_texts(Polyanno.selected[plural].array, popupIDstring);
 
+    initialiseOldTextPopovers($(popupIDstring).find(".open"+textType+"ChildrenPopup"), textType);
+
   }; 
 
 };
@@ -1930,6 +1916,7 @@ Polyanno.editor.prototype.closeEditor = function() {
   var the_editor_gone = dragondrop_remove_pop(id);
   Polyanno.colours.connectColours(thisEditor, "editor", "default");
   Polyanno.editors.removeEditor(id);
+
   return the_editor_gone;
 };
 
@@ -1959,6 +1946,7 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 Polyanno.editors.removeEditor = function(id) {
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
+  alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 };
 
 Polyanno.editors.closeAll = function() {
@@ -1978,6 +1966,7 @@ Polyanno.editors.openEditor = function(textType) {
 Polyanno.editors.ifOpen = function(fromType) {
 
   var comparison = Polyanno.selected.getAll();
+  //alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
   if (isUseless(Polyanno.editors.array[0])) {    Polyanno.editors.openEditor(fromType);  }
   else {
     var opened = $.grep( Polyanno.editors.array, function(ed) {
@@ -2192,16 +2181,17 @@ var newTextPopoverOpen = function() {
   });
 };
 
-var initialiseOldTextPopovers = function(base) {
-  Polyanno.selected.textHighlighting.parentDOM.popover({ 
-    trigger: 'manual', //////
+var initialiseOldTextPopovers = function(theDOM, base) {
+  theDOM.popover({ 
+    trigger: 'manual',
     html : true,
-    title: closeButtonHTML,
+    container: 'body',
     placement: "auto top",
+    title: closeButtonHTML,
     viewport: "#polyanno-page-body",
     content: Polyanno.HTML.popups.children[base]
   });
-  Polyanno.selected.textHighlighting.parentDOM.popover('show');
+  theDOM.popover('show');
 };
 
 var setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
@@ -2258,12 +2248,17 @@ var setNewTextVariables = function(selection, classCheck) {
   Polyanno.selected.textHighlighting.parent = ed.docs[plural][0].id;
 
   if (classCheck.includes('opentranscriptionChildrenPopup')) { 
+    Polyanno.selected.reset();
     Polyanno.selected.textHighlighting.type = "transcription";
-    initialiseOldTextPopovers("transcription");
+    var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
+    var t = Polyanno.transcriptions.getById(thisid);
+    alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+    Polyanno.selected.transcriptions.add(t);
+    $(selection.anchorNode.parentElement).popover("show");
   }
   else if (classCheck.includes('opentranslationChildrenPopup')) { 
     Polyanno.selected.textHighlighting.type = "translation";
-    initialiseOldTextPopovers("translation");
+    $(selection.anchorNode.parentElement).popover("show");
   }    
   else if (startParentID != endParentID) {
   
@@ -2324,15 +2319,18 @@ var setNewTextVariables = function(selection, classCheck) {
 //////////////////////////////////////////////////////////////////
 
 var polyanno_new_anno_via_selection = function(base) {
+
+  var popover = Polyanno.selected.textHighlighting.DOM.data('bs.popover');
+  popover.options.content = Polyanno.HTML.popups.children[base];
+
   var plural = base.concat("s");
-  var parent = Polyanno[plural].getById(Polyanno.selected.textHighlighting.parent);
 
   ///objects
   var targetData = {
-    id: Polyanno.selected.textHighlighting.DOMid,
+    _id: Polyanno.selected.textHighlighting.DOMid,
     text: Polyanno.selected.textHighlighting.fragment, 
     metadata: imageSelectedMetadata, 
-    parent: parent,
+    parent: Polyanno.selected.textHighlighting.parent,
     target: [
           {id: Polyanno.selected.textHighlighting.URI, format: "text/html"}, 
           {id: Polyanno.selected.textHighlighting.parent, format: "application/json"}, 
@@ -2343,12 +2341,13 @@ var polyanno_new_anno_via_selection = function(base) {
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
 
-  alert(JSON.stringify(data)); ///undefined parent????
+  alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
   Polyanno.annotations.add(new_anno);
 
+  var parent = Polyanno[plural].getById(Polyanno.selected.textHighlighting.parent);
   parent.update({text: Polyanno.selected.textHighlighting.newContent});
 
   ///editors and selected
@@ -2361,31 +2360,10 @@ var polyanno_new_anno_via_selection = function(base) {
 
   ////polyanno storage loop
 
+  Polyanno.selected.textHighlighting = {};
 
+  alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
 
-  Polyanno.selected.textHighlighting = {
-    selected: null,
-    parentDOM: null,
-    newDOM: null,
-    newContent: null
-  };
-
-};
-
-var polyanno_open_existing_text_transcription_menu = function() {
-
-  var selection = getSelected(); 
-
-  ///////
-
-  Polyanno.editors.ifOpen("transcription");
-  Polyanno.selected.textHighlighting.parentDOM.popover('hide'); ////
-};
-
-var polyanno_open_existing_text_translation_menu = function() {
-  var selection = getSelected(); 
-  Polyanno.editors.ifOpen("translation");
-  Polyanno.selected.textHighlighting.parentDOM.popover('hide'); ////
 };
 
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
@@ -2441,8 +2419,8 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
   var type = thisEditor.type;
   var plural = type.concat("s");
 
-  if (Polyanno.selected.vectors.array.length != 0) {  theData.vector =  Polyanno.selected.vector; };
-  if (!isUseless(thisEditor.parent)) {  theData.parent = thisEditor.parent;  };
+  if (Polyanno.selected.vectors.array.length != 0) {  theData.vector =  Polyanno.selected.vectors.array[0].id; };
+  if (!isUseless(thisEditor.parent)) {  theData.parent = thisEditor.parent.id;  };
 
   var data = new Polyanno[type](theData);
   Polyanno[plural].add(data);
@@ -3170,7 +3148,7 @@ var polyanno_new_anno_via_building = function(merged_vector, textType) {
   var plural = textType.concat("s");
   var htmlID = "#polyanno_merging_".concat(textType);
   var linkedText = $(htmlID).html();
-  var data = {text: linkedText, vector: merged_vector, metadata: imageSelectedMetadata, 
+  var data = {text: linkedText, vector: merged_vector.id, metadata: imageSelectedMetadata, 
     target: [
             {id: merged_vector,  format: "image/SVG"  },
             {id: imageSelected,  format: "application/json"  } ]
@@ -3825,8 +3803,8 @@ $("#polyanno-top-bar").on("click", ".polyanno-add-keyboard", function(event){
 var atu_blank_custom_keyboard_HTML = `
   <div class="col-md-6">
     <div class="row">
-      <span id="atu-custom-keyboard-name">Keyboard Name:</span>
-      <textarea style="height: 20px; width: 70%; background-color: buttonface; opacity: 0.5; border-style: hidden;"></textarea>
+      <span >Keyboard Name:</span>
+      <textarea id="atu-custom-keyboard-name" style="height: 20px; width: 70%; background-color: buttonface; opacity: 0.5; border-style: hidden;"></textarea>
     </div>
     <div id="atu-custom-keyboard-keys" class="row ui-droppable atu-keyboard-droppable" style="height: 100px; background-color: yellow; border: 5px dotted grey;">
 
@@ -4154,6 +4132,8 @@ var polyanno_setup = function(opts) {
   //will this induce synchronicity problems?
   $("#polyanno-page-body").addClass("row atu-keyboard-parent");
 
+  createCustomKeyboard();
+
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
   $(image_viewer_id)
   .removeClass(function (index, className) {
@@ -4176,10 +4156,14 @@ var polyanno_setup = function(opts) {
     $(".atu-custom-keyboard-buttons").toggle("swing");
   });
 
-  createCustomKeyboard();
+  window.hypothesisConfig = function () {
+  return {
+    "showHighlights": false
+  };
 
+  /////login to Hypothesis
 
-  ///attach a popover to the listing existing keyboards button
+};
 
 };
 

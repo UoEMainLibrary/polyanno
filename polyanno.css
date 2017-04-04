@@ -315,7 +315,7 @@
 
 .polyanno_merging_cursor {
   left: 13px;
-  bottom: 100%;
+  bottom: 50%;
   position: absolute;
   height: 30px;
   width: 275px;
