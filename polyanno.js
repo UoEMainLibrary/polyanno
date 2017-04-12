@@ -1819,7 +1819,7 @@ Polyanno.buildingParents.clicked = function(vec) {
       Polyanno.buildingParents.vectors.push(vec.layer);
       polyanno_add_merge_annos(vec.layer);
       polyanno_update_merge_shape(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
-      alert(Polyanno.buildingParents.vectors.length);
+      alert("the number of vectors involved "+Polyanno.buildingParents.vectors.length);
       polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors.length);
     }
     else {
@@ -1944,6 +1944,7 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 //plural
 
 Polyanno.editors.removeEditor = function(id) {
+  alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
   alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
@@ -2466,35 +2467,52 @@ var angle_from_zero = function(x,y) {
 };
 
 var recentre_coordinates = function(vertex_to_change, new_centre) {
+  alert("the vertex to change to is "+JSON.stringify(vertex_to_change)+" and the new centre is "+JSON.stringify(new_centre));
   var new_x = vertex_to_change[0] - new_centre[0];
   var new_y = vertex_to_change[1] - new_centre[1];
   return [new_x, new_y];
 };
 
-//vertex = [x,y]
-var anticlockwise_vertex_angle = function(vertex1, vertex2, vertex3) {
+var anticlockwise_vertex_angle = function(vertex1, vertex2) {
   //reset the centre to be the second vertex (the actual vertex in question)
   var new_vertex1 = recentre_coordinates(vertex1, vertex2);
-  var new_vertex3 = recentre_coordinates(vertex3, vertex2);
   var anticlockwise_angle_v1 = angle_from_zero(new_vertex1[0],new_vertex1[1]);
-  var anticlockwise_angle_v3 = angle_from_zero(new_vertex3[0],new_vertex3[1]);
-  return anticlockwise_angle_v3 - anticlockwise_angle_v1;
+  return anticlockwise_angle_v1;
+};
+
+//vertex = [x,y]
+var anticlockwise_corner_angle = function(vertex1, vertex2, vertex3) {
+  var anticlockwise_angle_v1 = anticlockwise_vertex_angle(vertex1, vertex2);
+  var anticlockwise_angle_v3 = anticlockwise_vertex_angle(vertex3, vertex2);
+  var angle = anticlockwise_angle_v3 - anticlockwise_angle_v1;
+
+  var c = vertex1[1] - (vertex1[0] * anticlockwise_angle_v1);
+
+  return [angle, anticlockwise_angle_v1, c];
 };
 
 var find_concavity_angles = function(coordinates) {
   /////if angle is between 180 degrees and 360 degrees then add it to the notches array
   ////need to account for repeat coordinates at beginning and end of array
   var notches_array = [];
+  var line_equations = [];
   for (var i=0; i< coordinates.length; i++) {
     var the_angle;
     if (i == (coordinates.length - 2)) {
-      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[1]);
+      var the = anticlockwise_corner_angle(coordinates[i],coordinates[i+1],coordinates[1]);
+      the_angle = the[0];
+      line_equations.push([the[1], the[2], the[0]]);
     }
     else if (i == (coordinates.length - 1)) {
-      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[1],coordinates[2]);
+      var the = anticlockwise_corner_angle(coordinates[i],coordinates[1],coordinates[2]);
+      the_angle = the[0];
+      line_equations.push([the[1], the[2], the[0]]);
     }
     else {
-      the_angle = anticlockwise_vertex_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
+      alert("so for i of "+i+" the third vertex is "+JSON.stringify(coordinates[i+2]));
+      var the = anticlockwise_corner_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
+      the_angle = the[0];
+      line_equations.push([the[1], the[2], the[0]]);
     };
     if ((the_angle > 180) && (the_angle < 360)) {
       ///[x,y, coordinates_array_position]
@@ -2502,24 +2520,61 @@ var find_concavity_angles = function(coordinates) {
       notches_array.push(the_vertex_array);
     };
   };
-  return notches_array;
+  return [notches_array, line_equations];
 };
 
 //(Chazelle and Dobkin, 1985) Optimal Decomposition Algorithm
-var chazelle_and_dobkin_polynomial_ocd = function(coordinates, notches_array) {
+var naive_ocd = function(coordinates, notches_array, line_equations) {
   var the_OCD_array = [];
-  ////algorithm here!!
-  var this_geometry = [];
-  var this_id = Math.random().toString().substring(2);
-  the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
+
+  var c = notches_array;
+  var n = coordinates;
+  var number = 0;
+  while (number < c.length) {
+
+    //[x,y, coordinates_array_position]
+    var v = c[number];
+    var v_index = v[2];
+    //[angle, offset, angle_diff]
+    var equation = line_equations[v_index];
+    var angle_diff = equation[2];
+    //what split makes it < 180 or > 360?
+    var new_angle_part1 = 180 + angle_diff/2; 
+    var new_angle = new_angle_part1 % 360;
+    var new_c = v[1] - (new_angle * v[0]);
+
+    for (var no=0; no < line_equations.length; no++) {
+      var eq = line_equations[no];
+      var intersect_x = Math.floor((new_c - eq[1])/(new_angle - eq[0]));
+      var a_x = coordinates[no][0];
+      var b_x;
+      if (no == coordinates.length -1) {  b_x = coordinates[1][0];  }
+      else {  b_x = coordinates[no + 1][0];  };
+      if ( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) { 
+        var intersect_y = (eq[0] * intersect_x) + new_c;
+        var this_geometry = coordinates.slice(v[2], no+1);
+        var to_remove = this_geometry.length - 1;
+        this_geometry.push([intersect_x, intersect_y]);
+        var this_id = Math.random().toString().substring(2);
+        the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
+        number = no +1;
+      }
+      else if (no == line_equations.length - 1) {
+        number += 1;
+      };
+    };
+
+  };
+
   return the_OCD_array;
 };
 
 //if concave then apply optimal convex decomposition algorithm to vector and store corresponding convex geometry in arrays in notFeatures
 var check_for_concavity = function(coordinates) {
-  var the_notches_array = find_concavity_angles(coordinates);
+  var the_circling = find_concavity_angles(coordinates);
+  var the_notches_array = the_circling[0];
   if (the_notches_array.length > 0) {
-    return chazelle_and_dobkin_polynomial_ocd(coordinates, the_notches_array);
+    return naive_ocd(coordinates, the_notches_array, the_circling[1]);
   }
   else {
     return false;
@@ -3129,7 +3184,7 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  alert("this merged anno is "+JSON.stringify(this_child));
+  //alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -3851,6 +3906,7 @@ var polyanno_keyboard_cursor_move = function() {
   cl.attr("id", "polyanno_merging_cursor");
   $("#newKeyboardForCloning").append(cl);
   $("#polyanno_merging_cursor").css({left:e.pageX - 50, top:e.pageY + 50});
+  ///disappear whilst the cursor is clicking and actually dragging and dropping
 };
 
 var createCustomKeyboard = function() {
@@ -3933,7 +3989,7 @@ var createCustomKeyboard = function() {
     if (atu_custom_keyboards_list == {}) {
       $(".atu-display-custom-keyboards-btn").removeClass("disabled").prop('disabled', false);
     };
-    var n = $("#atu-custom-keyboard-name").value();
+    var n = $("#atu-custom-keyboard-name").val();
     atu_custom_keyboards_list[n] = [];
     for (var i=0; i < $("#atu-custom-keyboard-keys").length; i++) {
       var keyDOM = document.getElementById("atu-custom-keyboard-keys").children[i];
@@ -3943,20 +3999,23 @@ var createCustomKeyboard = function() {
     $(atu_custom_keyboard_box_id).toggle();
     var nameHTML = "";
     for (names in atu_custom_keyboards_list) {
-      nameHTML.concat("<ul>"+names+"</ul>");
+      nameHTML.concat("<li>"+names+"</li>");
     };
-    var popHTML = "<li id='atu-display-custom-keyboards'>"+nameHTML+"</li>";
-    $(".atu-display-custom-keyboards-btn").popover("content", popHTML);
+    var popHTML = "<ul id='atu-display-custom-keyboards'>"+nameHTML+"</ul>";
+    $(".atu-display-custom-keyboards-btn").removeClass("disabled").prop('disabled', false);
+    var popover = $(".atu-display-custom-keyboards-btn").data('bs.popover');
+    popover.options.content = popHTML;
   });
 
   $(".atu-custom-keyboard-new-btn").on("click", function(event){
     $(atu_custom_keyboard_box_id).toggle();
   });
 
+  ////improve display as currently of zero height etc??
   $(".atu-display-custom-keyboards-btn").popover({
     html : true,
     placement: "auto bottom",
-    content: "<li id='atu-display-custom-keyboards'></li>"
+    content: "<ul id='atu-display-custom-keyboards'></ul>"
   });
 
   ///generate new custom map with up to 
