@@ -1819,7 +1819,6 @@ Polyanno.buildingParents.clicked = function(vec) {
       Polyanno.buildingParents.vectors.push(vec.layer);
       polyanno_add_merge_annos(vec.layer);
       polyanno_update_merge_shape(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
-      alert("the number of vectors involved "+Polyanno.buildingParents.vectors.length);
       polyanno_add_merge_numbers(vec.layer, Polyanno.buildingParents.vectors.length);
     }
     else {
@@ -2460,14 +2459,19 @@ var polyanno_new_anno_via_text_box = function(thisEditor){
 ////GEOMETRY
 
 /////find anticlockwise angle from edge one to edge two for each vertex in clockwise order
-
+///between 0 and 360
 var angle_from_zero = function(x,y) {
   var angle_radians = Math.atan2(y,x); //atan2 takes y first and deals with segments
-  return angle_radians * (180/Math.PI);
+  var angle_degrees = angle_radians * (180/Math.PI);
+  if (y < 0) {
+    return (360 + angle_degrees);
+  }
+  else {
+    return angle_degrees;
+  }
 };
 
 var recentre_coordinates = function(vertex_to_change, new_centre) {
-  alert("the vertex to change to is "+JSON.stringify(vertex_to_change)+" and the new centre is "+JSON.stringify(new_centre));
   var new_x = vertex_to_change[0] - new_centre[0];
   var new_y = vertex_to_change[1] - new_centre[1];
   return [new_x, new_y];
@@ -2485,10 +2489,27 @@ var anticlockwise_corner_angle = function(vertex1, vertex2, vertex3) {
   var anticlockwise_angle_v1 = anticlockwise_vertex_angle(vertex1, vertex2);
   var anticlockwise_angle_v3 = anticlockwise_vertex_angle(vertex3, vertex2);
   var angle = anticlockwise_angle_v3 - anticlockwise_angle_v1;
+  if (angle < 0) { angle = 360 + angle; };
 
-  var c = vertex1[1] - (vertex1[0] * anticlockwise_angle_v1);
-
+  var grad = (vertex2[1] - vertex1[1])/(vertex2[0] - vertex1[0]); //Math.tan(anticlockwise_angle_v1* Math.PI/180);
+  var c = vertex1[1] - (vertex1[0] * grad);
   return [angle, anticlockwise_angle_v1, c];
+};
+
+var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_index) {
+  ///a is start of clockwise loop around shape, b is the end
+  //need to account for the fact that the first and last coordinate have to be identical
+  if (point_a_index == 0) { 
+    return the_shape.slice(1, point_b_index); ///a is 0 AND last point, b is the penultimate point
+  }
+  else if (point_b_index == 0) {
+    return the_shape.slice(2, (the_shape.length - 1)); //b is 0 AND last point, a is 1
+  }
+  else {
+    var shape_start = the_shape.slice(1, point_b_index); // start not inlcuding ending, then up to, but not including, b
+    var shape_end = the_shape.slice(point_a_index+1); // from (a + 1) to end
+    return shape_end.concat(shape_start);
+  };
 };
 
 var find_concavity_angles = function(coordinates) {
@@ -2496,27 +2517,28 @@ var find_concavity_angles = function(coordinates) {
   ////need to account for repeat coordinates at beginning and end of array
   var notches_array = [];
   var line_equations = [];
-  for (var i=0; i< coordinates.length; i++) {
+  for (var i=0; i< (coordinates.length -1); i++) {
     var the_angle;
+    var the_notch_i;
+    var li;
     if (i == (coordinates.length - 2)) {
-      var the = anticlockwise_corner_angle(coordinates[i],coordinates[i+1],coordinates[1]);
+      var the = anticlockwise_corner_angle(coordinates[i],coordinates[0],coordinates[1]);
       the_angle = the[0];
-      line_equations.push([the[1], the[2], the[0]]);
-    }
-    else if (i == (coordinates.length - 1)) {
-      var the = anticlockwise_corner_angle(coordinates[i],coordinates[1],coordinates[2]);
-      the_angle = the[0];
-      line_equations.push([the[1], the[2], the[0]]);
+      the_notch_i = 0;
+      li = [the[1], the[2], the[0], coordinates[0], coordinates[i], coordinates[1]];
     }
     else {
-      alert("so for i of "+i+" the third vertex is "+JSON.stringify(coordinates[i+2]));
       var the = anticlockwise_corner_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
       the_angle = the[0];
-      line_equations.push([the[1], the[2], the[0]]);
+      the_notch_i = i+1;
+      li = [the[1], the[2], the[0], coordinates[i+1], coordinates[i], coordinates[i+2]];
     };
+
+    line_equations.push(li);
+
     if ((the_angle > 180) && (the_angle < 360)) {
-      ///[x,y, coordinates_array_position]
-      var the_vertex_array = [coordinates[0],coordinates[1],i];
+      ///[x,y, coordinates_array_position, line_equation]
+      var the_vertex_array = [coordinates[the_notch_i][0],coordinates[the_notch_i][1], li, the_notch_i];
       notches_array.push(the_vertex_array);
     };
   };
@@ -2524,47 +2546,91 @@ var find_concavity_angles = function(coordinates) {
 };
 
 //(Chazelle and Dobkin, 1985) Optimal Decomposition Algorithm
-var naive_ocd = function(coordinates, notches_array, line_equations) {
+
+//x_patterns = line_equations
+//steiner_points = points on internal line_equations
+
+var naive_ocd = function(coordinates, notches_array, line_equations, x_patterns, steiner_points) {
+
   var the_OCD_array = [];
 
   var c = notches_array;
   var n = coordinates;
   var number = 0;
-  while (number < c.length) {
 
-    //[x,y, coordinates_array_position]
+    //[x,y,line_equation, index]
     var v = c[number];
-    var v_index = v[2];
-    //[angle, offset, angle_diff]
-    var equation = line_equations[v_index];
-    var angle_diff = equation[2];
-    //what split makes it < 180 or > 360?
-    var new_angle_part1 = 180 + angle_diff/2; 
-    var new_angle = new_angle_part1 % 360;
-    var new_c = v[1] - (new_angle * v[0]);
+    var v_coords = [v[0], v[1]];
+
+    //[incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next]
+    var equation = v[2];
+    var v_index = equation[3];
+    var v_prev_index = equation[4];
+    var v_next_index = equation[5];
+
+    //what split makes it < 180? --> min: convex_diff, max: angle_diff - convex_diff
+    var convex_diff = equation[2] - 180;
+    var new_angle_part1 = equation[2]/2; 
+
+    var new_angle_part2 = equation[0];
+    var new_angle = (new_angle_part1+new_angle_part2) % 360;
+
+    var new_grad = Math.tan(new_angle* Math.PI/180);
+    var new_c = v[1] - (new_grad * v[0]);
+
+    //alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
 
     for (var no=0; no < line_equations.length; no++) {
+
+      //[angle, offset, angle_diff, coordinates, prev_index, next_index]
       var eq = line_equations[no];
-      var intersect_x = Math.floor((new_c - eq[1])/(new_angle - eq[0]));
-      var a_x = coordinates[no][0];
-      var b_x;
-      if (no == coordinates.length -1) {  b_x = coordinates[1][0];  }
-      else {  b_x = coordinates[no + 1][0];  };
-      if ( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) { 
-        var intersect_y = (eq[0] * intersect_x) + new_c;
-        var this_geometry = coordinates.slice(v[2], no+1);
-        var to_remove = this_geometry.length - 1;
-        this_geometry.push([intersect_x, intersect_y]);
-        var this_id = Math.random().toString().substring(2);
-        the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
-        number = no +1;
+
+      if ((eq[3] == v_index) || (eq[3] == v_next_index)) {
+        //number += 1;
       }
-      else if (no == line_equations.length - 1) {
-        number += 1;
+      else {
+
+        var a_coords = eq[4];
+        var b_coords = eq[3];
+
+        var this_grad = (b_coords[1] - a_coords[1])/(b_coords[0] - a_coords[0]);
+        var diffC = eq[1] - new_c;
+        var diffM = new_grad - this_grad;
+        var intersect_x = diffC / diffM;
+        var intersect_y = (new_grad * intersect_x) + new_c;
+
+        //alert("so this line of y="+new_grad+"x + "+new_c+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+this_grad+"x +"+eq[1]);
+
+        var a_x = a_coords[0];
+        var a_y = a_coords[1];
+        var b_x = b_coords[0];
+        var b_y = b_coords[1];
+
+        if (( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) &&
+        ( ((a_y < b_y) && (a_y < intersect_y) && (intersect_y < b_y)) || ((a_y > b_y) && (b_y < intersect_y) && (intersect_y < a_y)) )) { 
+
+          //for handling layers externally -- change to x-patterns later???
+          var this_geometry = polyanno_find_shape_between(coordinates, v[3], no);
+          this_geometry.push([intersect_x, intersect_y]);
+          this_geometry.splice(0,0, [intersect_x, intersect_y]);
+          var this_id = Math.random().toString().substring(2);
+          the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
+
+          //x-patterns and steiner points
+          //[angle, offset, angle_diff, coordinates, prev_coords, next_coords]
+          x_patterns.push([new_angle, new_c, null, v_coords, v_prev_index, [intersect_x, intersect_y]]);
+
+          //number = no +1;
+        }
+        else if (no == line_equations.length - 1) {
+          //number += 1;
+        };  
+
       };
+
     };
 
-  };
+  alert("the OCD is "+JSON.stringify(the_OCD_array));
 
   return the_OCD_array;
 };
@@ -2574,7 +2640,7 @@ var check_for_concavity = function(coordinates) {
   var the_circling = find_concavity_angles(coordinates);
   var the_notches_array = the_circling[0];
   if (the_notches_array.length > 0) {
-    return naive_ocd(coordinates, the_notches_array, the_circling[1]);
+    return naive_ocd(coordinates, the_notches_array, the_circling[1], [], []);
   }
   else {
     return false;
@@ -2779,24 +2845,29 @@ var polyanno_form_neighbour_index_array = function(shape, main_index){
   else {  prev = main_index - 1 };
   if (main_index==(shape.length -1)){  next = 1 }
   else {  next = main_index +1 };
-  return [shape[prev], shape[next]];
+  return [prev, next];
 };
 
-var sort_out_edge_direction = function(shortest, neighbour_value) {
+var sort_out_edge_direction = function(shortest, neighbour_value, neighbour_index_array) {
   //the bridge shape needs to run in the opposite direction to the shape it has come from to be clockwise
-  if (neighbour_value == 0) {   return [shortest, (shortest - 1)];    }
-  else {    return [(shortest + 1), shortest];    };  
+  if (neighbour_value == 0) {   return [shortest, neighbour_index_array[0]];    }
+  else {    return [neighbour_index_array[1], shortest];    };  
 };
 
 var polyanno_calculate_merge_shape_index = function(shape1, shape2) {
   ///[gap_length_value, shape1_index, shape2_index]
   var the_shortest_branch_array = polyanno_find_shortest_branch(shape1, shape2);
-  var shape1_shortest_neighbours = polyanno_form_neighbour_index_array(shape1, the_shortest_branch_array[1]);
-  var shape2_shortest_neighbours = polyanno_form_neighbour_index_array(shape2, the_shortest_branch_array[2]);
-  ///[gap_length_value, shape1_index, shape2_index]
+  //[previous_neighbour_index, next_neighbour_index]
+  var shape1_shortest_neighbours_index = polyanno_form_neighbour_index_array(shape1, the_shortest_branch_array[1]);
+  var shape2_shortest_neighbours_index = polyanno_form_neighbour_index_array(shape2, the_shortest_branch_array[2]);
+  //[previous_neighbour, next_neighbour]
+  var shape1_shortest_neighbours = [shape1[shape1_shortest_neighbours_index[0]], shape1[shape1_shortest_neighbours_index[1]]];
+  var shape2_shortest_neighbours = [shape2[shape2_shortest_neighbours_index[0]], shape2[shape2_shortest_neighbours_index[1]]];
+  ///[gap_length_value, shape1_neighbours_array_index, shape2_neighbours_array_index]
   var shortest_neighbour_branch_array = polyanno_find_shortest_branch(shape1_shortest_neighbours, shape2_shortest_neighbours);
-  var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1]);
-  var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2]);
+
+  var shape1_edge = sort_out_edge_direction(the_shortest_branch_array[1], shortest_neighbour_branch_array[1], shape1_shortest_neighbours_index);
+  var shape2_edge = sort_out_edge_direction(the_shortest_branch_array[2], shortest_neighbour_branch_array[2], shape2_shortest_neighbours_index);
   return [shape1_edge[0], shape1_edge[1], shape2_edge[0], shape2_edge[1]];
 };
 
@@ -2885,22 +2956,6 @@ var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array)
   return geometry_array;
 };
 
-var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_index) {
-  ///a is start of clockwise loop around shape, b is the end
-  //need to account for the fact that the first and last coordinate have to be identical
-  if (point_a_index == 0) { 
-    return the_shape.slice(1, point_b_index); ///a is 0 AND last point, b is the penultimate point
-  }
-  else if (point_b_index == 0) {
-    return the_shape.slice(2, (the_shape.length - 1)); //b is 0 AND last point, a is 1
-  }
-  else {
-    var shape_start = the_shape.slice(1, point_b_index); // start not inlcuding ending, then up to, but not including, b
-    var shape_end = the_shape.slice(point_a_index+1); // from (a + 1) to end
-    return shape_end.concat(shape_start);
-  };
-};
-
 var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   //[v1_index_shape1, v2_index_shape1, v3_index_shape2, v4_index_shape2]
   var bridge_index_array = polyanno_calculate_merge_shape_index(shape1, shape2);
@@ -2916,7 +2971,6 @@ var polyanno_calculate_new_merge_shape = function(shape1, shape2, merge_array) {
   var bridge_shape_start = bridge_final_geometry.slice(0, index_of_v4); // v2 to v3
   var bridge_shape_end = bridge_final_geometry.slice(index_of_v4); // v4 to v1
   var final_coords = shape1_segment.slice(0,1);
-
   var final_merge_shape_coords = shape1_segment.concat(bridge_shape_start, shape2_segment, bridge_shape_end, final_coords); //the first and last coordinates need to be identical
   return final_merge_shape_coords;
 };
@@ -3757,7 +3811,7 @@ var polyanno_vec_created = function() {
 
       else {
         var concavity_check = check_for_concavity(shape.geometry.coordinates[0]);
-        if (concavity_check != false) {  layer.properties.OCD = concavity_check;  };
+        if (concavity_check != false) {  layer.feature.properties.OCD = concavity_check;  };
         polyanno_new_vector_made(layer, shape);
       };
     };
