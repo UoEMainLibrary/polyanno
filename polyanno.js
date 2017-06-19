@@ -1943,10 +1943,10 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 //plural
 
 Polyanno.editors.removeEditor = function(id) {
-  alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
-  alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 };
 
 Polyanno.editors.closeAll = function() {
@@ -2077,7 +2077,8 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
       $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
     }
     else {
-      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + polyannoVoteOverlayHTML + closingHTML2;
+      //****need to debug the voting overlay**
+      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + closingHTML2; //polyannoVoteOverlayHTML + closingHTML2;
       $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
     };
 
@@ -2252,7 +2253,7 @@ var setNewTextVariables = function(selection, classCheck) {
     Polyanno.selected.textHighlighting.type = "transcription";
     var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
     var t = Polyanno.transcriptions.getById(thisid);
-    alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+    //alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
     Polyanno.selected.transcriptions.add(t);
     $(selection.anchorNode.parentElement).popover("show");
   }
@@ -2341,7 +2342,7 @@ var polyanno_new_anno_via_selection = function(base) {
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
 
-  alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
@@ -2362,7 +2363,7 @@ var polyanno_new_anno_via_selection = function(base) {
 
   Polyanno.selected.textHighlighting = {};
 
-  alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
 
 };
 
@@ -2525,21 +2526,19 @@ var find_concavity_angles = function(coordinates) {
       var the = anticlockwise_corner_angle(coordinates[i],coordinates[0],coordinates[1]);
       the_angle = the[0];
       the_notch_i = 0;
-      li = [the[1], the[2], the[0], coordinates[0], coordinates[i], coordinates[1]];
+      li = [the[1], the[2], the[0], coordinates[0], coordinates[i], coordinates[1], the_notch_i, -1];
     }
     else {
       var the = anticlockwise_corner_angle(coordinates[i],coordinates[i+1],coordinates[i+2]);
       the_angle = the[0];
       the_notch_i = i+1;
-      li = [the[1], the[2], the[0], coordinates[i+1], coordinates[i], coordinates[i+2]];
+      li = [the[1], the[2], the[0], coordinates[i+1], coordinates[i], coordinates[i+2], the_notch_i, -1];
     };
 
     line_equations.push(li);
 
     if ((the_angle > 180) && (the_angle < 360)) {
-      ///[x,y, coordinates_array_position, line_equation]
-      var the_vertex_array = [coordinates[the_notch_i][0],coordinates[the_notch_i][1], li, the_notch_i];
-      notches_array.push(the_vertex_array);
+      notches_array.push(li);
     };
   };
   return [notches_array, line_equations];
@@ -2550,89 +2549,212 @@ var find_concavity_angles = function(coordinates) {
 //x_patterns = line_equations
 //steiner_points = points on internal line_equations
 
-var naive_ocd = function(coordinates, notches_array, line_equations, x_patterns, steiner_points) {
+var find_linear_intersection = function(m1, c1, m2, c2, a_coords, b_coords) {
+  var diffC = c2 - c1;
+  var diffM = m1 - m2;
+  var intersect_x = diffC / diffM;
+  var intersect_y = (m1 * intersect_x) + c1;
+  //alert("so this line of y="+new_grad+"x + "+new_c+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+this_grad+"x +"+eq[1]);
 
-  var the_OCD_array = [];
+  var a_x = a_coords[0];
+  var a_y = a_coords[1];
+  var b_x = b_coords[0];
+  var b_y = b_coords[1];
 
-  var c = notches_array;
-  var n = coordinates;
-  var number = 0;
+  if (( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) &&
+  ( ((a_y < b_y) && (a_y < intersect_y) && (intersect_y < b_y)) || ((a_y > b_y) && (b_y < intersect_y) && (intersect_y < a_y)) )) { 
+    return [intersect_x, intersect_y];
+  }
+  else {
+    return null;
+  };
+};
 
-    //[x,y,line_equation, index]
-    var v = c[number];
-    var v_coords = [v[0], v[1]];
+var find_P_intersection = function(eq, new_grad, new_c, prev_coords) {
+  var a_coords = eq[4];
+  var b_coords = eq[3];
 
-    //[incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next]
-    var equation = v[2];
-    var v_index = equation[3];
-    var v_prev_index = equation[4];
-    var v_next_index = equation[5];
+  var this_grad = (b_coords[1] - a_coords[1])/(b_coords[0] - a_coords[0]);
+  var intersection = find_linear_intersection(new_grad, new_c, this_grad, eq[1], eq[4], eq[3]);
+  return intersection;
+};
 
-    //what split makes it < 180? --> min: convex_diff, max: angle_diff - convex_diff
-    var convex_diff = equation[2] - 180;
-    var new_angle_part1 = equation[2]/2; 
+var linear_equation_from_angle = function(angle, coordinates) {
+  var new_grad = Math.tan(angle* Math.PI/180);
+  var new_c = coordinates[1] - (new_grad * coordinates[0]);
+  return [new_grad, new_c, angle];
+};
 
-    var new_angle_part2 = equation[0];
-    var new_angle = (new_angle_part1+new_angle_part2) % 360;
+var naive_ocd_vertex = function(equation, line_equations) {
 
-    var new_grad = Math.tan(new_angle* Math.PI/180);
-    var new_c = v[1] - (new_grad * v[0]);
+  //equation = [incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next]
+  var v_index = equation[3];
+  var v_prev_index = equation[4];
+  var v_next_index = equation[5];
 
-    //alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
+  var new_angle_part1 = equation[2]/2; 
+  var new_angle_part2 = equation[0];
+  var new_angle = (new_angle_part1+new_angle_part2) % 360;
 
-    for (var no=0; no < line_equations.length; no++) {
+  var linear = linear_equation_from_angle(new_angle, v_index);
+  var new_grad = linear[0];
+  var new_c = linear[1];
 
-      //[angle, offset, angle_diff, coordinates, prev_index, next_index]
-      var eq = line_equations[no];
+  //alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
 
-      if ((eq[3] == v_index) || (eq[3] == v_next_index)) {
-        //number += 1;
-      }
-      else {
-
-        var a_coords = eq[4];
-        var b_coords = eq[3];
-
-        var this_grad = (b_coords[1] - a_coords[1])/(b_coords[0] - a_coords[0]);
-        var diffC = eq[1] - new_c;
-        var diffM = new_grad - this_grad;
-        var intersect_x = diffC / diffM;
-        var intersect_y = (new_grad * intersect_x) + new_c;
-
-        //alert("so this line of y="+new_grad+"x + "+new_c+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+this_grad+"x +"+eq[1]);
-
-        var a_x = a_coords[0];
-        var a_y = a_coords[1];
-        var b_x = b_coords[0];
-        var b_y = b_coords[1];
-
-        if (( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) &&
-        ( ((a_y < b_y) && (a_y < intersect_y) && (intersect_y < b_y)) || ((a_y > b_y) && (b_y < intersect_y) && (intersect_y < a_y)) )) { 
-
-          //for handling layers externally -- change to x-patterns later???
-          var this_geometry = polyanno_find_shape_between(coordinates, v[3], no);
-          this_geometry.push([intersect_x, intersect_y]);
-          this_geometry.splice(0,0, [intersect_x, intersect_y]);
-          var this_id = Math.random().toString().substring(2);
-          the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
-
-          //x-patterns and steiner points
-          //[angle, offset, angle_diff, coordinates, prev_coords, next_coords]
-          x_patterns.push([new_angle, new_c, null, v_coords, v_prev_index, [intersect_x, intersect_y]]);
-
-          //number = no +1;
-        }
-        else if (no == line_equations.length - 1) {
-          //number += 1;
-        };  
-
+  for (var no=0; no < line_equations.length; no++) {
+    var eq = line_equations[no];
+    if ((eq[3] != v_index) && (eq[3] != v_next_index)) { 
+      var x_pattern_line = find_P_intersection(eq, new_grad, new_c, v_index);
+      if (x_pattern_line != null) { 
+        //x-pattern line equation ---> [angle, offset, angle_diff, coordinates, prev_coords, next_coords, index, degree]
+        return [new_angle, new_c, null, x_pattern_line, v_prev_index, eq[3], null, 0];
       };
+    };
+  };
+  return null;
+};
+
+var naive_ocd = function(equation, p_patterns, x_patterns) {
+  var naive_X_check = naive_ocd_vertex(equation, x_patterns);
+  if (naive_X_check == null) {
+    var naive_P_check = naive_ocd_vertex(equation, p_patterns);
+    x_patterns.push(naive_P_check);
+  }
+  else {
+    //Steiner Points - vertices on the X Patterns
+    x_patterns.push(naive_X_check);
+  };
+  return x_patterns;
+};
+
+var extended_range_wedge = function(v1) {
+  //W = "extended ranges"
+  var convex_diff = v1[2] - 180;
+  var angle_min = (v1[0]+convex_diff) % 360;
+  var angle_max = (v1[0]+v1[2]-convex_diff) % 360;
+
+  var min = linear_equation_from_angle(angle_min, v[3]);
+  var max = linear_equation_from_angle(angle_max, v[3]);
+
+  return [min, max];
+};
+
+var extended_ranges_array = function(notches_array) {
+  var a = [];
+  for (var i=0; i <notches_array.length; i++) {
+    var w = extended_range_wedge(notches_array[i]);
+    a.push(w);
+  };
+  return a;
+};
+
+var x_patterns_hash_line = function(v_wedge, v, wedges, notches_array) {
+  var nearby_notches = [];
+  //wedges[i] = [min, max]
+  //min = [m, c, angle]
+  for (var i=0; i < wedges.length; i++) {
+    if (wedges[i] != v_wedge) {
+      var intersection1 = find_linear_intersection(v_wedge[0][0], v_wedge[0][1], wedges[i][0][0], wedges[i][0][1], v[3], notches_array[i][3]);
+      var intersection2 = find_linear_intersection(v_wedge[1][0], v_wedge[1][1], wedges[i][0][0], wedges[i][0][1], v[3], notches_array[i][3]);
+      var intersection3 = find_linear_intersection(v_wedge[0][0], v_wedge[0][1], wedges[i][1][0], wedges[i][1][1], v[3], notches_array[i][3]);
+      var intersection4 = find_linear_intersection(v_wedge[1][0], v_wedge[1][1], wedges[i][1][0], wedges[i][1][1], v[3], notches_array[i][3]);
+      //[incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next, index, degree]
+      if (intersection1 != null) {  nearby_notches.push([intersection1, i]); };
+      if (intersection2 != null) {  nearby_notches.push([v_wedge[1][2], v_wedge[1][1], null, intersection2, v[3], notches_array[i][3], i, 1]); };
+      if (intersection3 != null) {  nearby_notches.push([v_wedge[0][2], v_wedge[0][1], null, intersection3, v[3], notches_array[i][3], i, 1]); };
+      if (intersection4 != null) {  nearby_notches.push([v_wedge[1][2], v_wedge[1][1], null, intersection4, v[3], notches_array[i][3], i, 1]); };
+    };
+  };
+  return nearby_notches;
+};
+
+var x_pattern_iteration = function(notches_array, wedges, hash_table, x_patterns) {};
+
+var x_patterns_scan = function(notches_array) {
+  //[min, max]
+  var wedges = extended_ranges_array(notches_array);
+  var hash_table = []; //new Array(wedges.length);
+  var h = []; //new Array(wedges.length);
+
+  for (var i=0; i < notches_array.length; i++) {
+    var w = x_patterns_hash_line(wedges[i], notches_array[i], wedges, notches_array);
+    //[[intersection, partner_index], ...]
+    hash_table.push(w);
+  };
+
+  for (var n=0; n < notches_array.length; n++) {
+    var wedge_info = hash_table[n];
+    var x_pattern = [];
+    if (wedge_info == null) {
+      ///has already been linked together
+    }
+    else if (wedge_info.length == 0) {
+      x_pattern = naive_ocd(v, p_patterns, x_patterns);
+    }
+    else if (wedge_info.length == 1) {
+      var intersection = wedge_info[0][0];
+      var partner_index = wedge_info[0][1];
+      var partner = hash_table[partner_index];
+      //[incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next, index, degree]
+      x_pattern = [
+        [wedges[n][0][2], wedges[n][0][1], null, intersection, notches_array[n][3], notches_array[partner_index][3], null, 1],
+        [wedges[partner_index][0][2], wedges[partner_index][0][1], null, notches_array[partner_index][3], intersection, notches_array[partner_index][5], null, 1]
+      ];
+      
+      for (var search=0; search < hash_table[partner_index].length; search++) {
+        
+      };
+    }
+    else if (wedge_info.length == 2) {
+      ///
+
+    }
+    else {
 
     };
+    h.push(x_pattern);
+  };
 
-  alert("the OCD is "+JSON.stringify(the_OCD_array));
+  return hash_table;
+};
 
-  return the_OCD_array;
+var x_patterns_ocd = function(notches_array, p_patterns) {
+
+  var OCD_array = [];
+
+  var c = notches_array;
+  var x_patterns = [];
+
+  if (notches_array.length == 1) {
+    x_patterns = naive_ocd(v, p_patterns, x_patterns);
+  }
+  else {
+    for (var i=0; i < notches_array.length; i++) {
+      //[incoming_line_angle, linear_eq_offset, angle_diff, coordinates, prev, next, index, degree]
+      var v = c[i];
+
+      ///connect nearest notches together??
+
+
+      var naive_ocd_patterns = naive_ocd(v, p_patterns, x_patterns);
+
+    };
+  };
+
+  //for handling layers externally -- change to x-patterns later???
+  /*
+  var no = 
+  var this_geometry = polyanno_find_shape_between(coordinates, v[3], no);
+  this_geometry.push([intersect_x, intersect_y]);
+  this_geometry.splice(0,0, [intersect_x, intersect_y]);
+  var this_id = Math.random().toString().substring(2);
+  the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
+  */
+
+  //alert("the OCD is "+JSON.stringify(OCD_array));
+
+  return OCD_array;
 };
 
 //if concave then apply optimal convex decomposition algorithm to vector and store corresponding convex geometry in arrays in notFeatures
@@ -2640,7 +2762,7 @@ var check_for_concavity = function(coordinates) {
   var the_circling = find_concavity_angles(coordinates);
   var the_notches_array = the_circling[0];
   if (the_notches_array.length > 0) {
-    return naive_ocd(coordinates, the_notches_array, the_circling[1], [], []);
+    return x_patterns_ocd(the_notches_array, the_circling[1], [], []);
   }
   else {
     return false;

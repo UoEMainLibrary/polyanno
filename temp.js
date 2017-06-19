@@ -1,4 +1,4 @@
-
+///////////////////////////
 /////GLOBAL VARIABLES
 
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);

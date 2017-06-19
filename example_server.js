@@ -5,7 +5,7 @@ var express    = require('express');
 var bodyParser = require('body-parser');
 var mongoose   = require('mongoose');
 var cors = require('cors');
-//var polyanno = require('polyanno_storage');
+var polyanno = require('polyanno_storage');
 
 var thisWebsitePort = 8080;
 
