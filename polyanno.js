@@ -144,11 +144,6 @@ var Polyanno =  {
   intEffects: {}
 };
 
-var polyanno_obj_added = new Event("polyanno:added");
-var polyanno_obj_created = new Event("polyanno:created");
-var polyanno_obj_deleted = new Event("polyanno:removed");
-var polyanno_obj_edited = new Event("polyanno:edited");
-
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
 var $langSelector = false;
 var $imeSelector = false;
@@ -756,12 +751,32 @@ var PolyannoEventEmitter = function(opts) {
   this.listeners = {};
 };
 
-PolyannoEventEmitter.prototype.listeners = null;
-PolyannoEventEmitter.prototype.on = function(type, callback) {
-  if (!(type in this.listeners)) {
-    this.listeners[type] = [];
+/*
+
+.listeners contains these names and callbacks as a dictionary
+
+a callback function = function(the_value, event.detail) {}
+
+*/
+
+PolyannoEventEmitter.prototype.listeners = {};
+PolyannoEventEmitter.prototype.on = function(event_name, callback) {
+  if (!(event_name in this.listeners)) {
+    this.listeners[event_name] = [];
   }
-  this.listeners[type].push(callback);
+  this.listeners[event_name].push(callback);
+};
+
+PolyannoEventEmitter.prototype.trigger = function(event) {
+  if (!(event.type in this.listeners)) {
+    return true;
+  }
+  var stack = this.listeners[event.type];
+  event.target = this;
+  for (var i = 0; i < stack.length; i++) {
+    stack[i].call(this, event.detail);
+  }
+  return !event.defaultPrevented; ///????
 };
 
 PolyannoEventEmitter.prototype.unbind = function(type, callback) {
@@ -777,21 +792,17 @@ PolyannoEventEmitter.prototype.unbind = function(type, callback) {
   }
 };
 
-PolyannoEventEmitter.prototype.trigger = function(event) {
-  if (!(event.type in this.listeners)) {
-    return true;
-  }
-  var stack = this.listeners[event.type];
-  event.target = this;
-  for (var i = 0, l = stack.length; i < l; i++) {
-    stack[i].call(this, event);
-  }
-  return !event.defaultPrevented;
+////////////////// Events
+
+var PolyannoEvent = function(values) {
+  this.type = values.type;
+  var obj = values.object;
+  this.detail = {
+      time: values.timestamp,
+      object: obj
+      //user: values.user
+    };
 };
-
-
-
-
 
 
 /////////////Collections (Plural)
@@ -802,21 +813,43 @@ Polyanno.collections = function(type) {
   this.array = [];
 };
 
-Polyanno.collections.prototype = new PolyannoEventEmitter();
+///Add the event emitter properties explicitly to the object
+for (var pppp in PolyannoEventEmitter.prototype) {
+  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
+  Object.defineProperty(Polyanno.collections.prototype, pppp, thisprop);
+};
 
 ///Methods
 
 Polyanno.collections.prototype.add = function(anno) {
+
   var oldArr = [].concat(this.array);
   var type = this.type;
   if (annoCheckType(anno, type)) {  oldArr.push(anno);  };
   this.array = oldArr;
-  this.trigger('polyanno:added');
+
+  var ev = new PolyannoEvent({
+    type: "polyanno_created",
+    object: anno,
+    timestamp: new Date()
+  });
+
+  alert("the add function is happening and it is adding a "+anno.id);
+
+  this.trigger(ev); /////this is triggering for all collections...needs to be not "this" but instance of
 };
 
 Polyanno.collections.prototype.replaceOne = function(anno) {
   var oldArr = this.array;
   var newArr = arraySearchReplace(oldArr, anno);
+
+  var ev1 = new PolyannoEvent({
+    type: "polyanno_updating",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev1);
+
   this.array = newArr;
 };
 
@@ -827,6 +860,27 @@ Polyanno.collections.prototype.getById = function(the_id) {
 };
 
 Polyanno.collections.prototype.deleteAll = function() {
+  var coll = this;
+
+  ///triggering event for whole collection
+  var ev = new PolyannoEvent({
+    type: "polyanno_deleting",
+    object: coll,
+    timestamp: new Date()
+  });
+  this.trigger(ev);
+
+  //triggering deleting event for each individual object
+  for (var i=0; i < coll.array.length; i++) {
+    var anno = coll.array[i];
+    var ev1 = new PolyannoEvent({
+      type: "polyanno_deleting",
+      object: anno,
+      timestamp: new Date()
+    });
+    anno.trigger(ev1);
+  };
+
   this.array = [];
 };
 
@@ -900,11 +954,13 @@ Polyanno.annotation = function(value) {
     motivation: "identifying"
   };
 
-  this.trigger('polyanno:created');
-
 };
 
-Polyanno.annotation.prototype = new PolyannoEventEmitter();
+///Add the event emitter properties explicitly to the object
+for (var pppp in PolyannoEventEmitter.prototype) {
+  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
+  Object.defineProperty(Polyanno.annotation.prototype, pppp, thisprop);
+};
 
 ///
 
@@ -958,17 +1014,46 @@ var settingTargets = function(value, oldArr) {
 //singular
 
 Polyanno.annotation.prototype.update = function(opts) {
+
+  var ev1 = new PolyannoEvent({
+    type: "polyanno_updating",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev1);
+
   for (var property in opts) {
     this[property] = opts[property];
   };
-  this.dispatchEvent(polyanno_obj_edited);
+  
+  var ev2 = new PolyannoEvent({
+    type: "polyanno_updated",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev2);
+
   Polyanno.annotations.replaceOne(this);
 };
 
 Polyanno.annotation.prototype.delete = function() {
+
+  var ev1 = new PolyannoEvent({
+    type: "polyanno_deleting",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev1);
+
   var the_item = findByID(Polyanno.annotations.array, this.id)[0];
   Polyanno.annotations.array.splice(Polyanno.annotations.array.indexOf(the_item), 1);
-  this.dispatchEvent(polyanno_obj_deleted);
+  
+  var ev2 = new PolyannoEvent({
+    type: "polyanno_deleted",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev2);
 };
 
 Polyanno.annotation.prototype.getBody = function() {
@@ -998,19 +1083,19 @@ Polyanno.annotation.prototype.addTargets = function(targets) {
 ////Events
 
 Polyanno.annotation.prototype.onupdated = function(func) {
-  this.on('polyanno:edited', function(e) {
+  this.on('polyanno_edited', function(e) {
     func.call(this, this, e);
   });
 };
 
 Polyanno.annotation.prototype.ondeleted = function(func) {
-  this.on('polyanno:deleted', function(e) {
+  this.on('polyanno_deleted', function(e) {
     func.call(this, this, e);
   });
 };
 
 Polyanno.annotation.prototype.oncreated = function(func) {
-  this.on('polyanno:created', function(e) {
+  this.on('polyanno_created', function(e) {
     func.call(this, this, e);
   });
 };
@@ -1109,11 +1194,13 @@ Polyanno.baseAnnotationObject = function(value) {
     motivation: "identifying"
   };
 
-  //this.trigger('polyanno:created');
-
 };
 
-Polyanno.baseAnnotationObject.prototype = new PolyannoEventEmitter();
+///Add the event emitter properties explicitly to the object
+for (var pppp in PolyannoEventEmitter.prototype) {
+  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
+  Object.defineProperty(Polyanno.baseAnnotationObject.prototype, pppp, thisprop);
+};
 
 Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
   value: "application/json",
@@ -1331,21 +1418,50 @@ Object.defineProperty(Polyanno.transcription.prototype, "voting.down", {
 
 /////Methods
 
+
 //singular
 
 Polyanno.transcription.prototype.update = function(opts) {
+
+  var ev1 = new PolyannoEvent({
+    type: "polyanno_updating",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev1);
+
   for (var property in opts) {
     this[property] = opts[property];
   };
   Polyanno.transcriptions.replaceOne(this);
+
+  var ev2 = new PolyannoEvent({
+    type: "polyanno_updated",
+    object: this,
+    timestamp: new Date()
+  });
+  this.trigger(ev2);
 };
 
 Polyanno.transcription.prototype.delete = function() {
   var the_item = findByID(Polyanno.transcriptions, this.id)[0];
-  Polyanno.transcriptions.splice(Polyanno.transcriptions.indexOf(the_item), 1);
-};
 
-////Events Setting Methods
+  var ev1 = new PolyannoEvent({
+    type: "polyanno_deleting",
+    object: the_item,
+    timestamp: new Date()
+  });
+  this.trigger(ev1);
+
+  Polyanno.transcriptions.splice(Polyanno.transcriptions.indexOf(the_item), 1);
+
+  var ev2 = new PolyannoEvent({
+    type: "polyanno_deleted",
+    object: the_item,
+    timestamp: new Date()
+  });
+  this.trigger(ev2);
+};
 
 
 //////////Transcriptions (Plural)
@@ -1943,10 +2059,10 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 //plural
 
 Polyanno.editors.removeEditor = function(id) {
-  //alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
-  //alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 };
 
 Polyanno.editors.closeAll = function() {
@@ -1966,7 +2082,7 @@ Polyanno.editors.openEditor = function(textType) {
 Polyanno.editors.ifOpen = function(fromType) {
 
   var comparison = Polyanno.selected.getAll();
-  //alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
+  alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
   if (isUseless(Polyanno.editors.array[0])) {    Polyanno.editors.openEditor(fromType);  }
   else {
     var opened = $.grep( Polyanno.editors.array, function(ed) {
@@ -2253,7 +2369,7 @@ var setNewTextVariables = function(selection, classCheck) {
     Polyanno.selected.textHighlighting.type = "transcription";
     var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
     var t = Polyanno.transcriptions.getById(thisid);
-    //alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+    alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
     Polyanno.selected.transcriptions.add(t);
     $(selection.anchorNode.parentElement).popover("show");
   }
@@ -2342,7 +2458,7 @@ var polyanno_new_anno_via_selection = function(base) {
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
 
-  //alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
@@ -2363,7 +2479,7 @@ var polyanno_new_anno_via_selection = function(base) {
 
   Polyanno.selected.textHighlighting = {};
 
-  //alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
+  alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
 
 };
 
@@ -2544,17 +2660,23 @@ var find_concavity_angles = function(coordinates) {
   return [notches_array, line_equations];
 };
 
-//(Chazelle and Dobkin, 1985) Optimal Decomposition Algorithm
+//Optimal Decomposition Algorithm
 
 //x_patterns = line_equations
 //steiner_points = points on internal line_equations
 
+
+
+
 var find_linear_intersection = function(m1, c1, m2, c2, a_coords, b_coords) {
+  ///m2 and c2 are infinity????
   var diffC = c2 - c1;
   var diffM = m1 - m2;
+
+  ////these two are listed as NaN.....
   var intersect_x = diffC / diffM;
   var intersect_y = (m1 * intersect_x) + c1;
-  //alert("so this line of y="+new_grad+"x + "+new_c+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+this_grad+"x +"+eq[1]);
+  alert("so this line of y="+m1+"x + "+c1+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+m2+"x +"+c2);
 
   var a_x = a_coords[0];
   var a_y = a_coords[1];
@@ -2574,6 +2696,7 @@ var find_P_intersection = function(eq, new_grad, new_c, prev_coords) {
   var a_coords = eq[4];
   var b_coords = eq[3];
 
+  ///this_grad and eq[1] are currently infinity???
   var this_grad = (b_coords[1] - a_coords[1])/(b_coords[0] - a_coords[0]);
   var intersection = find_linear_intersection(new_grad, new_c, this_grad, eq[1], eq[4], eq[3]);
   return intersection;
@@ -2600,11 +2723,12 @@ var naive_ocd_vertex = function(equation, line_equations) {
   var new_grad = linear[0];
   var new_c = linear[1];
 
-  //alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
+  alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
 
   for (var no=0; no < line_equations.length; no++) {
     var eq = line_equations[no];
     if ((eq[3] != v_index) && (eq[3] != v_next_index)) { 
+      alert("This eq1 is "+JSON.stringify(eq[1])+" and the a_coords are "+JSON.stringify(eq[4])+" with b_coords of "+JSON.stringify(eq[3]));
       var x_pattern_line = find_P_intersection(eq, new_grad, new_c, v_index);
       if (x_pattern_line != null) { 
         //x-pattern line equation ---> [angle, offset, angle_diff, coordinates, prev_coords, next_coords, index, degree]
@@ -2752,7 +2876,7 @@ var x_patterns_ocd = function(notches_array, p_patterns) {
   the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
   */
 
-  //alert("the OCD is "+JSON.stringify(OCD_array));
+  alert("the OCD is "+JSON.stringify(OCD_array));
 
   return OCD_array;
 };
@@ -3360,7 +3484,7 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  //alert("this merged anno is "+JSON.stringify(this_child));
+  alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -3935,7 +4059,7 @@ var polyanno_vec_created = function() {
         var concavity_check = check_for_concavity(shape.geometry.coordinates[0]);
         if (concavity_check != false) {  layer.feature.properties.OCD = concavity_check;  };
         polyanno_new_vector_made(layer, shape);
-      };
+      }; ///*************
     };
 
   });
