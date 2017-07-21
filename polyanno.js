@@ -748,49 +748,48 @@ var polyanno_merging_new_shape_HTML = `<span>Click to link this shape next.</spa
 ////////////EventEmitterObject
 
 var PolyannoEventEmitter = function(opts) {
-  this.listeners = {};
-};
+  var self = this;
 
-/*
+  self.listeners = {};
 
-.listeners contains these names and callbacks as a dictionary
+  self.on = function(event_name, callback) {
+    //alert("here the this means "+JSON.stringify(this));
+    if (!(event_name in self.listeners)) {
+      self.listeners[event_name] = [];
+    };
+    self.listeners[event_name].push(callback); 
+    alert("so for this the listeners for this are now "+JSON.stringify(this.listeners)+" and for vectors "+JSON.stringify(Polyanno.vectors.listeners));
+  };
 
-a callback function = function(the_value, event.detail) {}
+  self.trigger = function(event) {
+    //alert("so for "+JSON.stringify(this)+" the trigger function is happening");
+    var self = this;
+    if (!(event.type in self.listeners)) {
+      return true;
+    }
+    var stack = self.listeners[event.type];
+    event.target = self;
+    for (var i = 0; i < stack.length; i++) {
+      stack[i].call(self, event.detail);
+    }
+    return !event.defaultPrevented; ///????
+  };
 
-*/
-
-PolyannoEventEmitter.prototype.listeners = {};
-PolyannoEventEmitter.prototype.on = function(event_name, callback) {
-  if (!(event_name in this.listeners)) {
-    this.listeners[event_name] = [];
-  }
-  this.listeners[event_name].push(callback);
-};
-
-PolyannoEventEmitter.prototype.trigger = function(event) {
-  if (!(event.type in this.listeners)) {
-    return true;
-  }
-  var stack = this.listeners[event.type];
-  event.target = this;
-  for (var i = 0; i < stack.length; i++) {
-    stack[i].call(this, event.detail);
-  }
-  return !event.defaultPrevented; ///????
-};
-
-PolyannoEventEmitter.prototype.unbind = function(type, callback) {
-  if (!(type in this.listeners)) {
-    return;
-  }
-  var stack = this.listeners[type];
-  for (var i = 0, l = stack.length; i < l; i++) {
-    if (stack[i] === callback){
-      stack.splice(i, 1);
+  self.unbind = function(type, callback) {
+    if (!(type in this.listeners)) {
       return;
     }
-  }
+    var stack = this.listeners[type];
+    for (var i = 0, l = stack.length; i < l; i++) {
+      if (stack[i] === callback){
+        stack.splice(i, 1);
+        return;
+      }
+    }
+  };
+
 };
+
 
 ////////////////// Events
 
@@ -807,21 +806,23 @@ var PolyannoEvent = function(values) {
 
 /////////////Collections (Plural)
 
-
 Polyanno.collections = function(type) {
-  this.type = type;
-  this.array = [];
+  var self = this;
+  self.type = type;
+  self.array = [];
+
+  PolyannoEventEmitter.call(self);
+
 };
 
-///Add the event emitter properties explicitly to the object
-for (var pppp in PolyannoEventEmitter.prototype) {
-  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
-  Object.defineProperty(Polyanno.collections.prototype, pppp, thisprop);
-};
 
 ///Methods
 
 Polyanno.collections.prototype.add = function(anno) {
+
+  var self = this;
+
+  alert("when adding the listeners to this object are:" + JSON.stringify(self.listeners));
 
   var oldArr = [].concat(this.array);
   var type = this.type;
@@ -834,9 +835,9 @@ Polyanno.collections.prototype.add = function(anno) {
     timestamp: new Date()
   });
 
-  alert("the add function is happening and it is adding a "+anno.id);
+  //alert("the add function is happening and it is adding a "+anno.id);
 
-  this.trigger(ev); /////this is triggering for all collections...needs to be not "this" but instance of
+  self.trigger(ev);
 };
 
 Polyanno.collections.prototype.replaceOne = function(anno) {
@@ -873,12 +874,13 @@ Polyanno.collections.prototype.deleteAll = function() {
   //triggering deleting event for each individual object
   for (var i=0; i < coll.array.length; i++) {
     var anno = coll.array[i];
+    alert(JSON.stringify(anno));
     var ev1 = new PolyannoEvent({
       type: "polyanno_deleting",
       object: anno,
       timestamp: new Date()
     });
-    anno.trigger(ev1);
+    anno.trigger(ev1); ////
   };
 
   this.array = [];
@@ -1680,9 +1682,9 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
-  Polyanno.annotations.add(new_anno);
+  //Polyanno.annotations.add(new_anno);
 
-  Polyanno.selected.vectors.add(data);
+  //Polyanno.selected.vectors.add(data);
   Polyanno.selected.targets = targetData.target.concat([{"id": data.id, "format": "image/SVG"}]);
 
   //Leaflet
