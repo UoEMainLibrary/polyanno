@@ -753,16 +753,13 @@ var PolyannoEventEmitter = function(opts) {
   self.listeners = {};
 
   self.on = function(event_name, callback) {
-    //alert("here the this means "+JSON.stringify(this));
     if (!(event_name in self.listeners)) {
       self.listeners[event_name] = [];
     };
     self.listeners[event_name].push(callback); 
-    alert("so for this the listeners for this are now "+JSON.stringify(this.listeners)+" and for vectors "+JSON.stringify(Polyanno.vectors.listeners));
   };
 
   self.trigger = function(event) {
-    //alert("so for "+JSON.stringify(this)+" the trigger function is happening");
     var self = this;
     if (!(event.type in self.listeners)) {
       return true;
@@ -772,7 +769,7 @@ var PolyannoEventEmitter = function(opts) {
     for (var i = 0; i < stack.length; i++) {
       stack[i].call(self, event.detail);
     }
-    return !event.defaultPrevented; ///????
+    return !event.defaultPrevented;
   };
 
   self.unbind = function(type, callback) {
@@ -822,8 +819,6 @@ Polyanno.collections.prototype.add = function(anno) {
 
   var self = this;
 
-  alert("when adding the listeners to this object are:" + JSON.stringify(self.listeners));
-
   var oldArr = [].concat(this.array);
   var type = this.type;
   if (annoCheckType(anno, type)) {  oldArr.push(anno);  };
@@ -834,8 +829,6 @@ Polyanno.collections.prototype.add = function(anno) {
     object: anno,
     timestamp: new Date()
   });
-
-  //alert("the add function is happening and it is adding a "+anno.id);
 
   self.trigger(ev);
 };
@@ -956,13 +949,11 @@ Polyanno.annotation = function(value) {
     motivation: "identifying"
   };
 
+  var self = this;
+  PolyannoEventEmitter.call(self);
+
 };
 
-///Add the event emitter properties explicitly to the object
-for (var pppp in PolyannoEventEmitter.prototype) {
-  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
-  Object.defineProperty(Polyanno.annotation.prototype, pppp, thisprop);
-};
 
 ///
 
@@ -1084,23 +1075,6 @@ Polyanno.annotation.prototype.addTargets = function(targets) {
 
 ////Events
 
-Polyanno.annotation.prototype.onupdated = function(func) {
-  this.on('polyanno_edited', function(e) {
-    func.call(this, this, e);
-  });
-};
-
-Polyanno.annotation.prototype.ondeleted = function(func) {
-  this.on('polyanno_deleted', function(e) {
-    func.call(this, this, e);
-  });
-};
-
-Polyanno.annotation.prototype.oncreated = function(func) {
-  this.on('polyanno_created', function(e) {
-    func.call(this, this, e);
-  });
-};
 
 ///////
 
@@ -1196,12 +1170,9 @@ Polyanno.baseAnnotationObject = function(value) {
     motivation: "identifying"
   };
 
-};
+  var self = this;
+  PolyannoEventEmitter.call(self);
 
-///Add the event emitter properties explicitly to the object
-for (var pppp in PolyannoEventEmitter.prototype) {
-  var thisprop = Object.getOwnPropertyDescriptor(PolyannoEventEmitter.prototype, pppp);
-  Object.defineProperty(Polyanno.baseAnnotationObject.prototype, pppp, thisprop);
 };
 
 Object.defineProperty(Polyanno.baseAnnotationObject.prototype, "format", {
@@ -1234,20 +1205,6 @@ Polyanno.baseAnnotationObject.prototype.getAnnosTargetingThis = function(type) {
     };
   };
   return t; 
-};
-
-////Events Setting Methods
-
-Polyanno.baseAnnotationObject.prototype.onupdated = function(func) {
-  this.on('polyanno:edited', function(e) {
-    func.call(this, this, e);
-  });
-};
-
-Polyanno.baseAnnotationObject.prototype.ondeleted = function(func) {
-  this.on('polyanno:deleted', function(e) {
-    func.call(this, this, e);
-  });
 };
 
 
