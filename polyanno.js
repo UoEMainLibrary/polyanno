@@ -1464,8 +1464,6 @@ Polyanno.translation = function(value) {
 /////Methods
 
 
-////Events Setting Methods
-
 
 ////Translations (plural)
 
@@ -1876,6 +1874,8 @@ Polyanno.buildingParents = {
     //translation
   }
 };
+
+//Methods
 
 Polyanno.buildingParents.clicked = function(vec) {
 
