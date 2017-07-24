@@ -867,7 +867,7 @@ Polyanno.collections.prototype.deleteAll = function() {
   //triggering deleting event for each individual object
   for (var i=0; i < coll.array.length; i++) {
     var anno = coll.array[i];
-    alert(JSON.stringify(anno));
+    //alert(JSON.stringify(anno));
     var ev1 = new PolyannoEvent({
       type: "polyanno_deleting",
       object: anno,
