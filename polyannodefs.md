@@ -26,6 +26,9 @@ It MUST be defined as using the IIIF image API as outlined here --> .....
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
 
 
 ### Methods
@@ -44,6 +47,12 @@ These are the important urls used if using any of the in-built AJAX REST API sup
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
+**vector** | `String` | window.location.host + "/api/vectors/" | 
+**transcription** | `String` | window.location.host + "/api/transcriptions/" | 
+**translation** | `String` | window.location.host + "/api/translations/" | 
+**annotation** | `String` | window.location.host + "/api/annotations/" | 
 
 
 ### Methods
@@ -62,6 +71,8 @@ The object defining the map used in the Polyanno implementation, to pass through
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
 
 
 ### Methods
@@ -79,11 +90,48 @@ Because there are various situations where the colours change throughout use of 
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
 
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
+  highlight: {
+    editor: "#EC0028",
+    vector: "#EC0028",
+    span: "#EC0028"
+  },
+  default: {
+    editor: "buttonface",
+    vector: "#03f",
+    span: "transparent"
+  },
+  processing: {
+    editor: "yellow",
+    vector: "yellow",
+    span: "yellow"
+  }
 
 ### Methods
 
-None.
+Method | Returns | Description
+--- | --- | --- 
+
+.connectColours
+
+
+.highlightThis.vector
+
+.highlightThis.editor
+
+.highlightThis.span
+
+
 
 ### Events
 
@@ -95,6 +143,14 @@ None.
 These are the objects containing the variables that contain the HTML (as strings) used to dynamically generate the DOM.
 
 ### Properties
+
+  symbols: {},
+  popups: {},
+  connectingEquals: {},
+  buildingParents: {}
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
 
 
 
@@ -113,11 +169,27 @@ The properties of this object are used to define the JS and CSS effects used to 
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
+.buildingParents = {
+  transcription: null,
+  translation: null,
+  vector: {
+    mouseover: {},
+    mouseout: {}
+  }
+};
 
 
 ### Methods
 
-None.
+Method | Returns | Description
+--- | --- | --- 
+
+.buildingParents.span_mouseover
+
+
 
 ### Events
 
@@ -126,45 +198,48 @@ None.
 
 
 
+## Polyanno.collections
 
-## Polyanno Text Objects
-
-
-
+This defines the behaviour of groups of Polyanno objects to ensure consistency and checks, especially if importing objects from an external source rather than those generated within the package.
 
 ### Properties
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
+.type
+
+.array
 
 
 
 ### Methods
+
+Method | Returns | Description
+--- | --- | --- 
+.on
+
+.trigger
+
+.unbind
+
+
+.add
+
+
+.replaceOne
+
+.getById
+
+
+.deleteAll
+
+.getAll
 
 
 ### Events
 
 
 
-
-## Polyanno Collections
-
-
-
-### Properties
-
-
-
-### Methods
-
-
-### Events
-
-
-
-
-# Transcriptions
-
-
-
-# Translations
 
 
 
@@ -172,40 +247,150 @@ None.
 
 These objects are the annotations as outlined and defined by the W3C definition for the Web Annotation Model.
 
+For more information, please see the Web Annotation Model... http://www.w3.org/TR/annotation-model/
+
 ## Polyanno.annotation
+
+...
 
 ### Properties 
 
-id
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
 
 
-body
+...    if (prop == "format") {
+      this.format = value.format;
+    };
+    if ((prop == "language") && (typeof value.language == Array)) {
+      this.language = value.language;
+    };
+    if (prop == "processingLanguage") {
+      this.processingLanguage = value.processingLanguage;
+    };
+    if ((prop == "type") && (typeof value.type == Array)) {
+      this.type = value.type;
+    };
+    if ((prop == "textDirection") && ["auto", "ltr", "rtl"].includes(value.textDirection)) {
+      this.textDirection = value.textDirection;
+
+.id
 
 
-target
+._id
 
 
+.body
 
-For more information, please see the Web Annotation Model...
+
+.target
+
+
+.creator
+
+
 
 
 
 ### Methods (Singular)
 
+Method | Returns | Description
+--- | --- | --- 
+.update
+
+.delete
+
+.getBody
+
+
+.getTargets
+
+.addTargets
+
+
+
 
 ### Events (Singular)
+
 
 
 ## Polyanno.annotations
 
 ### Properties 
 
-See Polyanno.collections for more info, with the **type** property set to **Polyanno.annotation**.
+* Methods inherited from Polyanno.collections with the **type** property set to **Polyanno.annotation**.
 
-### Methods (Singular)
+### Methods (Plural)
+
+* Methods inherited from Polyanno.collections
+
+Method | Returns | Description
+--- | --- | --- 
+
+Polyanno.getAnnotationsByTarget
+
+Polyanno.getAnnotationByBody
 
 
-### Events (Singular)
+### Events (Plural)
+
+* Events inherited from Polyanno.collections
+
+
+## Polyanno.baseAnnotationObject
+
+This defines the shared characteristics of objects 
+
+
+### Properties
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
+.@context.
+
+ [ "http://www.w3.org/ns/anno.jsonld" ];
+
+.type 
+
+
+.metadata 
+
+
+.format 
+
+"auto", "ltr", "rtl"
+
+
+.language 
+
+.processingLanguage
+
+
+.creator = 
+{
+    name: polyanno_current_username,
+    motivation: "identifying"
+  };
+
+
+### Methods
+
+Method | Returns | Description
+--- | --- | --- 
+.on
+
+.trigger
+
+.unbind
+
+
+
+### Events
+
 
 
 
@@ -215,10 +400,13 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 ### Properties 
 
-
+Property | Type | Default | Description
+--- | --- | --- | --- 
 
 ### Methods (Singular)
 
+Method | Returns | Description
+--- | --- | --- 
 
 ### Events (Singular)
 
@@ -227,10 +415,11 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 ### Methods (Plural)
 
+* Methods inherited from Polyanno.collections
 
 ### Events (Plural)
 
-
+* Events inherited from Polyanno.collections
 
 
 # Images
@@ -246,6 +435,9 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 ### Properties
 
+Property | Type | Default | Description
+--- | --- | --- | --- 
+
   this.DOM 
   this.id 
   this.docs = {
@@ -260,6 +452,8 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 ### Methods (Singular)
 
+Method | Returns | Description
+--- | --- | --- 
 .update
 
 .closeEditor
@@ -277,6 +471,11 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 ### Methods (Plural)
 
+Method | Returns | Description
+--- | --- | --- 
+
+* Methods inherited from Polyanno.collections
+
 .removeEditor
 
 .closeAll
@@ -292,6 +491,9 @@ See Polyanno.collections for more info, with the **type** property set to **Poly
 
 
 ### Events (Plural)
+
+* Methods inherited from Polyanno.collections
+
 
 
 # Currently Selected
