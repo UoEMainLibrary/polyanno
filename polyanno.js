@@ -136,11 +136,9 @@ var polyannoEditorHTML_partfinal = `
 ////POLYANNO OBJECTS
 
 var Polyanno =  {
-  image : {},
   urls : {},
   colours : {},
   HTML : {},
-  map: {},
   intEffects: {}
 };
 
@@ -2014,6 +2012,9 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
   if (check.length == 0) { return false; }
   else { return true; };
 };
+
+
+
 
 //plural
 

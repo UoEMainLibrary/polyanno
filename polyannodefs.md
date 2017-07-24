@@ -1,14 +1,34 @@
 
 # Contents
 
+"urls",
+"colours",
+"HTML",
+"intEffects",
+"collections",
+"annotation",
+"annotations",
+	"getAnnotationsByTarget",
+	"getAnnotationByBody",
+"baseAnnotationObject",
+"baseTextObject",
+"transcription",
+"transcriptions",
+"translation",
+"translations",
+"vector",
+"vectors",
+"selected",
+"connectingEquals",
+"buildingParents",
+"editor",
+"editors"
 
-* [Generic Polyanno Objects](#)
+* [Generic Polyanno Objects](#Generic-Polyanno-Objects)
 
-*  [image](## Polyanno.image)
-*  [urls]()
+*  [urls](#Polyanno.urls)
 *  [colours]()
 *  [HTML]()
-*  [map]()
 *  [intEffects]()
 
 * [Annotation Model Objects]()
@@ -34,25 +54,6 @@
 These are objects that are unlikely to be used directly when working with the original intended use cases of Polyanno, however they may be used by those wishing to adapt the package for more experimental applications. They define the shared features of the other Polyanno objects that inherit from them.
 
 
-## Polyanno.image
- 
-It MUST be defined as using the IIIF image API as outlined here --> .....
-
-### Properties
-
-Property | Type | Default | Description
---- | --- | --- | --- 
-
-
-
-### Methods
-
-None.
-
-### Events
-
-None.
-
 
 
 ## Polyanno.urls
@@ -67,7 +68,6 @@ Property | Type | Default | Description
 **transcription** | `String` | window.location.host + "/api/transcriptions/" | 
 **translation** | `String` | window.location.host + "/api/translations/" | 
 **annotation** | `String` | window.location.host + "/api/annotations/" | 
-
 
 ### Methods
 
@@ -115,20 +115,19 @@ Property | Type | Default | Description
 **vector** | `String` | "yellow" | HTML colour
 **span** | `String` | "yellow" | HTML colour
 
-
 ### Methods
 
 Method | Returns | Description
 --- | --- | --- 
-**connectColours(** object, type, action **)** | `this` | 
-**highlightThis.vector(** chosenVector, colourChange **)** | `this` | 
-**highlightThis.editor(** chosenEditor, colourChange **)** | `this` | 
-**highlightThis.span(** chosenSpan, colourChange **)** | `this` | 
-
+**connectColours(** object, type, action **)** | `this` | For a given object of type vector, editor, or span, the "equivalent" objects of the other types (those sharing a common annotation model feature) are all highlighted to their Polyanno.colours.process colours.
+**highlightThis.vector(** chosenVector, colourChange **)** | `this` | Changes the chosen vector to the chosen HTML colour.
+**highlightThis.editor(** chosenEditor, colourChange **)** | `this` | Changes the chosen editor to the chosen HTML colour.
+**highlightThis.span(** chosenSpan, colourChange **)** | `this` | Changes the chosen span highlight to the chosen HTML colour.
 
 ### Events
 
 None.
+
 
 
 ## Polyanno.HTML
@@ -141,45 +140,35 @@ These are the objects containing the variables that contain the HTML (as strings
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-**editor** | `String` | "" | HTML stored as String
+**transcription** | `String` |  | HTML stored as String
+**translation** | `String` |  | HTML stored as String
+**discussion** | `String` |  | HTML stored as String
+**textHighlightingCut** | `String` |  | HTML stored as String
+**textHighlightingOthers** | `String` |  | HTML stored as String
+**textHighlighting.transcription** | `String` |  | HTML stored as String
+**textHighlighting.translation** | `String` |  | HTML stored as String
+**newAnnotation** | `String` |  | HTML stored as String
+**buildingParents** | `String` |  | HTML stored as String
+**buildingParent.transcription** | `String` |  | HTML stored as String
+**buildingParent.translation** | `String` |  | HTML stored as String
+**connectingEquals.transcription** | `String` |  | HTML stored as String
+**connectingEquals.translation** | `String` |  | HTML stored as String
+**showAlternatives** | `String` |  | HTML stored as String
 
 **Polyanno.HTML.popups Properties**
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-**editor** | `String` | "" | HTML stored as String
-
-**Polyanno.HTML.connectingEquals Properties**
-
-Property | Type | Default | Description
---- | --- | --- | --- 
-**editor** | `String` | "" | HTML stored as String
+**connectingEquals** | `String` | "" | HTML stored as String
+**textHighlighting** | `String` | "" | HTML stored as String
+**children** | `String` | "" | HTML stored as String
 
 **Polyanno.HTML.buildingParents Properties**
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-**editor** | `String` | "" | HTML stored as String
-
-
-### Methods
-
-None.
-
-### Events
-
-None.
-
-
-## Polyanno.map
-
-The object defining the map used in the Polyanno implementation, to pass through to the Leaflet and associated plugins like Leaflet-IIIF.
-
-### Properties
-
-Property | Type | Default | Description
---- | --- | --- | --- 
-
+**Transcriptions** | `String` | "" | HTML stored as String
+**Translations** | `String` | "" | HTML stored as String
 
 ### Methods
 
@@ -188,37 +177,33 @@ None.
 ### Events
 
 None.
+
+
 
 
 ## Polyanno.intEffects
 
-The properties of this object are used to define the JS and CSS effects used to animate the DOM during default Polyanno behaviour.
+The properties of this object are used to define the JS and CSS effect functions used to animate the DOM during default Polyanno behaviour.
 
 ### Properties
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-**editor** | `String` | "" | HTML stored as String
+**editor** | `Function` | null | Animation callback for the editor UI whilst the buildingParents process is live.
+**buildingParents** | `Object` | | See the BuildingParents Effects Object below for more information.
 
-.buildingParents = {
-  transcription: null,
-  translation: null,
-  vector: {
-    mouseover: {},
-    mouseout: {}
-  }
-};
-
+Property | Type | Default | Description
+--- | --- | --- | --- 
+**transcription** | `Function` | null | The callback for the animation of the transcriptions corresponding to the vectors being linked.
+**translation** | `Function` | null | The callback for the animation of the translations corresponding to the vectors being linked.
+**vector.mouseover** | `Object` | undefined | Dictionary where the animation callback for mouseover are stored using the Leaflet._id of the vectors as their key
+**vector.mouseout** | `Object` | undefined | Dictionary where the animation callback for mouseout are stored using the Leaflet._id of the vectors as their key
 
 ### Methods
 
 Method | Returns | Description
 --- | --- | --- 
-**connectColours(** object, type, action **)** | `this` | 
-
-.buildingParents.span_mouseover
-
-
+**buildingParents.span_mouseover(** span_id, text_type **)** | `this` | Function to animate the chosen span defined by the DOM span id and text_type during the buildingParents process.
 
 ### Events
 
@@ -242,19 +227,22 @@ Property | Type | Default | Description
 
 Method | Returns | Description
 --- | --- | --- 
-**on(** event **)** | `this` | Use to add event listeners for the Polyanno object
-**trigger(** event **)** | `this` | Use to trigger Polyanno events from this object
-**unbind()** | `this` | Removes all event listeners for this object
-**add(** anno **)** | `this` | 
-**replaceOne(** anno **)** | `this` | 
-**getById(** the_id **)** | `Object` | 
-**deleteAll()** | `this` | 
+**on(** event **)** | `this` | Use to add event listeners for the Polyanno object.
+**trigger(** event **)** | `this` | Use to trigger Polyanno events from this object.
+**unbind()** | `this` | Removes all event listeners for this object.
+**add(** object **)** | `this` | If the object is of the type property for htis collection then it is added to the array.
+**replaceOne(** object **)** | `this` | Replaces the object in the collection with this one's id, with the object submitted.
+**getById(** the_id **)** | `Object` | Returns the object in this collection with this id value.
+**deleteAll()** | `this` | Empties the array property of the collection.
 **getAll(** object, type, action **)** | `Array` | Returns array property for this Polyanno.collection
-
 
 ### Events
 
-
+Event | Data | Description
+--- | --- | --- 
+**polyanno_created** | | Triggered when a new object has been added to the collection.
+**polyanno_updating** | | Triggered when an object in this collection is being updated.
+**polyanno_deleting** | | Triggered when the collection is being deleted.
 
 
 
@@ -312,10 +300,10 @@ Method | Returns | Description
 
 Event | Data | Description
 --- | --- | --- 
-polyanno_deleting |  | Triggered before the object is deleted.
-polyanno_deleted |  | Triggered after the object has been deleted.
-polyanno_updating |  | Triggered before the object's properties have been updated.
-polyanno_updated |  | Triggered after the object's properties have been updated.
+**polyanno_deleting** |  | Triggered before the object is deleted.
+**polyanno_deleted** |  | Triggered after the object has been deleted.
+**polyanno_updating** |  | Triggered before the object's properties have been updated.
+**polyanno_updated** |  | Triggered after the object's properties have been updated.
 
 ## Polyanno.annotations
 
@@ -620,8 +608,24 @@ vectors | `Polyanno.collections Object` | | Polyanno collection of Polyanno.vect
 transcriptions | `Polyanno.collections Object` | | Polyanno collection of Polyanno.transcription objects that are currently being handled
 translations | `Polyanno.collections Object` | | Polyanno collection of Polyanno.translation objects that are currently being handled
 targets | `Polyanno.collections Object` | | Polyanno collection of any valid JavaScript objects that are currently being handled
-currentlyEditing | Boolean | false | If true then 
-currentlyDeleting | Boolean | false | If true then 
+currentlyEditing | `Boolean` | false | If true then 
+currentlyDeleting | `Boolean` | false | If true then 
+textHighlighting | `Object` |  | See textHighlighting object for more information.
+
+**Polyanno.selected.textHighlighting Properties **
+
+Property | Type | Default | Description
+--- | --- | --- | --- 
+selected | `` | null | 
+parentDOM | `` | null | 
+newDOM | `` | null | 
+oldContent | `` | null | 
+newContent | `` | null | 
+DOMid | `` | null | 
+URI | `` | null | 
+fragment | `` | null | 
+
+
 
 ### Methods (Singular)
 
@@ -677,13 +681,12 @@ Method | Returns | Description
 
 Method | Returns | Description
 --- | --- | --- 
-**removeEditor()** | `` | 
-**closeAll()** | `` | 
-**openEditor()** | `` | 
-**ifOpen()** | `` | 
-**findAllByDoc()** | `` | 
-**findOneByDoc()** | `` | 
-
+**removeEditor(** id **)** | `this` | Removes this editor from the collection.
+**closeAll()** | `this` | Closes all the editors currently open in the page.
+**openEditor(** textType **)** | `this` | Creates a new Polyanno.editor object and adds it to the collection.
+**ifOpen(** fromType **)** | `Object` | If this editor is currently open in the page then it shakes it to get the users attention, else it opens it up in the page.
+**findAllByDoc(** docId, type **)** | `Array` | Returns array of Polyanno.editor objects that are handling that object in their docs property.
+**findOneByDoc(** docId, type **)** | `Polyanno.editor Object` | Returns first Polyanno.editor that is handling that object in its docs property.
 
 
 ### Events (Plural)
@@ -704,11 +707,13 @@ Method | Returns | Description
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-DOM | `DOM` | undefined | 
-
-
-
-
+status | `Boolean` | false | If true then the process is live.
+type | `String` | undefined | 
+parent_anno | `String` | undefined |
+parent_vector | `String` | undefined | 
+siblings | `Array` | undefined | 
+vector | `String` | undefined | 
+leafletControl | `Leaflet Draw Control Object` | | Defining the control options allowed whilst the process is live
 
 
 
