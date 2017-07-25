@@ -579,16 +579,18 @@ textHighlighting | `Object` |  | See textHighlighting object for more informatio
 
 **Polyanno.selected.textHighlighting Properties **
 
+These are the properties used in the process of textHighlighting - when the user selects text within a transcription or translation in order to offer an alternative.
+
 Property | Type | Default | Description
 --- | --- | --- | --- 
-selected | `` | null | 
-parentDOM | `` | null | 
-newDOM | `` | null | 
-oldContent | `` | null | 
-newContent | `` | null | 
-DOMid | `` | null | 
-URI | `` | null | 
-fragment | `` | null | 
+selected | `Selection Object` | null | The [JavaScript Selection Object](https://developer.mozilla.org/en-US/docs/Web/API/Selection) of the text that has been highlighted by the user.
+DOM | `DOM` | null | The HTML object, normally a span, wrapped around just the highlighted text.
+parentDOM | `DOM` | null | The HTML object, normally a span, wrapped around the text containing the highlighted text's DOM.
+oldContent | `String` | null | The original text content inside the highlighted text location.
+newContent | `String` | null | The new text content to replace the original in the highlighted text location
+DOMid | `String` | null | The id of the textHighlighting.DOM object.
+URI | `String` | null | The URI generated from the Polyanno.urls, setup storage options, and the DOMid - to be used as the id in the Polyanno.baseTextObject.
+fragment | `String` | null | The formatted string version of the selected object.
 
 ### Methods (Singular)
 
@@ -597,7 +599,7 @@ Method | Returns | Description
 **getAll()** | `Object` | Returns all the arrays of the currently handled objects in a dictionary object structure.
 **reset()** | `this` | Empties all the arrays of the selected object.
 **setSelected(** docs **)** | `this` | Accepts an object with the same properties as Polyanno.selected to update their values.
-**setVector(** vector **)** | `this` | 
+**setVector(** vector **)** | `this` | Converts the chosen Leaflet vector object into a Polyanno.vector object and stores it in the Polyanno.selected properties.
 
 
 

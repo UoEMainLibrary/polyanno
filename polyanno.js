@@ -2201,8 +2201,12 @@ var polyanno_populate_tags = function(theAnno, popupIDstring) {
 Polyanno.selected.textHighlighting = {
   selected: null,
   parentDOM: null,
-  newDOM: null,
-  newContent: null
+  DOM: null,
+  oldContent: null,
+  newContent: null,
+  DOMid: null,
+  URI: null,
+  fragment: null
 };
 
 function getSelected() {
