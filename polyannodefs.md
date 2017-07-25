@@ -1,50 +1,27 @@
 
 # Contents
 
-"urls",
-"colours",
-"HTML",
-"intEffects",
-"collections",
-"annotation",
-"annotations",
-	"getAnnotationsByTarget",
-	"getAnnotationByBody",
-"baseAnnotationObject",
-"baseTextObject",
-"transcription",
-"transcriptions",
-"translation",
-"translations",
-"vector",
-"vectors",
-"selected",
-"connectingEquals",
-"buildingParents",
-"editor",
-"editors"
-
 * [Generic Polyanno Objects](#Generic-Polyanno-Objects)
 
 *  [urls](#Polyanno.urls)
-*  [colours]()
-*  [HTML]()
-*  [intEffects]()
+*  [colours](#Polyanno.colours)
+*  [HTML](#Polyanno.HTML)
+*  [intEffects](#Polyanno.intEffects)
 
 * [Annotation Model Objects]()
 
-*  [collections]()
-*  [Annotations]()
-*  [BaseAnnotationObject]()
-*  [Vectors]()
-*  [BaseTextObject]()
-*  [Transcriptions]()
-*  [Translations]()
+*  [Collections](#Polyanno.collections)
+*  [Annotations](#Annotations)
+*  [BaseAnnotationObject](#Polyanno.baseAnnotationObject)
+*  [Vectors](#Vectors)
+*  [BaseTextObject](#Polyanno.baseTextObject)
+*  [Transcriptions](#Transcriptions)
+*  [Translations](#Translations)
 
 * [UI Objects]()
 
-*  [Editors]()
-*  [Selected]()
+*  [Editors](#Editors)
+*  [Selected](#Selected)
 
 # Introduction
 
@@ -249,13 +226,9 @@ Event | Data | Description
 
 # Annotations
 
-These objects are the annotations as outlined and defined by the W3C definition for the Web Annotation Model.
-
-For more information, please see the Web Annotation Model... http://www.w3.org/TR/annotation-model/
+These objects are the annotations as outlined and defined by the [W3C Web Annotation Model standards](http://www.w3.org/TR/annotation-model/).
 
 ## Polyanno.annotation
-
-...
 
 ### Properties 
 
@@ -283,7 +256,7 @@ Property | Type | Default | Description
 **format** | `String` |  | 
 **language** | `Array` |  | 
 **processingLanguage** | `String` |  | 
-**type** | `Array` |  | An array of the types, as defined by the Web Annotation Model framework here...
+**type** | `Array` |  | An array of the types, as defined by the Web Annotation Model framework.
 **textDirection** | `String` |  | MUST be one of : "auto", "ltr", "rtl".
 
 ### Methods (Singular)
@@ -307,6 +280,8 @@ Event | Data | Description
 
 ## Polyanno.annotations
 
+The collection of Polyanno.annotation objects.
+
 ### Properties 
 
 * Methods inherited from Polyanno.collections with the **type** property set to **Polyanno.annotation**.
@@ -317,11 +292,8 @@ Event | Data | Description
 
 Method | Returns | Description
 --- | --- | --- 
-
-Polyanno.getAnnotationsByTarget
-
-Polyanno.getAnnotationByBody
-
+**Polyanno.getAnnotationsByTarget(** object, type, expanded **)** | `Array` | Returns an array of the Polyanno.annotation objects with the given target. If expanded is true then it returns the annotation object with the linking Polyanno objects as well.
+**Polyanno.getAnnotationByBody(** object, expanded **)** | `Object` | Returns the Polyanno.annotation object with the given object as body. If expanded is true then it returns the annotation object with the linking Polyanno objects as well.
 
 ### Events (Plural)
 
@@ -338,8 +310,7 @@ Polyanno.getAnnotationByBody
 
 ## Polyanno.baseAnnotationObject
 
-This defines the shared characteristics of objects 
-
+This defines the shared characteristics of objects that are bodies or targets in annotation models.
 
 ### Properties
 
@@ -368,14 +339,13 @@ Method | Returns | Description
 **on(** event **)** | `this` | Use to add event listeners for the Polyanno object
 **trigger(** event **)** | `this` | Use to trigger Polyanno events from this object
 **unbind()** | `this` | Removes all event listeners for this object
-**isAnnotationBody()** | `Object` | 
-**isAnnotationTarget(** type **)** | `Array` | 
-**getAnnosTargetingThis(** type **)** | `Array` | 
-
+**isAnnotationBody()** | `Object` | If this Polyanno object is the body of an annotation then the corresponding annotation object is returned.
+**isAnnotationTarget(** type **)** | `Array` | If this Polyanno object is the target of annotations then the corresponding annotation objects are returned.
+**getAnnosTargetingThis(** type **)** | `Array` | If this Polyanno object is the target of annotations then the Polyanno objects corresponding to the bodies of these annotations are returned.
 
 ### Events
 
-
+None.
 
 
 
@@ -383,7 +353,7 @@ Method | Returns | Description
 
 ## Polyanno.baseTextObject
 
-This defines the shared characteristics of objects that are text based annotation bodies.
+This defines the shared characteristics of objects that are bodies or targets in annotation models and are primarily of textual content.
 
 ### Properties
 
@@ -402,16 +372,11 @@ Property | Type | Default | Description
 
 * Methods inherited from Polyanno.baseAnnotationObject
 
-Method | Returns | Description
---- | --- | --- 
-
-
-.....voting functions....
 
 ### Events
 
 * Events inherited from Polyanno.baseAnnotationObject
-.....voting events?....
+
 
 
 
@@ -457,7 +422,10 @@ polyanno_deleted |  | Triggered after the object has been deleted.
 polyanno_updating |  | Triggered before the object's properties have been updated.
 polyanno_updated |  | Triggered after the object's properties have been updated.
 
+
 ##Polyanno.transcriptions
+
+The collection of Polyanno.transcription objects.
 
 ### Methods (Plural)
 
@@ -513,7 +481,11 @@ polyanno_deleted |  | Triggered after the object has been deleted.
 polyanno_updating |  | Triggered before the object's properties have been updated.
 polyanno_updated |  | Triggered after the object's properties have been updated.
 
+
+
 ##Polyanno.translations
+
+The collection of Polyanno.translation objects.
 
 ### Methods (Plural)
 
@@ -587,13 +559,6 @@ polyanno_updated |  | Triggered after the object's properties have been updated.
 
 
 
-
-# Images
-
-
-
-
-
 # Selected
 
 ## Polyanno.selected
@@ -625,8 +590,6 @@ DOMid | `` | null |
 URI | `` | null | 
 fragment | `` | null | 
 
-
-
 ### Methods (Singular)
 
 Method | Returns | Description
@@ -638,27 +601,24 @@ Method | Returns | Description
 
 
 
+
 # Editors
 
-
+The editors are the boxes within the UI that the user can interact with and all the supporting information (the objects not directly seen but linked via the annotation models handled) for them.
 
 ## Polyanno.editor
-
-
 
 ### Properties
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
-DOM | `DOM` | undefined | 
-id | `String` | Random | 
-docs.vectors | `Array` | Polyanno.selected.vectors.array | 
-docs.transcriptions | `Array` | Polyanno.selected.transcriptions.array | 
-docs.translations | `Array` | Polyanno.selected.translations.array | 
-targets | `Array` | Polyanno.selected.targets | 
-type | `String` | undefined | 
-
-
+DOM | `DOM` | undefined | The HTML object of the editor within the UI.
+id | `String` | Random | The HTML id assigned ot the editor DOM object.
+docs.vectors | `Array` | Polyanno.selected.vectors.array | The vectors handled within this editor.
+docs.transcriptions | `Array` | Polyanno.selected.transcriptions.array | The transcriptions handled within this editor.
+docs.translations | `Array` | Polyanno.selected.translations.array | The translations handled within this editor.
+targets | `Array` | Polyanno.selected.targets | The other objects handled within this editor not defined by Polyanno object type.
+type | `String` | undefined | The type of Polyanno object that this editor allows the user to directly interact with e.g. transcription.
 
 ### Methods (Singular)
 
@@ -669,11 +629,15 @@ Method | Returns | Description
 **setSelected()** | `this` | Resets the Polyanno.selected property values to those of the Polyanno.editor.docs.
 **checkDocs(** document_id, type **)** | `Boolean` | Returns true if the docs are included in those of this editor.
 
-
 ### Events (Singular)
+
+None.
+
 
 
 ## Polyanno.editors
+
+The collection containing all the Polyanno.editor objects being handled by the page.
 
 ### Methods (Plural)
 
@@ -688,7 +652,6 @@ Method | Returns | Description
 **findAllByDoc(** docId, type **)** | `Array` | Returns array of Polyanno.editor objects that are handling that object in their docs property.
 **findOneByDoc(** docId, type **)** | `Polyanno.editor Object` | Returns first Polyanno.editor that is handling that object in its docs property.
 
-
 ### Events (Plural)
 
 * Methods inherited from Polyanno.collections
@@ -702,17 +665,18 @@ Method | Returns | Description
 
 ## Polyanno.connectingEquals
 
+This handles the information relating to the process of adding existing Polyanno objects as bodies and targets to annotation models, typically by drawing the shared canvas vector for an existing textual object.
 
 ### Properties
 
 Property | Type | Default | Description
 --- | --- | --- | --- 
 status | `Boolean` | false | If true then the process is live.
-type | `String` | undefined | 
-parent_anno | `String` | undefined |
-parent_vector | `String` | undefined | 
-siblings | `Array` | undefined | 
-vector | `String` | undefined | 
+type | `String` | undefined | Type of textual object currently being handled e.g. "transcription".
+parent_anno | `String` | undefined | The id of the parent of the textual annotation being handled, if it exists.
+parent_vector | `String` | undefined | The id of the parent of the vector being handled, if it exists.
+siblings | `Array` | undefined | The array of all the Polyanno objects that also bodies of the same annotation model as the object currrently being handled.
+vector | `String` | undefined | The vector that has been selected to link to the current textual object being handled.
 leafletControl | `Leaflet Draw Control Object` | | Defining the control options allowed whilst the process is live
 
 
