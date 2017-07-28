@@ -139,7 +139,8 @@ var Polyanno =  {
   urls : {},
   colours : {},
   HTML : {},
-  intEffects: {}
+  intEffects: {},
+  starting: {}
 };
 
 var rejectionOptions = new Set(["false",'""' , null , false , 'undefined','']);
@@ -367,7 +368,7 @@ Polyanno.colours = {
 
 Polyanno.colours.highlightThis.vector = function(chosenVector, colourChange) {
 
-  allDrawnItems.eachLayer(function(l){
+  Polyanno.leaflet.vectors.eachLayer(function(l){
     if (l._leaflet_id == chosenVector) {
       l.setStyle({color: colourChange});
     }
@@ -487,7 +488,7 @@ Polyanno.intEffects.buildingParents.span_mouseover = function(new_frag_id, text_
   Polyanno.intEffects.buildingParents[text_type] = te;
 };
 
-var polyanno_setup_highlighting = function() {
+Polyanno.starting.highlighting = function() {
 
   $('#polyanno-page-body').on("mouseenter", ".textEditorBox", function(event){
 
@@ -529,7 +530,7 @@ var polyanno_setup_highlighting = function() {
 
   ///the vector highlights are not working??
 
-  allDrawnItems.on('mouseover', function(vec) {
+  Polyanno.leaflet.vectors.on('mouseover', function(vec) {
     if (!Polyanno.buildingParents.status) {
       Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "highlight");
     }
@@ -538,7 +539,7 @@ var polyanno_setup_highlighting = function() {
       Polyanno.intEffects.buildingParents.vector.mouseover[n]();
     };
   });
-  allDrawnItems.on('mouseout', function(vec) {
+  Polyanno.leaflet.vectors.on('mouseout', function(vec) {
     if (!Polyanno.buildingParents.status) {
       Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "default");
     }
@@ -587,8 +588,8 @@ Polyanno.HTML.popups = {
 
     connectingEquals: `
       <div id="connectingEqualsMenu" class="popupAnnoMenu">
-        <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_setting_selecting_vector(); polyanno_map.closePopup();">Submit</a>
-        <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_reset_selecting_vector(); polyanno_map.closePopup();">Cancel</a>
+        <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_setting_selecting_vector(); Polyanno.leaflet.map.closePopup();">Submit</a>
+        <a class="btn btn-default polyanno-standard-btn" onclick="polyanno_reset_selecting_vector(); Polyanno.leaflet.map.closePopup();">Cancel</a>
       </div>
     `,
 
@@ -646,9 +647,9 @@ Polyanno.HTML.buildingParents = {
 
 var openHTML = "<div class='popupAnnoMenu'>";
 var transcriptionOpenHTML = `<a class="openTranscriptionMenu polyanno-standard-btn btn btn-default" onclick="Polyanno.editors.ifOpen('transcription');
-      polyanno_map.closePopup();">`+Polyanno.HTML.symbols.transcription+`</a><br>`;
+      Polyanno.leaflet.map.closePopup();">`+Polyanno.HTML.symbols.transcription+`</a><br>`;
 var translationOpenHTML = `<a class="openTranslationMenu polyanno-standard-btn btn btn-default" onclick="Polyanno.editors.ifOpen('translation');
-      polyanno_map.closePopup();">`+Polyanno.HTML.symbols.translation+`</a>`;
+      Polyanno.leaflet.map.closePopup();">`+Polyanno.HTML.symbols.translation+`</a>`;
 var endHTML = "</div>";
 var popupVectorMenuHTML = openHTML + transcriptionOpenHTML + translationOpenHTML + endHTML;
 
@@ -1517,7 +1518,7 @@ Polyanno.vector = function(value) {
 };
 
 Object.defineProperty(Polyanno.vector, "layer", {
-  get: function() { return allDrawnItems.getLayer(this.id); }
+  get: function() { return Polyanno.leaflet.vectors.getLayer(this.id); }
 });
 
 Object.defineProperty(Polyanno.vector, "coordinates", {
@@ -1589,10 +1590,10 @@ var polyanno_load_existing_vectors = function(existingVectors) {
           },
           onEachFeature: function (feature, layer) {
             layer._leaflet_id = vector.id,
-            allDrawnItems.addLayer(layer),
-            layer.bindPopup(popupVectorMenu)
+            Polyanno.leaflet.vectors.addLayer(layer),
+            layer.bindPopup(Polyanno.leaflet.menu.newVector)
           }
-        }).addTo(polyanno_map);
+        }).addTo(Polyanno.leaflet.map);
 
     });
   };
@@ -1644,7 +1645,7 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
   layer._leaflet_id = data.id;
 
-  if (!Polyanno.connectingEquals.status) { layer.bindPopup(popupVectorMenu).openPopup(); }
+  if (!Polyanno.connectingEquals.status) { layer.bindPopup(Polyanno.leaflet.menu.newVector).openPopup(); }
   else {  updateVectorSelection(data); };
 
   if (!isUseless(callback_function)) {  callback_function(data);  };
@@ -1760,16 +1761,16 @@ var polyanno_linking_annos_to_vector_checks = function(layer) {
   var shape = layer.toGeoJSON();
 
   //[number, overlap_array, parent_array, children_array]
-  var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, false); //don't complete children array, do complete parent array
+  var checkingOverlapping = check_this_shape_for_overlapping(shape, Polyanno.leaflet.vectors, false, true, false); //don't complete children array, do complete parent array
 
   if ((checkingOverlapping[0] == 2) && (checkingOverlapping[2].includes(Polyanno.connectingEquals.parent_vector))) {  ///inside the correct vector
-    allDrawnItems.addLayer(layer);
+    Polyanno.leaflet.vectors.addLayer(layer);
     layer.bindPopup(Polyanno.HTML.popups.connectingEquals).openPopup();
   }
   else { 
-    allDrawnItems.removeLayer(layer);
+    Polyanno.leaflet.vectors.removeLayer(layer);
     var popLtLngs = Polyanno.connectingEquals.parent_vector.getBounds().getCenter(); 
-    polyanno_map.fitBounds(Polyanno.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
+    Polyanno.leaflet.map.fitBounds(Polyanno.connectingEquals.parent_vector.toGeoJSON().geometry.coordinates[0]);
   };
 };
 
@@ -1790,14 +1791,14 @@ var updateVectorSelection = function(the_vector_url) {
 };
 
 var polyanno_setting_selecting_vector = function() {
-  var this_layer = allDrawnItems.getLayer(Polyanno.selected.vector.id);
+  var this_layer = Polyanno.leaflet.vectors.getLayer(Polyanno.selected.vector.id);
   var this_shape = this_layer.toGeoJSON();
   var this_parent = Polyanno.connectingEquals.parent_vector._leaflet_id;
   polyanno_new_vector_made(this_layer, this_shape, this_parent);
 };
 var polyanno_reset_selecting_vector = function() {
-  var this_layer = allDrawnItems.getLayer(Polyanno.selected.vector.id);
-  allDrawnItems.removeLayer(this_layer);
+  var this_layer = Polyanno.leaflet.vectors.getLayer(Polyanno.selected.vector.id);
+  Polyanno.leaflet.vectors.removeLayer(this_layer);
 };
 
 //states
@@ -1808,15 +1809,15 @@ var polyanno_connecting_equals_enabled = function() {
   var vec = Polyanno.connectingEquals.parent_vector;
 
   ///disabled unnecessary functionailty
-  polyanno_draw_control.remove();
+  Polyanno.leaflet.drawControl.default.remove();
   polyanno_disable_keyboards();
   $("#polyanno-merge-shapes-enable").addClass("disabled").prop('disabled', true);
 
   //Leaflet
-  Polyanno.connectingEquals.leafletControl.addTo(polyanno_map);
+  Polyanno.leaflet.drawControl.connectingEquals.addTo(Polyanno.leaflet.map);
   var b = vec.getBounds();
-  polyanno_map.fitBounds(b);
-  polyanno_map.setMaxBounds(b);
+  Polyanno.leaflet.map.fitBounds(b);
+  Polyanno.leaflet.map.setMaxBounds(b);
   vec.unbindPopup();
   L.drawLocal.draw.handlers.polygon.tooltip.start = 'Draw around the text on the image';
   L.drawLocal.draw.handlers.rectangle.tooltip.start = 'Draw around the text on the image';
@@ -1829,15 +1830,15 @@ var polyanno_connecting_equals_disabled = function() {
   var vec = Polyanno.connectingEquals.parent_vector;
 
   //restore functionality
-  Polyanno.connectingEquals.leafletControl.remove();
+  Polyanno.leaflet.drawControl.connectingEquals.remove();
   polyanno_enable_keyboards();
   $("#polyanno-merge-shapes-enable").removeClass("disabled").prop('disabled', false);
 
   //leaflet
-  polyanno_draw_control.addTo(polyanno_map);
-  polyanno_map.setMaxBounds(null);
-  var vec = allDrawnItems.getLayer(Polyanno.connectingEquals.vector.id);
-  vec.bindPopup(popupVectorMenu);
+  Polyanno.leaflet.drawControl.default.addTo(Polyanno.leaflet.map);
+  Polyanno.leaflet.map.setMaxBounds(null);
+  var vec = Polyanno.leaflet.vectors.getLayer(Polyanno.connectingEquals.vector.id);
+  vec.bindPopup(Polyanno.leaflet.menu.newVector);
   L.drawLocal.draw.handlers.polygon.tooltip.start = 'Draw around the text on the image';
   L.drawLocal.draw.handlers.rectangle.tooltip.start = 'Draw around the text on the image';
 };
@@ -2019,10 +2020,10 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 //plural
 
 Polyanno.editors.removeEditor = function(id) {
-  alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
-  alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 };
 
 Polyanno.editors.closeAll = function() {
@@ -2042,7 +2043,7 @@ Polyanno.editors.openEditor = function(textType) {
 Polyanno.editors.ifOpen = function(fromType) {
 
   var comparison = Polyanno.selected.getAll();
-  alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
+  //alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
   if (isUseless(Polyanno.editors.array[0])) {    Polyanno.editors.openEditor(fromType);  }
   else {
     var opened = $.grep( Polyanno.editors.array, function(ed) {
@@ -2069,6 +2070,10 @@ Polyanno.editors.findOneByDoc = function(docID, type) {
   });
   return arr[0];
 };
+
+
+
+
 
 ///// VIEWER WINDOWS
 
@@ -2153,7 +2158,9 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
       $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
     }
     else {
-      //****need to debug the voting overlay**
+
+      //****need to debug the voting overlay*****
+
       var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + closingHTML2; //polyannoVoteOverlayHTML + closingHTML2;
       $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
     };
@@ -2209,15 +2216,14 @@ Polyanno.selected.textHighlighting = {
   fragment: null
 };
 
-function getSelected() {
-  if(window.getSelection) { return window.getSelection() }
+var getSelected = function() {
+  if(window.getSelection) { return window.getSelection(); }
   else if(document.getSelection) { return document.getSelection(); }
   else {
     var selection = document.selection && document.selection.createRange();
     if(selection.text) { return selection.text; }
     return false;
   }
-  return false;
 };
 
 var newSpanClass = function(startParentClass) {
@@ -2229,11 +2235,12 @@ var newSpanClass = function(startParentClass) {
   }
   else {
     return null;
-  };
+  }
 };
 
 var strangeTrimmingFunction = function(thetext) {
-  if(thetext && (thetext = new String(thetext).replace(/^\s+|\s+$/g,''))) {
+  var t = new String(thetext).replace(/^\s+|\s+$/g,'');
+  if(thetext && t) {
     return thetext.toString();
   }; 
 };
@@ -2333,7 +2340,7 @@ var setNewTextVariables = function(selection, classCheck) {
     Polyanno.selected.textHighlighting.type = "transcription";
     var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
     var t = Polyanno.transcriptions.getById(thisid);
-    alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+    //alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
     Polyanno.selected.transcriptions.add(t);
     $(selection.anchorNode.parentElement).popover("show");
   }
@@ -2422,7 +2429,7 @@ var polyanno_new_anno_via_selection = function(base) {
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
 
-  alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
@@ -2443,7 +2450,7 @@ var polyanno_new_anno_via_selection = function(base) {
 
   Polyanno.selected.textHighlighting = {};
 
-  alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
+  //alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
 
 };
 
@@ -2570,7 +2577,7 @@ var anticlockwise_corner_angle = function(vertex1, vertex2, vertex3) {
   var anticlockwise_angle_v1 = anticlockwise_vertex_angle(vertex1, vertex2);
   var anticlockwise_angle_v3 = anticlockwise_vertex_angle(vertex3, vertex2);
   var angle = anticlockwise_angle_v3 - anticlockwise_angle_v1;
-  if (angle < 0) { angle = 360 + angle; };
+  if (angle < 0) { angle = 360 + angle; }
 
   var grad = (vertex2[1] - vertex1[1])/(vertex2[0] - vertex1[0]); //Math.tan(anticlockwise_angle_v1* Math.PI/180);
   var c = vertex1[1] - (vertex1[0] * grad);
@@ -2590,7 +2597,7 @@ var polyanno_find_shape_between = function(the_shape, point_a_index, point_b_ind
     var shape_start = the_shape.slice(1, point_b_index); // start not inlcuding ending, then up to, but not including, b
     var shape_end = the_shape.slice(point_a_index+1); // from (a + 1) to end
     return shape_end.concat(shape_start);
-  };
+  }
 };
 
 var find_concavity_angles = function(coordinates) {
@@ -2640,7 +2647,7 @@ var find_linear_intersection = function(m1, c1, m2, c2, a_coords, b_coords) {
   ////these two are listed as NaN.....
   var intersect_x = diffC / diffM;
   var intersect_y = (m1 * intersect_x) + c1;
-  alert("so this line of y="+m1+"x + "+c1+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+m2+"x +"+c2);
+  //alert("so this line of y="+m1+"x + "+c1+" could intersect at \n["+intersect_x+","+intersect_y+"] and the two coords are "+JSON.stringify(a_coords)+" and "+JSON.stringify(b_coords)+"\nwith an equation of y="+m2+"x +"+c2);
 
   var a_x = a_coords[0];
   var a_y = a_coords[1];
@@ -2648,12 +2655,13 @@ var find_linear_intersection = function(m1, c1, m2, c2, a_coords, b_coords) {
   var b_y = b_coords[1];
 
   if (( ((a_x < b_x) && (a_x < intersect_x) && (intersect_x < b_x)) || ((a_x > b_x) && (b_x < intersect_x) && (intersect_x < a_x)) ) &&
-  ( ((a_y < b_y) && (a_y < intersect_y) && (intersect_y < b_y)) || ((a_y > b_y) && (b_y < intersect_y) && (intersect_y < a_y)) )) { 
+  ( ((a_y < b_y) && (a_y < intersect_y) && (intersect_y < b_y)) || ((a_y > b_y) && (b_y < intersect_y) && (intersect_y < a_y)) )) 
+  { 
     return [intersect_x, intersect_y];
   }
   else {
     return null;
-  };
+  }
 };
 
 var find_P_intersection = function(eq, new_grad, new_c, prev_coords) {
@@ -2687,12 +2695,12 @@ var naive_ocd_vertex = function(equation, line_equations) {
   var new_grad = linear[0];
   var new_c = linear[1];
 
-  alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
+  //alert("so for notch with incoming angle of "+equation[0]+" and diff of "+equation[2]+"\nthe split line has angle of "+new_angle+" and gradient of "+new_grad);
 
   for (var no=0; no < line_equations.length; no++) {
     var eq = line_equations[no];
     if ((eq[3] != v_index) && (eq[3] != v_next_index)) { 
-      alert("This eq1 is "+JSON.stringify(eq[1])+" and the a_coords are "+JSON.stringify(eq[4])+" with b_coords of "+JSON.stringify(eq[3]));
+      //alert("This eq1 is "+JSON.stringify(eq[1])+" and the a_coords are "+JSON.stringify(eq[4])+" with b_coords of "+JSON.stringify(eq[3]));
       var x_pattern_line = find_P_intersection(eq, new_grad, new_c, v_index);
       if (x_pattern_line != null) { 
         //x-pattern line equation ---> [angle, offset, angle_diff, coordinates, prev_coords, next_coords, index, degree]
@@ -2840,7 +2848,7 @@ var x_patterns_ocd = function(notches_array, p_patterns) {
   the_OCD_array.push({"_id": this_id, "coordinates": this_geometry});
   */
 
-  alert("the OCD is "+JSON.stringify(OCD_array));
+  //alert("the OCD is "+JSON.stringify(OCD_array));
 
   return OCD_array;
 };
@@ -3156,7 +3164,7 @@ var polyanno_merge_overlap_iteration = function(initial_geometry, drawnItem) {
 
 var polyanno_merge_shape_avoid_overlap = function(initial_geometry, merge_array) {
   var geometry_array = initial_geometry;
-  allDrawnItems.eachLayer(function(layer){
+  Polyanno.leaflet.vectors.eachLayer(function(layer){
       if (merge_array.includes(layer)) {    } //unsure if this will work with the file types involved?
       else {
         var drawnItem = layer.toGeoJSON();
@@ -3211,17 +3219,17 @@ var polyanno_update_merge_shape = function(temp_shape_layer, new_vec_layer, merg
   tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
   tempGeoJSON.properties.children.push(new_vec_layer._leaflet_id);
 
-  temp_merge_shape.removeLayer(temp_shape_layer);
+  Polyanno.leaflet.suggestedParentVector.removeLayer(temp_shape_layer);
 
   L.geoJson(tempGeoJSON, 
         { style: {color: Polyanno.colours.processing.vector },
           onEachFeature: function (feature, layer) {
-            temp_merge_shape.addLayer(layer),
+            Polyanno.leaflet.suggestedParentVector.addLayer(layer),
             layer.bringToBack(),
             Polyanno.buildingParents.parent.vector = layer
           }
-        }).addTo(polyanno_map);
-  temp_merge_shape.bringToBack();
+        }).addTo(Polyanno.leaflet.map);
+  Polyanno.leaflet.suggestedParentVector.bringToBack();
 };
 
 var polyanno_add_first_merge_shape = function(shape_to_copy) {
@@ -3243,12 +3251,12 @@ var polyanno_add_first_merge_shape = function(shape_to_copy) {
   L.geoJson(tempGeoJSON, 
         { style: {color: Polyanno.colours.processing.vector },
           onEachFeature: function (feature, layer) {
-            temp_merge_shape.addLayer(layer),
+            Polyanno.leaflet.suggestedParentVector.addLayer(layer),
             layer.bringToBack(),
             Polyanno.buildingParents.parent.vector = layer
           }
-        }).addTo(polyanno_map);
-  temp_merge_shape.bringToBack();
+        }).addTo(Polyanno.leaflet.map);
+  Polyanno.leaflet.suggestedParentVector.bringToBack();
 };
 
 var polyanno_submit_merge_shape = function() {
@@ -3257,13 +3265,13 @@ var polyanno_submit_merge_shape = function() {
   L.geoJson(thisJSON, 
         { style: {color: Polyanno.colours.default.vector},
           onEachFeature: function (feature, layer) {
-            allDrawnItems.addLayer(layer),
+            Polyanno.leaflet.vectors.addLayer(layer),
             submitted_layer_id = layer._leaflet_id,
             layer.bringToBack()
           }
-        }).addTo(polyanno_map);
-  temp_merge_shape.removeLayer(Polyanno.buildingParents.parent.vector);  
-  var submitted_layer = allDrawnItems.getLayer(submitted_layer_id);
+        }).addTo(Polyanno.leaflet.map);
+  Polyanno.leaflet.suggestedParentVector.removeLayer(Polyanno.buildingParents.parent.vector);  
+  var submitted_layer = Polyanno.leaflet.vectors.getLayer(submitted_layer_id);
   return submitted_layer;    
 };
 
@@ -3288,17 +3296,17 @@ var polyanno_remove_merge_shape = function(vec_removed, merge_shape) {
 
   ///replace with setLatLngs method??
 
-  temp_merge_shape.removeLayer(merge_shape);
+  Polyanno.leaflet.suggestedParentVector.removeLayer(merge_shape);
 
   L.geoJson(new_shape, 
         { style: {color: Polyanno.colours.processing.vector },
           onEachFeature: function (feature, layer) {
-            temp_merge_shape.addLayer(layer),
+            Polyanno.leaflet.suggestedParentVector.addLayer(layer),
             layer.bringToBack(),
             Polyanno.buildingParents.parent.vector = layer
           }
-        }).addTo(polyanno_map);
-  temp_merge_shape.bringToBack();
+        }).addTo(Polyanno.leaflet.map);
+  Polyanno.leaflet.suggestedParentVector.bringToBack();
 
 };
 
@@ -3448,7 +3456,7 @@ var polyanno_extracting_merged_anno = function(text_type, children_array, vec) {
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  alert("this merged anno is "+JSON.stringify(this_child));
+  //alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -3567,7 +3575,7 @@ var polyanno_enable_merging_listeners = function() {
     ///
   };
 
-  allDrawnItems.eachLayer(function(vec){
+  Polyanno.leaflet.vectors.eachLayer(function(vec){
     var n = vec._leaflet_id.toString();
     Polyanno.intEffects.buildingParents.vector.mouseover[n] = this_mouseover_listener;
     Polyanno.intEffects.buildingParents.vector.mouseout[n] = this_mouseout_listener;
@@ -3586,10 +3594,10 @@ var polyanno_building_parents_enabled = function() {
   Polyanno.buildingParents.status = true;
 
   ///disabled unnecessary functionailty
-  polyanno_draw_control.remove();
+  Polyanno.leaflet.drawControl.default.remove();
   polyanno_disable_keyboards();
 
-  polyanno_map.fitBounds(allDrawnItems.getBounds());
+  Polyanno.leaflet.map.fitBounds(Polyanno.leaflet.vectors.getBounds());
   polyanno_enable_merging_listeners();
 
   animate_moving_image_box_focus_end(function() {
@@ -3616,7 +3624,7 @@ var polyanno_building_parents_enabled = function() {
       var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
         return t._id = s;
       });
-      var vec = allDrawnItems.getLayer(arr[0].vector);
+      var vec = Polyanno.leaflet.vectors.getLayer(arr[0].vector);
       ////
 
     },
@@ -3672,7 +3680,7 @@ var polyanno_building_parents_disabled = function() {
     var this_vec = Polyanno.buildingParents.vectors[i];
     this_vec.unbindTooltip();
   };
-  allDrawnItems.bindPopup(popupVectorMenu);
+  Polyanno.leaflet.vectors.bindPopup(Polyanno.leaflet.menu.newVector);
  
   //reset variables
   Polyanno.buildingParents.parent.vector = false;
@@ -3708,7 +3716,7 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
 
   $(".polyanno-merge-shapes-submit-btn").on("click", function (event) {
 
-    polyanno_draw_control.addTo(polyanno_map);
+    Polyanno.leaflet.drawControl.default.addTo(Polyanno.leaflet.map);
 
     if (Polyanno.buildingParents.vectors.length > 1) {
       var layer = polyanno_submit_merge_shape();
@@ -3721,16 +3729,16 @@ var polyanno_leaflet_merge_polyanno_button_setup = function() {
       polyanno_new_vector_made(layer, shape, false, the_children_array, polyanno_posted_merge_shape, true); //layer, shape, parent, children, callback, fromMerge
     }
     else {
-      temp_merge_shape.removeLayer(Polyanno.buildingParents.parent.vector);
+      Polyanno.leaflet.suggestedParentVector.removeLayer(Polyanno.buildingParents.parent.vector);
       polyanno_building_parents_disabled();
     };
   }); 
 
   $(".polyanno-merge-shapes-cancel-btn").on("click", function(event){
 
-    polyanno_draw_control.addTo(polyanno_map);
+    Polyanno.leaflet.drawControl.default.addTo(Polyanno.leaflet.map);
 
-    temp_merge_shape.removeLayer(Polyanno.buildingParents.parent.vector);
+    Polyanno.leaflet.suggestedParentVector.removeLayer(Polyanno.buildingParents.parent.vector);
     polyanno_building_parents_disabled();
   });
 
@@ -3860,90 +3868,86 @@ var polyanno_findLUNAimage_description = function(IIIFmetadata) {
 
 /////////LEAFLET SETUP
 
-var polyanno_map;
-var baseLayer;
-var allDrawnItems = new L.FeatureGroup();
-var temp_merge_shape = new L.FeatureGroup();
-////set default colours here....
-var controlOptions = {
-    draw: {
-        polygon: {
-          allowIntersection: false,
-          shapeOptions: {
-            color: Polyanno.colours.default.vector
-          }
-        },
-        rectangle: {
-          shapeOptions: {
-            color: Polyanno.colours.default.vector
-          }
-        },  
-        circle: false,      
-        polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
-        marker: false
-    },
-    edit: {
-        featureGroup: allDrawnItems //passes draw controlOptions to the FeatureGroup of editable layers
-    }
+Polyanno.leaflet = {};
+
+Polyanno.leaflet.vectors = new L.FeatureGroup();
+Polyanno.leaflet.suggestedParentVector = new L.FeatureGroup();
+
+Polyanno.leaflet.drawControl = {};
+
+Polyanno.leaflet.drawControl.default = new L.Control.Draw({
+  draw: {
+      polygon: {
+        allowIntersection: false,
+        shapeOptions: {
+          color: Polyanno.colours.default.vector
+        }
+      },
+      rectangle: {
+        shapeOptions: {
+          color: Polyanno.colours.default.vector
+        }
+      },  
+      circle: false,      
+      polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
+      marker: false
+  },
+  edit: {
+      featureGroup: Polyanno.leaflet.vectors //passes draw control options to the FeatureGroup of editable layers
+  }
+});
+
+Polyanno.leaflet.drawControl.connectingEquals = new L.Control.Draw({
+  draw: {
+      polygon: {
+        allowIntersection: false,
+        shapeOptions: {
+          color: Polyanno.colours.highlight.vector
+        }
+      },
+      rectangle: {
+        shapeOptions: {
+          color: Polyanno.colours.highlight.vector
+        }
+      },  
+      circle: false,      
+      polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
+      marker: false
+  },
+  edit: false
+});
+
+
+Polyanno.leaflet.menu = {
+  newVector: L.popup().setContent(popupVectorMenuHTML),
+  overlaps: L.popup().setContent("<p>You cannot draw overlapping shapes.</p>"),
+  isChild: L.popup().setContent("<p>Highlight the text first and then draw a smaller shape for it.</p>"),
+  isParent: L.popup().setContent("<p>To make a larger shape you must connect the smaller shapes in order using the connecting button.</p>"),
+  invalidConnectingEquals: L.popup().setContent("<p>Please draw inside the correct larger shape!</p>")
 };
+ 
 
-var polyanno_draw_control;
-
-var popupVectorMenu;
-var overlappingShapesPopup;
-var newShapeIsChildPopup;
-var newShapeIsParentPopup;
-var connectingEqualsWrongParentPopup;
 
 var polyanno_leaflet_basic_setup = function() {
 
-  popupVectorMenu = L.popup().setContent(popupVectorMenuHTML);
-
-  overlappingShapesPopup = L.popup().setContent("<p>You cannot draw overlapping shapes.</p>");
-  newShapeIsChildPopup = L.popup().setContent("<p>Highlight the text first and then draw a smaller shape for it.</p>");
-  newShapeIsParentPopup = L.popup().setContent("<p>To make a larger shape you must connect the smaller shapes in order using the connecting button.</p>");
-  connectingEqualsWrongParentPopup = L.popup().setContent("<p>Please draw inside the correct larger shape!</p>");
-  
-  polyanno_map = L.map('polyanno_map');
-  polyanno_map.options.crs = L.CRS.Simple;
-  polyanno_map.options.maxBoundsViscosity = 0.9;
-  polyanno_map.setView(
+  Polyanno.leaflet.map = L.map('polyanno_map');
+  Polyanno.leaflet.map.options.crs = L.CRS.Simple;
+  Polyanno.leaflet.map.options.maxBoundsViscosity = 0.9;
+  Polyanno.leaflet.map.setView(
     [0, 0], //centre coordinates
     0 //zoom needs to vary according to size of object in viewer but whatever
   );
-  polyanno_map.options.crs = L.CRS.Simple;
+  Polyanno.leaflet.map.options.crs = L.CRS.Simple;
 
-  baseLayer = L.tileLayer.iiif(imageSelected);
+  Polyanno.leaflet.iiifLayer = L.tileLayer.iiif(imageSelected);
 
-  polyanno_map.addLayer(baseLayer);
+  Polyanno.leaflet.map.addLayer(Polyanno.leaflet.iiifLayer);
+  Polyanno.leaflet.map.addLayer(Polyanno.leaflet.suggestedParentVector);
+  Polyanno.leaflet.map.addLayer(Polyanno.leaflet.vectors);
 
-  polyanno_map.addLayer(temp_merge_shape);
+  Polyanno.leaflet.drawControl.default.addTo(Polyanno.leaflet.map);
 
-  polyanno_map.addLayer(allDrawnItems);
-
-  polyanno_draw_control = new L.Control.Draw(controlOptions);
-  Polyanno.connectingEquals.leafletControl = new L.Control.Draw({
-    draw: {
-        polygon: {
-          allowIntersection: false,
-          shapeOptions: {
-            color: Polyanno.colours.highlight.vector
-          }
-        },
-        rectangle: {
-          shapeOptions: {
-            color: Polyanno.colours.highlight.vector
-          }
-        },  
-        circle: false,      
-        polyline: false,  //disables the polyline and marker feature as this is unnecessary for annotation of text as it cannot enclose it
-        marker: false
-    },
-    edit: false
-  });
-  polyanno_draw_control.addTo(polyanno_map); //
-
-  polyanno_map.whenReady(function(){
+  Polyanno.leaflet.map.whenReady(function(){
     mapset = true;
     polyanno_annos_of_target(imageSelected, "vector", polyanno_load_existing_vectors);
     polyanno_vec_created();
@@ -3956,7 +3960,7 @@ var polyanno_leaflet_basic_setup = function() {
 
 
 var polyanno_vec_created = function() {
-  polyanno_map.on(L.Draw.Event.CREATED, function(evt) {
+  Polyanno.leaflet.map.on(L.Draw.Event.CREATED, function(evt) {
 
     var layer = evt.layer;
 
@@ -3968,21 +3972,21 @@ var polyanno_vec_created = function() {
       var shape = layer.toGeoJSON();
       //[number, overlap_array, parent_array, children_array]
       //where number: 0 = no overlap, 1 = overlap, 2 = new shape is a child, 3 = new shape is a parent
-      var checkingOverlapping = check_this_shape_for_overlapping(shape, allDrawnItems, false, true, true);
+      var checkingOverlapping = check_this_shape_for_overlapping(shape, Polyanno.leaflet.vectors, false, true, true);
 
-      allDrawnItems.addLayer(layer);
+      Polyanno.leaflet.vectors.addLayer(layer);
 
       if (checkingOverlapping[0] == 1) {  
-        allDrawnItems.removeLayer(layer);
-        var mapCentre = polyanno_map.getCenter();
-        overlappingShapesPopup.setLatLng(mapCentre).openOn(polyanno_map);
+        Polyanno.leaflet.vectors.removeLayer(layer);
+        var mapCentre = Polyanno.leaflet.map.getCenter();
+        Polyanno.leaflet.menu.overlaps.setLatLng(mapCentre).openOn(Polyanno.leaflet.map);
         setTimeout(function(){
-          polyanno_map.closePopup();
+          Polyanno.leaflet.map.closePopup();
         }, 2000);
       }
 
       else if (checkingOverlapping[0] == 2)  {   
-        allDrawnItems.removeLayer(layer);
+        Polyanno.leaflet.vectors.removeLayer(layer);
 
         Polyanno.selected.reset();
         var parentLayer = checkingOverlapping[2][0];
@@ -3993,7 +3997,7 @@ var polyanno_vec_created = function() {
         if (translations_ids.length != 0) { Polyanno.selected.translations.add(translations_ids[0]); };
 
         var popLtLngs = parentLayer.getBounds().getCenter();
-        newShapeIsChildPopup.setLatLng(popLtLngs).openOn(polyanno_map);
+        Polyanno.leaflet.menu.isChild.setLatLng(popLtLngs).openOn(Polyanno.leaflet.map);
         setTimeout(function(){
           parentLayer.openPopup();
         }, 2000);
@@ -4001,14 +4005,14 @@ var polyanno_vec_created = function() {
 
       else if (checkingOverlapping[0] == 3)  { 
         var popLtLngs = layer.getBounds().getCenter();  
-        allDrawnItems.removeLayer(layer);
+        Polyanno.leaflet.vectors.removeLayer(layer);
         for (var t=0; t < checkingOverlapping[3].length; t++) {
           checkingOverlapping[3][t].setStyle({color: Polyanno.colours.processing.vector});
         };
-        newShapeIsParentPopup.setLatLng(popLtLngs).openOn(polyanno_map);
+        Polyanno.leaflet.menu.isParent.setLatLng(popLtLngs).openOn(Polyanno.leaflet.map);
         $("#polyanno-merge-shapes-enable").removeClass("btn-default").addClass("btn-warning", 500);
         setTimeout(function(){
-          polyanno_map.closePopup();
+          Polyanno.leaflet.map.closePopup();
         }, 2000);
         setTimeout(function(){
           $("#polyanno-merge-shapes-enable").removeClass("btn-warning").addClass("btn-default", 500);
@@ -4031,7 +4035,7 @@ var polyanno_vec_created = function() {
 
 var polyanno_vec_click = function() {
 
-  allDrawnItems.on('click', function(vec) {
+  Polyanno.leaflet.vectors.on('click', function(vec) {
 
     //reset Selected
     Polyanno.selected.reset();
@@ -4050,11 +4054,11 @@ var polyanno_vec_click = function() {
 
 var polyanno_vec_edit = function() {
 
-  polyanno_map.on(L.Draw.Event.EDITSTART, function(){
+  Polyanno.leaflet.map.on(L.Draw.Event.EDITSTART, function(){
     Polyanno.selected.currentlyEditing = true;
   });
 
-  polyanno_map.on(L.Draw.Event.EDITVERTEX, function(layers){
+  Polyanno.leaflet.map.on(L.Draw.Event.EDITVERTEX, function(layers){
 
     ///eventually use ghosting and checking but for now
 
@@ -4071,11 +4075,11 @@ var polyanno_vec_edit = function() {
 
 var polyanno_vec_delete = function() {
 
-  polyanno_map.on(L.Draw.Event.DELETESTART, function(){
+  Polyanno.leaflet.map.on(L.Draw.Event.DELETESTART, function(){
     Polyanno.selected.currentlyDeleting = true;
   });
 
-  polyanno_map.on(L.Draw.Event.DELETED, function(){
+  Polyanno.leaflet.map.on(L.Draw.Event.DELETED, function(){
 
     if (Polyanno.vectors.array.length == 0) {
       $("#polyanno-merge-shapes-enable").addClass("disabled").prop('disabled', true);
@@ -4299,7 +4303,7 @@ var createCustomKeyboard = function() {
 
 /////////////
 
-var polyanno_setup_storage_fields = function(opts) {
+Polyanno.starting.storage_fields = function(opts) {
   Polyanno.urls = {
     "vector": websiteAddress.concat("/api/vectors/"),
     "transcription": websiteAddress.concat("/api/transcriptions/"),
@@ -4314,20 +4318,20 @@ var polyanno_setup_storage_fields = function(opts) {
   };
 };
 
-var polyanno_setup_storage = function(opts) {
+Polyanno.starting.storage = function(opts) {
   
   if ( (!isUseless(opts)) && (!isUseless(opts.base_url)) ) {
     websiteAddress = opts.base_url;
-    polyanno_setup_storage_fields(opts);
+    Polyanno.starting.storage_fields(opts);
   }
   else {
     websiteAddress = "http://"+window.location.host;
-    polyanno_setup_storage_fields(opts);
+    Polyanno.starting.storage_fields(opts);
   };
 
 };
 
-var polyanno_setup_voting = function() {
+Polyanno.starting.voting = function() {
 
   $('#polyanno-page-body').on("click", '.votingUpButton', function(event) {
     var votedID = $(event.target).closest(".polyanno-text-display").find("p").attr("id");
@@ -4339,7 +4343,7 @@ var polyanno_setup_voting = function() {
   });
 };
 
-var polyanno_setup_editor_events = function() {
+Polyanno.starting.editor_events = function() {
   var the_tags_html = "<div class='row'>";
   $('.polyanno-image-metadata-tags-btn').on("click", function(event){
     var tagHTML1 = "<a class='polyanno-tag' >";
@@ -4394,7 +4398,7 @@ var polyanno_setup_editor_events = function() {
     thisEditor.setSelected();
     var parent_anno = Polyanno.transcriptions.getById(Polyanno.selected.transcriptions.array[0].parent.id);
     var parent_vector_id = checkForVectorTarget(null);
-    var the_parent_vector = allDrawnItems.getLayer(parent_vector_id);
+    var the_parent_vector = Polyanno.leaflet.vectors.getLayer(parent_vector_id);
     Polyanno.connectingEquals = {
       status: true,
       siblings: Polyanno.selected.transcriptions.array,
@@ -4445,7 +4449,7 @@ var polyanno_setup = function(opts) {
   };
 
   ///this is currently compulsory and synchronous but should use a local storage in parallel soon too like Leaflet Draw?
-  polyanno_setup_storage(opts.storage);
+  Polyanno.starting.storage(opts.storage);
 
   if (!isUseless(opts.editor_options)) {  polyannoEditorHTML_options = polyannoEditorHTML_options_partone + opts.editor_options + polyannoEditorHTML_options_parttwo; };
 
@@ -4468,11 +4472,11 @@ var polyanno_setup = function(opts) {
 
   polyanno_leaflet_basic_setup();
 
-  if (!isUseless(opts.highlighting)) {  polyanno_setup_highlighting();  };
+  if (!isUseless(opts.highlighting)) {  Polyanno.starting.highlighting();  };
 
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
 
-  polyanno_setup_editor_events();
+  Polyanno.starting.editor_events();
 
   $(".atu-custom-keyboard-buttons").toggle();
   $(".atu-custom-keyboard-btn").on("click", function(event){
