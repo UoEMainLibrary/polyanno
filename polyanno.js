@@ -36,14 +36,6 @@ var polyanno_image_viewer_HTML = `
   `;
 
 
-var polyannoVoteOverlayHTML = `<div class='polyanno-voting-overlay' >
-                        <button type='button' class='btn btn-default polyanno-standard-btn voteBtn polyannoVotingUpButton'>
-                          <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
-                        </button>
-                        <button type='button' class='btn btn-default polyanno-standard-btn polyannoVotesUpBadge'>
-                          <span class='badge'></span>
-                        </button>
-                      </div>`;
 var closeButtonHTML = `<span class='closePopoverMenuBtn glyphicon glyphicon-remove'></span>`;
 
 var transcriptionIconHTML = `<span class='glyphicon glyphicon-list-alt'></span>
@@ -74,6 +66,21 @@ var polyannoEditorHTML_options_parttwo = `</div>`;
 
 var polyannoEditorHTML_options = polyannoEditorHTML_options_partone + polyannoEditorHTML_options_parttwo;
 
+var polyannoVotingRow1 = `
+  <div class='polyanno-voting-overlay'>
+    <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
+      <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
+    </button>
+    <button disabled type='button' class='btn btn-default polyannoVotesUpBadge'>
+      <span class='badge'>
+`;
+
+var polyannoVotingRow2 = `
+      </span>
+    </button>
+  </div>
+`;
+
 var polyannoEditorHTML_partfinal = `
       <div class="row polyanno-vector-link-row">
         <button type="button" class="btn polyannoEditorDropdownBtn polyannoLinkVectorBtn">
@@ -83,14 +90,6 @@ var polyannoEditorHTML_partfinal = `
 
       <div class="row polyanno-top-voted polyanno-text-display">
       
-        <div class='polyanno-voting-overlay' >
-          <button type='button' class='btn btn-default voteBtn polyannoVotingUpButton'>
-            <span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' ></span>
-          </button>
-          <button type='button' class='btn btn-default polyannoVotesUpBadge'>
-            <span class='badge'></span>
-          </button>
-        </div>
       </div>
 
       <div class="row polyanno-alternatives-toggle-row">
@@ -252,7 +251,9 @@ var findByID = function(array, id) {
 var arraySearchReplace = function(annoField, doc) {
   var existing = findByID(annoField, doc.id);
   if (existing.length > 0) {
-    return annoField.splice(annoField.indexOf(existing[0]), 1, doc);
+    var index = annoField.indexOf(existing[0]);
+    annoField.splice(index, 1, doc);
+    return annoField;
   }
   else {
     return false;
@@ -1221,9 +1222,23 @@ Polyanno.baseTextObject = function(value) {
   if (!isUseless(opts.parent)) {  this.parent = opts.parent; };
   this.voting = {
     up: 0,
-    down: 0
+    down: 0,
+    rank: 0
   };
 };
+
+
+Object.defineProperty(Polyanno.baseTextObject.prototype, "voting.up", {
+  enumerable: true,
+  set: function() {
+    var plural = this.type.concat("s");
+    alert("the plural is "+plural);
+    rank = voteChangeRank(Polyanno.transcriptions, this, 1);
+  }
+});
+
+
+/////Methods
 
 var sharedParentSearch = function(arr, item) {
   var array = $.grep(arr, function(a){
@@ -1268,6 +1283,7 @@ var voteChangeRank = function(arr, item, vote) {
       return arr[neighbour].rank + vote;
     };
   };
+  alert("so now the text is "+JSON.stringify(item));
 };
 
 
@@ -1301,11 +1317,14 @@ var votingFunction = function(vote, votedID, thisEditor) {
   var type = thisEditor.type;
   var plural = type.concat("s");
   var targetID = Polyanno.urls[type].concat(votedID); ///API URL of the annotation voted on
+
   var thisText = Polyanno[plural].getById(targetID);
 
   var votedTextBody = $("#"+votedID).html(); 
 
-  thisText.voting[vote];
+  thisText.voting[vote] = thisText.voting[vote] + 1;
+  thisText.voting.rank = voteChangeRank(Polyanno[plural], thisText, +1); ///currently only upvoting
+
 
   ////if change in rank necessitates a reload in parent text is this done here or elsewhere???
 
@@ -1321,7 +1340,7 @@ var findHighestRankingChild = function(the_parent_json_children, locationID) {
   return polyanno_find_highest_ranking_frag_child(theLocation);
 };
 
-/////Methods
+
 
 
 
@@ -1359,22 +1378,6 @@ Polyanno.transcription = function(value) {
 };
 
 
-Object.defineProperty(Polyanno.transcription.prototype, "voting.up", {
-  enumerable: true,
-  set: function() {
-    voting.up += 1;
-    rank = voteChangeRank(Polyanno.transcriptions, this, 1);
-  }
-});
-
-Object.defineProperty(Polyanno.transcription.prototype, "voting.down", {
-  enumerable: true,
-  set: function() {
-    voting.up -= 1;
-    rank = voteChangeRank(Polyanno.transcriptions, this, -1);
-  }
-});
-
 /////Methods
 
 
@@ -1392,6 +1395,7 @@ Polyanno.transcription.prototype.update = function(opts) {
   for (var property in opts) {
     this[property] = opts[property];
   };
+
   Polyanno.transcriptions.replaceOne(this);
 
   var ev2 = new PolyannoEvent({
@@ -1637,9 +1641,9 @@ var polyanno_new_vector_made = function(layer, shape, vector_parent, vector_chil
 
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
-  //Polyanno.annotations.add(new_anno);
+  Polyanno.annotations.add(new_anno);
 
-  //Polyanno.selected.vectors.add(data);
+  Polyanno.selected.vectors.add(data);
   Polyanno.selected.targets = targetData.target.concat([{"id": data.id, "format": "image/SVG"}]);
 
   //Leaflet
@@ -1901,17 +1905,7 @@ Polyanno.editor = function(textType) {
     if (!isUseless(mainText.parent)) {
 
       $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
-
-      //enable listening event for voting display   
-      ////improve to hover because otherwise flickering for small text displays!!
-      $(popupIDstring).on("mouseenter", ".polyanno-text-display", function(event){
-        //$(event.target).find(".polyanno-voting-overlay").css("display", "block");
-        $(event.target).find(".polyanno-voting-overlay").show("swing");
-      });
-      $(popupIDstring).on("mouseleave", ".polyanno-voting-overlay", function(event){
-        //$(event.target).find(".polyanno-voting-overlay").css("display", "none");
-        $(event.target).find(".polyanno-voting-overlay").hide("swing");
-      });      
+    
     };
 
     polyanno_display_editor_texts(Polyanno.selected[plural].array, popupIDstring);
@@ -2088,7 +2082,7 @@ var polyanno_build_text_display_row = function(polyannoTextAnno) {
   var closingHTML1 = "</p>"
   var itemText = polyannoTextAnno.text;
   var itemID = polyannoTextAnno._id;
-  var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1; 
+  var itemHTML = paragraphHTML + itemID + middleHTML + itemText + closingHTML1 + polyannoVotingRow1 + polyannoTextAnno.voting.up + polyannoVotingRow2; ///////********voting
   return itemHTML;
 };
 
@@ -2112,7 +2106,7 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
 
       //****need to debug the voting overlay*****
 
-      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + closingHTML2; //polyannoVoteOverlayHTML + closingHTML2;
+      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + closingHTML2; 
       $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
     };
 
@@ -2382,8 +2376,6 @@ Polyanno.textHighlighting.new = function(base) {
   var data = new Polyanno[base](targetData);
   Polyanno[plural].add(data);
 
-  //alert("after adding the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
-
   targetData.body = data;
   var new_anno = new Polyanno.annotation(targetData);
   Polyanno.annotations.add(new_anno);
@@ -2402,8 +2394,6 @@ Polyanno.textHighlighting.new = function(base) {
   ////polyanno storage loop
 
   Polyanno.textHighlighting = {};
-
-  //alert("at the end of the function the data is "+JSON.stringify(data)+" and they are "+JSON.stringify(Polyanno.transcriptions.array));
 
 };
 
@@ -3075,7 +3065,7 @@ var polyanno_redirect_shape_boundary = function(initial_geometry, convex_shape, 
     var second_v = i + 1;
     if (i == (initial_geometry.length - 1)) { second_v = 0  };
     var intersects = find_edge_intersection(initial_geometry[i], initial_geometry[second_v], convex_shape[vertex1_index], convex_shape[conflict_vertex_index]);
-    if (intersects != false) {  new_geometry = initial_geometry.splice(second_v, 0, intersects);  };
+    if (intersects != false) {  initial_geometry.splice(second_v, 0, intersects); new_geometry = initial_geometry; };
   };
   return new_geometry;
 };
@@ -3282,8 +3272,11 @@ Polyanno.buildingParents.vector.remove = function(vec_removed, merge_shape) {
     };
   };
   if (removing_coords.includes(old_coords[0])) {
-    var new_start = new_coords.splice(0,1);
-    new_coords.push(new_start);
+    var the_coords = new_coords;
+    new_coords.splice(0,1);
+    new_start = new_coords;
+    the_coords.push(new_start);
+    new_coords = the_coords;
   };
   var new_shape = old_shape_JSON;
   new_shape.geometry.coordinates[0] = new_coords;
@@ -3362,7 +3355,8 @@ Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, arr
       permanent: true,
       direction: 'auto'
     });
-  var affected_array = merge_array.splice(array_index+1);
+  var affected_array = merge_array;
+  affected_array.splice(array_index+1);
   for (var i=0; i < affected_array.length; i++) {
     var this_vec = affected_array[i];
     this_vec.unbindTooltip();
@@ -3375,8 +3369,10 @@ Polyanno.buildingParents.numbers.rearrange = function(old_array_index, new_array
   var vec = arr[old_array_index];
   vec_removed.unbindTooltip();
   Polyanno.buildingParents.numbers.add(vec, new_array_index+1);
-  var arr2 = arr.splice(old_array_index, 1);
-  var merge_array = arr.splice(new_array_index, 0, vec);
+  var arr2 = arr;
+  arr2.splice(old_array_index, 1);
+  var merge_array = arr;
+  merge_array.splice(new_array_index, 0, vec);
   for (var i=0; i < merge_array.length; i++) {
     var this_vec = merge_array[i];
       this_vec.unbindTooltip();
@@ -4347,13 +4343,15 @@ Polyanno.starting.storage = function(opts) {
 
 Polyanno.starting.voting = function() {
 
-  $('#polyanno-page-body').on("click", '.votingUpButton', function(event) {
+  $('#polyanno-page-body').on("click", '.polyannoVotingUpButton', function(event) {
     var votedID = $(event.target).closest(".polyanno-text-display").find("p").attr("id");
     var currentTopText = $(event.target).closest(".textEditorPopup").find(".polyanno-top-voted").find("p").html();
     var thisEditorID = $(event.target).closest(".textEditorPopup").attr("id");
     var thisEditor = Polyanno.editors.getById(thisEditorID);
     thisEditor.setSelected();
+
     votingFunction("up", votedID, thisEditor);
+
   });
 };
 
@@ -4491,6 +4489,8 @@ var polyanno_setup = function(opts) {
   initialise_dragondrop("polyanno-page-body", {"minimise": polyanno_minimising });
 
   Polyanno.starting.editor_events();
+
+  Polyanno.starting.voting();
 
   $(".atu-custom-keyboard-buttons").toggle();
   $(".atu-custom-keyboard-btn").on("click", function(event){
