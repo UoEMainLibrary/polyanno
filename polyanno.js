@@ -1221,7 +1221,6 @@ Polyanno.baseTextObject = function(value) {
   if (!isUseless(opts.vector)) { this.vector = opts.vector;  };
   if (!isUseless(opts.parent)) {  this.parent = opts.parent; }
   else {  this.parent = null; };
-  alert("trying to set parent to "+JSON.stringify(opts.parent));
   this.voting = {
     up: 0,
     down: 0,
@@ -1250,34 +1249,34 @@ var setInitialRank = function(arr, item) {
     var blank = $.grep(all, function(a){
       return (a.voting.up == 0) && (a.voting.down == 0); //finding the other annos with no votes
     });
-    alert("the siblings are "+JSON.stringify(all)+"\n and so the none voted list is "+JSON.stringify(blank));
     if (all.length == 0) {  return 0; } //if it is the first child then it is the highest ranking
     else if (blank.length == 0) {
       return all[all.length -1].votingrank + 1; //if it is the only one with no votes then it is the lowest rank
     }
     else {
-      alert("the lowest ranking non-voted is "+JSON.stringify(blank[0]));
-      return blank[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
+      var nonvotedranked = blank.sort(function(x,y){
+        return y.voting.rank - x.voting.rank;
+      });
+      return nonvotedranked[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
     };
   };
 };
 
 var voteChangeRank = function(arr, item, vote) {
   ///vote = +1 or -1
-  var arr = sharedParentSearch(Polyanno.transcriptions.array, item);
-  alert("so now the sibling array is \n"+JSON.stringify(arr)+"\n and the full array is \n"+JSON.stringify(Polyanno.transcriptions.array)); ///
+  var siblings = sharedParentSearch(arr, item);
   var index = arr.indexOf(item);
   if (index != 0) {
     var neighbour = index - vote;
-    var diff = (arr[neighbour].voting.up - arr[neighbour].voting.down) - (item.voting.up - item.voting.down);
+    var diff = (siblings[neighbour].voting.up - siblings[neighbour].voting.down) - (item.voting.up - item.voting.down);
     while ((diff <= 0) && (neighbour >= 0) && (neighbour <= arr.length - 1)) {
       neighbour -= vote;
     };
-    if ((neighbour < 0) && (neighbour > arr.length - 1)){
-      return arr[(neighbour += vote)].voting.rank;
+    if ((neighbour < 0) && (neighbour > siblings.length - 1)){
+      return siblings[(neighbour += vote)].voting.rank;
     }
     else {
-      return arr[neighbour].voting.rank + vote;
+      return siblings[neighbour].voting.rank + vote;
     };
   };
 };
@@ -1319,7 +1318,7 @@ var votingFunction = function(vote, votedID, thisEditor) {
   var votedTextBody = $("#"+votedID).html(); 
 
   thisText.voting[vote] = thisText.voting[vote] + 1;
-  thisText.voting.rank = voteChangeRank(Polyanno[plural], thisText, +1); ///currently only upvoting
+  thisText.voting.rank = voteChangeRank(Polyanno[plural].array, thisText, +1); ///currently only upvoting
 
   ////if change in rank necessitates a reload in parent text is this done here or elsewhere???
 
@@ -2452,12 +2451,9 @@ Polyanno.selected.textBox.new = function(thisEditor){
   var type = thisEditor.type;
   var plural = type.concat("s");
 
-  alert("this editor is "+JSON.stringify(thisEditor));
-
   if (Polyanno.selected.vectors.array.length != 0) {  theData.vector =  Polyanno.selected.vectors.array[0].id; };
-  if (!isUseless(thisEditor.parent)) {  
-    //Polyanno.editors.getById(edID).docs[plural][0].id; 
-    theData.parent = thisEditor.parent.id;  
+  if ( (!isUseless(thisEditor.docs[plural][0])) && (!isUseless(thisEditor.docs[plural][0].parent)) ) {   
+    theData.parent = thisEditor.docs[plural][0].parent;  
   };
 
   var data = new Polyanno[type](theData);
