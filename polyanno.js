@@ -102,18 +102,18 @@ var polyannoEditorHTML_partfinal = `
 
       </div>
 
-      <div class="row polyanno-add-new-toggle-row">
-        <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
-          `+polyanno_new_anno_symbol+`
-        </button> 
-      </div>
-
       <div class="row polyanno-add-new-row">
         <div class='polyannoAddNewContainer col-md-12'> 
           <textarea id='testingKeys' class='newAnnotation row' placeholder='Add new annotation text here'></textarea><br>
           <button type='button' class='btn addAnnotationSubmit polyannoEditorDropdownBtn row'><span class='glyphicon glyphicon-ok-circle'></span></button>  
         </div> 
 
+      </div>
+
+      <div class="row polyanno-add-new-toggle-row">
+        <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
+          `+polyanno_new_anno_symbol+`
+        </button> 
       </div>
 
       <div class="row polyanno-add-new-cancel-row">
@@ -1219,7 +1219,9 @@ Polyanno.baseTextObject = function(value) {
   Polyanno.baseAnnotationObject.call(this, opts);
   this.text = opts.text;
   if (!isUseless(opts.vector)) { this.vector = opts.vector;  };
-  if (!isUseless(opts.parent)) {  this.parent = opts.parent; };
+  if (!isUseless(opts.parent)) {  this.parent = opts.parent; }
+  else {  this.parent = null; };
+  alert("trying to set parent to "+JSON.stringify(opts.parent));
   this.voting = {
     up: 0,
     down: 0,
@@ -1228,47 +1230,42 @@ Polyanno.baseTextObject = function(value) {
 };
 
 
-Object.defineProperty(Polyanno.baseTextObject.prototype, "voting.up", {
-  enumerable: true,
-  set: function() {
-    var plural = this.type.concat("s");
-    alert("the plural is "+plural);
-    rank = voteChangeRank(Polyanno.transcriptions, this, 1);
-  }
-});
-
-
 /////Methods
 
 var sharedParentSearch = function(arr, item) {
+  if (isUseless(item.parent)) { return []; };
   var array = $.grep(arr, function(a){
     return a.parent == item.parent;
   });
   return array.sort(function(x, y){
-    return x.rank - y.rank;
+    return x.voting.rank - y.voting.rank;
   });
 };
 
 var setInitialRank = function(arr, item) {
-  if (isUseless(arr)) {  return 0; }
+  ///those with more votes down could be ranked lower than those with no votes yet.
+  if (isUseless(arr)) {  return 0; } //if first of its kind at all then highest ranking
   else {
-    var all = sharedParentSearch(arr, item);
+    var all = sharedParentSearch(arr, item); //finds the other annos with the same parent ranked in order of rank
     var blank = $.grep(all, function(a){
-      return (a.voting.up == 0) && (a.voting.down == 0);
+      return (a.voting.up == 0) && (a.voting.down == 0); //finding the other annos with no votes
     });
-    if (all.length == 0) {  return 0; }
+    alert("the siblings are "+JSON.stringify(all)+"\n and so the none voted list is "+JSON.stringify(blank));
+    if (all.length == 0) {  return 0; } //if it is the first child then it is the highest ranking
     else if (blank.length == 0) {
-      return all[all.length -1].rank + 1;
+      return all[all.length -1].votingrank + 1; //if it is the only one with no votes then it is the lowest rank
     }
     else {
-      return blank[0].rank + 1;
+      alert("the lowest ranking non-voted is "+JSON.stringify(blank[0]));
+      return blank[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
     };
   };
 };
 
 var voteChangeRank = function(arr, item, vote) {
   ///vote = +1 or -1
-  var arr = votingRankSearch(Polyanno.transcriptions, item);
+  var arr = sharedParentSearch(Polyanno.transcriptions.array, item);
+  alert("so now the sibling array is \n"+JSON.stringify(arr)+"\n and the full array is \n"+JSON.stringify(Polyanno.transcriptions.array)); ///
   var index = arr.indexOf(item);
   if (index != 0) {
     var neighbour = index - vote;
@@ -1277,13 +1274,12 @@ var voteChangeRank = function(arr, item, vote) {
       neighbour -= vote;
     };
     if ((neighbour < 0) && (neighbour > arr.length - 1)){
-      return arr[(neighbour += vote)].rank;
+      return arr[(neighbour += vote)].voting.rank;
     }
     else {
-      return arr[neighbour].rank + vote;
+      return arr[neighbour].voting.rank + vote;
     };
   };
-  alert("so now the text is "+JSON.stringify(item));
 };
 
 
@@ -1325,13 +1321,12 @@ var votingFunction = function(vote, votedID, thisEditor) {
   thisText.voting[vote] = thisText.voting[vote] + 1;
   thisText.voting.rank = voteChangeRank(Polyanno[plural], thisText, +1); ///currently only upvoting
 
-
   ////if change in rank necessitates a reload in parent text is this done here or elsewhere???
 
 };
 
 var polyanno_find_highest_ranking_frag_child = function(location_json) {
-  var the_child = fieldMatching(location_json.fragments, "rank", 0); 
+  var the_child = fieldMatching(location_json.fragments, "voting.rank", 0); 
   return findField(the_child, "id");
 };
 
@@ -1354,7 +1349,9 @@ Polyanno.transcription = function(value) {
   };
   if (!isUseless(opts.translation)) {  this.translation = opts.translation; };
 
-  this.voting.rank = setInitialRank(Polyanno.transcriptions, this);
+  var r = setInitialRank(Polyanno.transcriptions.array, this);
+  alert("so the rank is now "+r);
+  this.voting.rank = r;
 
   if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
     this._id = opts._id;
@@ -2447,12 +2444,21 @@ Polyanno.selected.textBox.new = function(thisEditor){
   //Objects 
 
   var newText = thisEditor.DOM.find(".newAnnotation").val();
-  var theData = {text: newText, metadata: imageSelectedMetadata, target: thisEditor.targets };
+  var theData = {
+    text: newText, 
+    metadata: imageSelectedMetadata, 
+    target: thisEditor.targets 
+  };
   var type = thisEditor.type;
   var plural = type.concat("s");
 
+  alert("this editor is "+JSON.stringify(thisEditor));
+
   if (Polyanno.selected.vectors.array.length != 0) {  theData.vector =  Polyanno.selected.vectors.array[0].id; };
-  if (!isUseless(thisEditor.parent)) {  theData.parent = thisEditor.parent.id;  };
+  if (!isUseless(thisEditor.parent)) {  
+    //Polyanno.editors.getById(edID).docs[plural][0].id; 
+    theData.parent = thisEditor.parent.id;  
+  };
 
   var data = new Polyanno[type](theData);
   Polyanno[plural].add(data);
@@ -4344,7 +4350,7 @@ Polyanno.starting.storage = function(opts) {
 Polyanno.starting.voting = function() {
 
   $('#polyanno-page-body').on("click", '.polyannoVotingUpButton', function(event) {
-    var votedID = $(event.target).closest(".polyanno-text-display").find("p").attr("id");
+    var votedID = $(event.target).closest(".polyanno-voting-overlay").prev().attr("id");
     var currentTopText = $(event.target).closest(".textEditorPopup").find(".polyanno-top-voted").find("p").html();
     var thisEditorID = $(event.target).closest(".textEditorPopup").attr("id");
     var thisEditor = Polyanno.editors.getById(thisEditorID);
