@@ -1288,6 +1288,11 @@ var voteChangeRank = function(arr, item, vote) {
 
       ///////parent doc needs to be updated to include new top ranking *****
       var theParent = arr.getById(item.parent);
+      var oldTopVotedID = siblings[0]._id;
+      var oldParentText = theParent.text;
+      var t = $("<p>"+oldParentText+"</p>").find("#"+oldTopVotedID).html(item.text).attr("id", item._id).parent();
+      var newParentText = t.html();
+      theParent.update({ text: newParentText });
 
     }
     else if ((neighbour == siblings.length -1) && (diff < 0)) {
@@ -1337,6 +1342,7 @@ var votingFunction = function(vote, votedID, thisEditor) {
 
     //update the Polyanno.selected and refresh the editor
     oldDocs[plural] = sharedParentSearch(Polyanno[plural].array, thisText);
+    Polyanno.selected.setSelected(oldDocs);
     thisEditor.refresh();
 
     ///////if the parent is open in editors then reload with new texts 
@@ -1756,7 +1762,7 @@ Polyanno.selected.reset = function () {
 Polyanno.selected.setSelected = function (docs) {
   Polyanno.selected.reset();
   for (var property in docs) {
-    Polyanno.selected[property] = docs[property];
+    Polyanno.selected[property].array = docs[property];
   };
 };
 
@@ -1954,6 +1960,8 @@ Polyanno.editor.prototype.refresh = function() {
   var thisType = this.type;
   var plural = thisType + "s";
   var popupIDstring = "#" + this.id;
+  $(popupIDstring).find(".polyanno-top-voted").html(" ");
+  $(popupIDstring).find(".polyanno-list-alternatives-row").html(" ");
   updateEditorBox(popupIDstring, plural);
 
   //refreshing docs
