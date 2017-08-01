@@ -1264,48 +1264,59 @@ var setInitialRank = function(arr, item) {
 
 var voteChangeRank = function(arr, item, vote) {
   ///vote = +1 or -1
-  var siblings = sharedParentSearch(arr, item);
-  var index = arr.indexOf(item);
-  if (index != 0) {
+  var siblings = sharedParentSearch(arr.array, item); //in order of ranking
+  var index = siblings.indexOf(item); //should be equal value to voting.rank property
+  if ( ((index == 0) && (vote == 1)) || ((index == (siblings.length -1)) && (vote == -1)) ) { 
+    //rank cannot get higher if already highest, and cannot get lower than lowest
+    return false;
+  }
+  else {
+    var newRank;
     var neighbour = index - vote;
-    var diff = (siblings[neighbour].voting.up - siblings[neighbour].voting.down) - (item.voting.up - item.voting.down);
-    while ((diff <= 0) && (neighbour >= 0) && (neighbour <= arr.length - 1)) {
+    var diff = (siblings[neighbour].voting.up - siblings[neighbour].voting.down) - ( vote * (item.voting.up - item.voting.down));
+
+    while ((diff < 0) && (neighbour > 0) && (neighbour < siblings.length - 1)) {
+      //iterate through those with equal value to the next neighbour with a higher/lower
       neighbour -= vote;
+      diff = (siblings[neighbour].voting.up - siblings[neighbour].voting.down) - ( vote * (item.voting.up - item.voting.down));
     };
-    if ((neighbour < 0) && (neighbour > siblings.length - 1)){
-      return siblings[(neighbour += vote)].voting.rank;
+
+
+    if ((neighbour == 0) && (diff < 0)) {
+      ////if higher than top, then now top
+      newRank = 0;
+
+      ///////parent doc needs to be updated to include new top ranking *****
+      var theParent = arr.getById(item.parent);
+
+    }
+    else if ((neighbour == siblings.length -1) && (diff < 0)) {
+      //if lower than bottom, then now top
+      newRank = siblings.length -1;
+    }
+    else if (diff < 0) {
+      //if it overtakes neighbour then takes its rank
+      newRank = siblings[neighbour].voting.rank;
     }
     else {
-      return siblings[neighbour].voting.rank + vote;
+      //if it only matches the neighbour then it is the rank one below
+      newRank = siblings[neighbour].voting.rank + vote;
     };
+
+    for (var i = item.voting.rank - vote; ((vote > 0) && (i >= newRank)) || ((vote < 0) && (i <= newRank)); i -= vote) {
+      //updating the other items rankings
+      var thisID = siblings[i].id;
+      var thisNeighbour = arr.getById(thisID);
+      var newNeighbourRank = thisNeighbour.voting.rank + vote;
+      thisNeighbour.voting.rank = newNeighbourRank;
+    };
+
+    item.voting.rank = newRank;
+
+    return true;
   };
 };
 
-
-
-/////
-
-var polyanno_voting_reload_editors = function(updatedTranscription, editorID, targetID, textType) {
-  if (updatedTranscription) {    
-    Polyanno.selected.transcription.id = targetID;
-    ///change HTML content of editors
-  };
-  if (updatedTranscription && (!isUseless(Polyanno.selected.vector.id))) {
-    var updateTargetData = {};
-    updateTargetData[textType] = targetID;
-    updateAnno(Polyanno.selected.vector.id, updateTargetData);
-  };
-
-  ///////if the parent is open in an editor rebuild carousel with new transcription 
-  Polyanno.editors.array.forEach(function(editorOpen){
-    editorOpen.children.forEach(function(eachChild){
-      if ( eachChild.id == Polyanno.selected.transcription.DOMid ){
-        ////change HTML content of editors
-      };
-    });
-  });
-
-};
 
 
 var votingFunction = function(vote, votedID, thisEditor) {
@@ -1318,9 +1329,37 @@ var votingFunction = function(vote, votedID, thisEditor) {
   var votedTextBody = $("#"+votedID).html(); 
 
   thisText.voting[vote] = thisText.voting[vote] + 1;
-  thisText.voting.rank = voteChangeRank(Polyanno[plural].array, thisText, +1); ///currently only upvoting
+  var rankHasChanged = voteChangeRank(Polyanno[plural], thisText, +1);
 
-  ////if change in rank necessitates a reload in parent text is this done here or elsewhere???
+  if (rankHasChanged) {
+
+    var oldDocs = Polyanno.selected.getAll();
+
+    //update the Polyanno.selected and refresh the editor
+    oldDocs[plural] = sharedParentSearch(Polyanno[plural].array, thisText);
+    thisEditor.refresh();
+
+    ///////if the parent is open in editors then reload with new texts 
+    ///for all new editors opening the information should be okay, this is just for those already open
+    var parentEds = Polyanno.editors.findAllByDoc(thisText.parent, type);
+    var theNewParent = Polyanno[plural].getById(thisText.parent);
+    for (var a=0; a<parentEds; a++) {
+      var parentEdDocs = parentEds[a].docs[plural];
+      var theParentArray = $.grep(parentEdDocs, function(par){
+        return par.id == thisText.parent;
+      });
+      var theOldParentIndex = parentEdDocs.indexOf(theParentArray[0]);
+      parentEdDocs.splice(theOldParentIndex, 1, theNewParent);
+
+      var parentEdIdString = "#" + parentEds[a].id;
+      polyanno_display_editor_texts(parentEdDocs, parentEdIdString);
+    };
+
+  }
+  else {
+    //just update voting badge
+    $("#"+thisEditor.id).find("#"+thisText._id).next().find(".badge").html(thisText.voting[vote]);
+  };
 
 };
 
@@ -1349,7 +1388,6 @@ Polyanno.transcription = function(value) {
   if (!isUseless(opts.translation)) {  this.translation = opts.translation; };
 
   var r = setInitialRank(Polyanno.transcriptions.array, this);
-  alert("so the rank is now "+r);
   this.voting.rank = r;
 
   if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
@@ -1874,6 +1912,7 @@ Polyanno.editor = function(textType) {
 
   this.DOM = $(popupIDstring);
   this.id = $(popupIDstring).attr("id");
+
   this.docs = {
     vectors: Polyanno.selected.vectors.array,
     transcriptions: Polyanno.selected.transcriptions.array,
@@ -1884,31 +1923,7 @@ Polyanno.editor = function(textType) {
 
   var thisEditor = this;
 
-  if (Polyanno.selected.vectors.array.length == 0) {  
-    $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
-  };
-
-  if (Polyanno.selected[plural].array.length == 0) {
-    $(popupIDstring).find(".polyanno-add-new-row")
-    .css("display", "block")
-    .attr("id", "addBox"+popupIDstring);
-    if ($(".polyanno-language-buttons").css("display") == "none") {
-      $(".polyanno-language-buttons").css("display", "inline-block");
-    };
-  }
-  else {
-    var mainText = Polyanno.selected[plural].array[0];
-    if (!isUseless(mainText.parent)) {
-
-      $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
-    
-    };
-
-    polyanno_display_editor_texts(Polyanno.selected[plural].array, popupIDstring);
-
-    Polyanno.textHighlighting.menu.oldText($(popupIDstring).find(".open"+textType+"ChildrenPopup"), textType);
-
-  }; 
+  updateEditorBox(popupIDstring, plural);
 
 };
 
@@ -1934,6 +1949,23 @@ Polyanno.editor.prototype.closeEditor = function() {
   return the_editor_gone;
 };
 
+Polyanno.editor.prototype.refresh = function() {
+  //refreshing UI box
+  var thisType = this.type;
+  var plural = thisType + "s";
+  var popupIDstring = "#" + this.id;
+  updateEditorBox(popupIDstring, plural);
+
+  //refreshing docs
+  this.docs = {
+    vectors: Polyanno.selected.vectors.array,
+    transcriptions: Polyanno.selected.transcriptions.array,
+    translations: Polyanno.selected.translations.array
+  };
+  this.targets = Polyanno.selected.targets;
+
+};
+
 Polyanno.editor.prototype.setSelected = function() {
 
   Polyanno.selected.reset();
@@ -1954,8 +1986,6 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
   if (check.length == 0) { return false; }
   else { return true; };
 };
-
-
 
 
 //plural
@@ -1979,12 +2009,13 @@ Polyanno.editors.openEditor = function(textType) {
   var ed = new Polyanno.editor(textType);
   Polyanno.editors.add(ed);
 
+  return ed;
+
 };
 
 Polyanno.editors.ifOpen = function(fromType) {
 
   var comparison = Polyanno.selected.getAll();
-  //alert("currently the selected transcription is "+JSON.stringify(Polyanno.selected.transcriptions.array[0]));
   if (isUseless(Polyanno.editors.array[0])) {    Polyanno.editors.openEditor(fromType);  }
   else {
     var opened = $.grep( Polyanno.editors.array, function(ed) {
@@ -2063,6 +2094,32 @@ var createEditorPopupBox = function(textType) {
 
 };
 
+var updateEditorBox = function(popupIDstring, plural) {
+  if (Polyanno.selected.vectors.array.length == 0) {  
+    $(popupIDstring).find(".polyanno-vector-link-row").css("display", "block");
+  };
+
+  if (Polyanno.selected[plural].array.length == 0) {
+    $(popupIDstring).find(".polyanno-add-new-row")
+    .css("display", "block")
+    .attr("id", "addBox"+popupIDstring);
+    if ($(".polyanno-language-buttons").css("display") == "none") {
+      $(".polyanno-language-buttons").css("display", "inline-block");
+    };
+  }
+  else {
+    var mainText = Polyanno.selected[plural].array[0];
+    if (!isUseless(mainText.parent)) {
+
+      $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
+    
+    };
+
+    polyanno_display_editor_texts(Polyanno.selected[plural].array, popupIDstring);
+
+  }; 
+};
+
 var returnTextIcon = function(textType){
   if(textType == "transcription") {
     return transcriptionIconHTML;
@@ -2085,9 +2142,6 @@ var polyanno_build_text_display_row = function(polyannoTextAnno) {
 var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring) {
 
   $(popupIDstring).find(".polyanno-alternatives-toggle-row").css("display", "block");
-  var openingHTML1 = "<div class='col-md-12'><div class='polyanno-text-display row  ";
-  var openingHTML2 = "'>"
-  var closingHTML2 = `</div></div>`;
 
   existingTextAnnos.forEach(function(subarray, index) {
 
@@ -2099,16 +2153,12 @@ var polyanno_build_alternatives_list = function(existingTextAnnos, popupIDstring
       $(popupIDstring).find(".polyanno-top-voted").append(theParagraphHTML);
     }
     else {
-
-      //****need to debug the voting overlay*****
-
-      var itemHTML = openingHTML1 + thisItemID + openingHTML2 + theParagraphHTML + closingHTML2; 
-      $(popupIDstring).find(".polyanno-list-alternatives-row").append(itemHTML);
+      $(popupIDstring).find(".polyanno-list-alternatives-row").append(theParagraphHTML);
     };
 
     if ( !isUseless(subarray[1]) )  {
       var votesUp = subarray[1].votesUp;
-      $("."+thisItemID).find(".polyanno-voting-overlay").find(".polyannoVotesUpBadge").find(".badge").html(votesUp); 
+      $("."+thisItemID).next().find(".badge").html(votesUp); 
     }; 
  
   });
@@ -2385,7 +2435,9 @@ Polyanno.textHighlighting.new = function(base) {
   Polyanno.selected[plural].add(data);
   Polyanno.selected.targets = targetData.target;
 
-  Polyanno.editors.openEditor(base);
+  var newEditor = Polyanno.editors.openEditor(base);
+
+  Polyanno.textHighlighting.menu.oldText($("#"+newEditor.id).find(".open"+base+"ChildrenPopup"), base);
 
   ////polyanno storage loop
 
@@ -2468,11 +2520,16 @@ Polyanno.selected.textBox.new = function(thisEditor){
   ///HTML
 
   thisEditor.DOM.find(".polyanno-add-new-row").css("display", "none");
-  thisEditor.DOM.find(".polyanno-top-voted").css("display", "block");
   var itemHTML = polyanno_build_text_display_row(data);
-  thisEditor.DOM.find(".polyanno-top-voted").append(itemHTML);
-
-  ///polyanno storage loop?
+  if (thisEditor.DOM.find(".polyanno-top-voted").css("display") == "block") {
+    thisEditor.DOM.find(".polyanno-alternatives-toggle-row").css("display", "block");
+    thisEditor.DOM.find(".polyanno-list-alternatives-row").css("display", "block");
+    thisEditor.DOM.find(".polyanno-list-alternatives-row").append(itemHTML);
+  }
+  else {
+    thisEditor.DOM.find(".polyanno-top-voted").css("display", "block");
+    thisEditor.DOM.find(".polyanno-top-voted").append(itemHTML);
+  };
 
 };
 
