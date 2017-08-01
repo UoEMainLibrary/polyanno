@@ -1347,9 +1347,9 @@ var votingFunction = function(vote, votedID, thisEditor) {
 
     ///////if the parent is open in editors then reload with new texts 
     ///for all new editors opening the information should be okay, this is just for those already open
-    var parentEds = Polyanno.editors.findAllByDoc(thisText.parent, type);
+    var parentEds = Polyanno.editors.findAllByDoc(thisText.parent, plural);
     var theNewParent = Polyanno[plural].getById(thisText.parent);
-    for (var a=0; a<parentEds; a++) {
+    for (var a=0; a<parentEds.length; a++) {
       var parentEdDocs = parentEds[a].docs[plural];
       var theParentArray = $.grep(parentEdDocs, function(par){
         return par.id == thisText.parent;
@@ -1358,6 +1358,8 @@ var votingFunction = function(vote, votedID, thisEditor) {
       parentEdDocs.splice(theOldParentIndex, 1, theNewParent);
 
       var parentEdIdString = "#" + parentEds[a].id;
+      $(parentEdIdString).find(".polyanno-top-voted").html(" ");
+      $(parentEdIdString).find(".polyanno-list-alternatives-row").html(" ");
       polyanno_display_editor_texts(parentEdDocs, parentEdIdString);
     };
 
