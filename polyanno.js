@@ -868,7 +868,6 @@ Polyanno.collections.prototype.deleteAll = function() {
   //triggering deleting event for each individual object
   for (var i=0; i < coll.array.length; i++) {
     var anno = coll.array[i];
-    //alert(JSON.stringify(anno));
     var ev1 = new PolyannoEvent({
       type: "polyanno_deleting",
       object: anno,
@@ -1136,7 +1135,7 @@ Polyanno.getAnnotationByBody = function(target, expanded) {
     return expandingAnnotation(a[0]);
   }
   else {
-    return {"anno": a[0] };
+    return a[0] ;
   };
 };
 
@@ -1231,40 +1230,45 @@ Polyanno.baseTextObject = function(value) {
 
 /////Methods
 
-var sharedParentSearch = function(arr, item) {
-  if (isUseless(item.parent)) { return []; };
-  var array = $.grep(arr, function(a){
-    return a.parent == item.parent;
+var siblingSearch = function(type, item) {
+  var anno = Polyanno.getAnnotationByBody(item.id);
+  var parentA = $.grep(anno.target, function(a){
+    return a.id.includes(".html#");
   });
-  return array.sort(function(x, y){
+  if (parentA.length == 0) { return []; };
+  var siblings = polyanno_annos_of_target(parentA[0].id, type);
+  alert("so now the siblings are "+JSON.stringify(siblings)); ///...for some reason the rankings are now changing??
+  return siblings.sort(function(x, y){
     return x.voting.rank - y.voting.rank;
   });
 };
 
-var setInitialRank = function(arr, item) {
+var setInitialRank = function(type, item) {
   ///those with more votes down could be ranked lower than those with no votes yet.
+  var arr = Polyanno[type+"s"].array;
   if (isUseless(arr)) {  return 0; } //if first of its kind at all then highest ranking
   else {
-    var all = sharedParentSearch(arr, item); //finds the other annos with the same parent ranked in order of rank
+    var all = siblingSearch(type, item); //finds the other annos with the same parent ranked in order of rank
     var blank = $.grep(all, function(a){
       return (a.voting.up == 0) && (a.voting.down == 0); //finding the other annos with no votes
     });
     if (all.length == 0) {  return 0; } //if it is the first child then it is the highest ranking
     else if (blank.length == 0) {
-      return all[all.length -1].votingrank + 1; //if it is the only one with no votes then it is the lowest rank
+      item.voting.rank = all[all.length -1].votingrank + 1; //if it is the only one with no votes then it is the lowest rank
     }
     else {
       var nonvotedranked = blank.sort(function(x,y){
         return y.voting.rank - x.voting.rank;
       });
-      return nonvotedranked[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
+      item.voting.rank = nonvotedranked[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
     };
   };
 };
 
-var voteChangeRank = function(arr, item, vote) {
+var voteChangeRank = function(type, item, vote) {
+  var arr = Polyanno[type+"s"];
   ///vote = +1 or -1
-  var siblings = sharedParentSearch(arr.array, item); //in order of ranking
+  var siblings = siblingSearch(type, item); //in order of ranking
   var index = siblings.indexOf(item); //should be equal value to voting.rank property
   if ( ((index == 0) && (vote == 1)) || ((index == (siblings.length -1)) && (vote == -1)) ) { 
     //rank cannot get higher if already highest, and cannot get lower than lowest
@@ -1334,25 +1338,26 @@ var votingFunction = function(vote, votedID, thisEditor) {
   var votedTextBody = $("#"+votedID).html(); 
 
   thisText.voting[vote] = thisText.voting[vote] + 1;
-  var rankHasChanged = voteChangeRank(Polyanno[plural], thisText, +1);
+  var rankHasChanged = voteChangeRank(type, thisText, +1);
 
   if (rankHasChanged) {
 
     var oldDocs = Polyanno.selected.getAll();
 
     //update the Polyanno.selected and refresh the editor
-    oldDocs[plural] = sharedParentSearch(Polyanno[plural].array, thisText);
+    oldDocs[plural] = siblingSearch(type, thisText);
     Polyanno.selected.setSelected(oldDocs);
     thisEditor.refresh();
 
     ///////if the parent is open in editors then reload with new texts 
     ///for all new editors opening the information should be okay, this is just for those already open
-    var parentEds = Polyanno.editors.findAllByDoc(thisText.parent, plural);
-    var theNewParent = Polyanno[plural].getById(thisText.parent);
+    var thisParent = thisText.parent.split("#")[1];
+    var parentEds = Polyanno.editors.findAllByDoc(thisParent, plural);
+    var theNewParent = Polyanno[plural].getById(thisParent);
     for (var a=0; a<parentEds.length; a++) {
       var parentEdDocs = parentEds[a].docs[plural];
       var theParentArray = $.grep(parentEdDocs, function(par){
-        return par.id == thisText.parent;
+        return par.id == thisParent;
       });
       var theOldParentIndex = parentEdDocs.indexOf(theParentArray[0]);
       parentEdDocs.splice(theOldParentIndex, 1, theNewParent);
@@ -1394,9 +1399,6 @@ Polyanno.transcription = function(value) {
     opts[prop] = value[prop];
   };
   if (!isUseless(opts.translation)) {  this.translation = opts.translation; };
-
-  var r = setInitialRank(Polyanno.transcriptions.array, this);
-  this.voting.rank = r;
 
   if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
     this._id = opts._id;
@@ -1483,8 +1485,6 @@ Polyanno.translation = function(value) {
     opts[prop] = value[prop];
   };
   if (!isUseless(opts.transcription)) {  this.transcription = opts.transcription; };
-
-  this.voting.rank = setInitialRank(Polyanno.translations, this);
 
   if ((!isUseless(opts._id)) && (!isUseless(opts.id))) {
     this._id = opts._id;
@@ -2001,10 +2001,8 @@ Polyanno.editor.prototype.checkDocs = function(docID, type) {
 //plural
 
 Polyanno.editors.removeEditor = function(id) {
-  //alert("just before closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
   var this_editor = findByID(Polyanno.editors.array, id)[0];
   Polyanno.editors.array.splice(Polyanno.editors.array.indexOf(this_editor), 1);
-  //alert("after closing the editor the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
 };
 
 Polyanno.editors.closeAll = function() {
@@ -2120,9 +2118,7 @@ var updateEditorBox = function(popupIDstring, plural) {
   else {
     var mainText = Polyanno.selected[plural].array[0];
     if (!isUseless(mainText.parent)) {
-
       $(popupIDstring).find(".polyanno-add-new-toggle-row").css("display", "block");
-    
     };
 
     polyanno_display_editor_texts(Polyanno.selected[plural].array, popupIDstring);
@@ -2343,7 +2339,6 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
     Polyanno.textHighlighting.type = "transcription";
     var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
     var t = Polyanno.transcriptions.getById(thisid);
-    //alert("so the id is "+thisid+" and the transcriptions are "+JSON.stringify(Polyanno.transcriptions.array));
     Polyanno.selected.transcriptions.add(t);
     $(selection.anchorNode.parentElement).popover("show");
   }
@@ -2380,7 +2375,7 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
     var outerElementEndContent = Polyanno.textHighlighting.setOEEC(outerElementHTML, nextSpanContent, nextSpan );
 
     Polyanno.textHighlighting.DOMid = newNodeInsertID;
-    Polyanno.textHighlighting.URI = Polyanno.textHighlighting.parent.concat(".text#"+Polyanno.textHighlighting.DOMid);
+    Polyanno.textHighlighting.URI = Polyanno.textHighlighting.parent.concat(".html#"+Polyanno.textHighlighting.DOMid);
     Polyanno.textHighlighting.oldContent = Polyanno.textHighlighting.parentDOM.html();
     Polyanno.textHighlighting.newContent = outerElementStartContent + newSpan + outerElementEndContent;
     Polyanno.textHighlighting.fragment = Polyanno.textHighlighting.strangeTrimmingFunction(selection);
@@ -2408,6 +2403,17 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
 
 
 //////////////////////////////////////////////////////////////////
+
+Polyanno.textHighlighting.reset = function() {
+  Polyanno.textHighlighting.selected = null;
+  Polyanno.textHighlighting.DOM = null;
+  Polyanno.textHighlighting.parentDOM = null;
+  Polyanno.textHighlighting.oldContent = null;
+  Polyanno.textHighlighting.newContent = null;
+  Polyanno.textHighlighting.DOMid = null;
+  Polyanno.textHighlighting.fragment = null;
+  Polyanno.textHighlighting.URI = null;
+};
 
 Polyanno.textHighlighting.new = function(base) {
 
@@ -2439,6 +2445,8 @@ Polyanno.textHighlighting.new = function(base) {
   var parent = Polyanno[plural].getById(Polyanno.textHighlighting.parent);
   parent.update({text: Polyanno.textHighlighting.newContent});
 
+  setInitialRank(base, data);
+
   ///editors and selected
 
   Polyanno.selected.reset();
@@ -2449,11 +2457,10 @@ Polyanno.textHighlighting.new = function(base) {
 
   Polyanno.textHighlighting.menu.oldText($("#"+newEditor.id).find(".open"+base+"ChildrenPopup"), base);
 
-  ////polyanno storage loop
-
-  Polyanno.textHighlighting = {};
+  Polyanno.textHighlighting.reset();
 
 };
+
 
 $('#polyanno-page-body').on("mouseup", '.content-area', function(event) {
 
@@ -2524,6 +2531,9 @@ Polyanno.selected.textBox.new = function(thisEditor){
   theData.body = data;
   var new_anno = new Polyanno.annotation(theData);
   Polyanno.annotations.add(new_anno);
+
+  setInitialRank(type, data);
+
   Polyanno.selected[plural].add(data);
   thisEditor.docs[plural] = Polyanno.selected[plural].array;
 
@@ -3541,7 +3551,7 @@ Polyanno.buildingParents.annos.removeText = function(text_type, children_array, 
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  //alert("this merged anno is "+JSON.stringify(this_child));
+  alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -3592,11 +3602,13 @@ Polyanno.buildingParents.annos.updateChildren = function(merged_vector, merged_t
       this_json.body = createdText;
       var newAnno = Polyanno.annotation(this_json);
       Polyanno.annotations.add(newAnno);
+      setInitialRank(textType, createdText);
     }
     else {
       this_json.update({"parent": merged_text});
       var thisAnno = Polyanno.annotations.getAnnotationByBody(this_json.id);
       thisAnno.addTargets(updatedTarget);
+      setInitialRank(textType, this_json);
     };
   };
 };
