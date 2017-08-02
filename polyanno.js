@@ -600,7 +600,7 @@ Polyanno.HTML.popups = {
       transcription: `
         <div id="popupTranscriptionNewMenu" class="popupAnnoMenu">
            <div data-role="main" class="ui-content">
-              <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default polyanno-standard-btn" onclick="Polyanno.textHighlighting.DOM.popover("hide"); Polyanno.textHighlighting.new("transcription");">`+Polyanno.HTML.symbols.transcription+`</a></br>
+              <a class="openTranscriptionMenuNew transcriptionTarget editorPopover btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.transcription+`</a></br>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
            </div>
         </div>
@@ -609,7 +609,7 @@ Polyanno.HTML.popups = {
       translation: `
         <div id="popupTranslationNewMenu" class="popupAnnoMenu" >
             <div data-role="main" class="ui-content">
-              <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all polyanno-standard-btn" onclick="Polyanno.textHighlighting.DOM.popover("hide"); Polyanno.textHighlighting.new("translation");">`+Polyanno.HTML.symbols.translation+`</a></br>
+              <a class="openTranslationMenuNew translationTarget editorPopover ui-btn ui-corner-all polyanno-standard-btn">`+Polyanno.HTML.symbols.translation+`</a></br>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
             </div>
         </div>  
@@ -619,7 +619,7 @@ Polyanno.HTML.popups = {
       transcription: `
         <div id="popupTranscriptionChildrenMenu" class="popupAnnoMenu">
             <div data-role="main" class="ui-content">
-              <a class="openTranscriptionMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="Polyanno.editors.ifOpen('transcription');" >`+Polyanno.HTML.symbols.textHighlighting.transcription+`</a>
+              <a class="openTranscriptionMenuOld editorPopover btn btn-default polyanno-standard-btn" >`+Polyanno.HTML.symbols.textHighlighting.transcription+`</a>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
             </div>
         </div>
@@ -627,7 +627,7 @@ Polyanno.HTML.popups = {
       translation: `
         <div id="popupTranslationChildrenMenu" class="popupAnnoMenu">
             <div data-role="main" class="ui-content">
-              <a class="openTranslationMenuOld editorPopover btn btn-default polyanno-standard-btn" onclick="Polyanno.editors.ifOpen('translation');" >`+Polyanno.HTML.symbols.textHighlighting.translation+`</a>
+              <a class="openTranslationMenuOld editorPopover btn btn-default polyanno-standard-btn" >`+Polyanno.HTML.symbols.textHighlighting.translation+`</a>
               <a class="polyanno-add-discuss btn btn-default polyanno-standard-btn">`+Polyanno.HTML.symbols.discussion+` Discuss</a>
             </div>
         </div>
@@ -2251,31 +2251,7 @@ Polyanno.textHighlighting.strangeTrimmingFunction = function(thetext) {
 
 Polyanno.textHighlighting.menu = {};
 
-Polyanno.textHighlighting.menu.newText = function() {
-  $('#polyanno-page-body').on("click", function(event) {
-    if (!$(event.target).hasClass("popupAnnoMenu") && (!isUseless(Polyanno.textHighlighting.DOMid))) {
-      Polyanno.textHighlighting.DOM.popover("hide");
-      Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
-    }
-  });
-
-  $('.openTranscriptionMenuNew').on("click", function(event) {
-    Polyanno.textHighlighting.DOM.popover("hide");
-    Polyanno.textHighlighting.new("transcription");   
-  });
-
-  $('.openTranslationMenuNew').on("click", function(event) {
-    Polyanno.textHighlighting.DOM.popover("hide");
-    Polyanno.textHighlighting.new("translation");  
-  });
-
-  $('.closePopoverMenuBtn').on("click", function(event){
-    Polyanno.textHighlighting.DOM.popover("hide");
-    Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
-  });
-};
-
-Polyanno.textHighlighting.menu.oldText = function(theDOM, base) {
+Polyanno.textHighlighting.menu.newText = function(theDOM, base) {
   theDOM.popover({ 
     trigger: 'manual',
     html : true,
@@ -2283,10 +2259,49 @@ Polyanno.textHighlighting.menu.oldText = function(theDOM, base) {
     placement: "auto top",
     title: closeButtonHTML,
     viewport: "#polyanno-page-body",
-    content: Polyanno.HTML.popups.children[base]
+    content: Polyanno.HTML.popups.textHighlighting[base]
   });
   theDOM.popover('show');
+  theDOM.on("shown.bs.popover", function(ev) {
+
+    $('#polyanno-page-body').on("click", function(event) {
+      ///need to change so that the menu fo this particular DOM will always close before another can be opened
+      if (!$(event.target).hasClass("popupAnnoMenu") && (!isUseless(Polyanno.textHighlighting.DOMid))) {
+        theDOM.popover("hide");
+        Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
+      }
+    });
+
+    $('.openTranscriptionMenuNew').on("click", function(event) {
+      theDOM.popover("hide");
+      Polyanno.textHighlighting.new("transcription");   
+    });
+
+    $('.openTranslationMenuNew').on("click", function(event) {
+      theDOM.popover("hide");
+      Polyanno.textHighlighting.new("translation");  
+    });
+
+    $('.closePopoverMenuBtn').on("click", function(event){
+      theDOM.popover("hide");
+      Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
+    }); 
+
+    $('.openTranscriptionMenuOld').on("click", function(event) {
+      alert(JSON.stringify(Polyanno.selected.getAll())); 
+      theDOM.popover("hide");
+      Polyanno.editors.ifOpen('transcription');
+    });
+
+    $('.openTranslationMenuOld').on("click", function(event) {
+      alert(JSON.stringify(Polyanno.selected.getAll())); 
+      theDOM.popover("hide");
+      Polyanno.editors.ifOpen('transcription');
+    });
+
+  });
 };
+
 
 Polyanno.textHighlighting.setOESC = function(outerElementHTML, previousSpanContent, previousSpan) {
   var outerElementStartContent;
@@ -2341,18 +2356,34 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
 
   Polyanno.textHighlighting.parent = ed.docs[plural][0].id;
 
+  //if selection is already a child/button
   if (classCheck.includes('opentranscriptionChildrenPopup')) { 
     Polyanno.selected.reset();
     Polyanno.textHighlighting.type = "transcription";
-    var thisid = Polyanno.urls.transcription + selection.anchorNode.parentElement.id;
-    var t = Polyanno.transcriptions.getById(thisid);
-    Polyanno.selected.transcriptions.add(t);
+
+    var thisSpanID = selection.anchorNode.parentElement.id;
+    var targetID = Polyanno.textHighlighting.parent.concat(".html#"+thisSpanID);
+
+    var t = polyanno_annos_of_target(targetID, "transcription");
+    Polyanno.selected.transcriptions.array = t;
+    Polyanno.selected.targets.array = [{id: targetID}];
+    alert("before the popover opens the selected is "+JSON.stringify(Polyanno.selected.getAll()));
     $(selection.anchorNode.parentElement).popover("show");
   }
   else if (classCheck.includes('opentranslationChildrenPopup')) { 
+    Polyanno.selected.reset();
     Polyanno.textHighlighting.type = "translation";
+
+    var thisSpanID = selection.anchorNode.parentElement.id;
+    var targetID = Polyanno.textHighlighting.parent.concat(".html#"+thisSpanID);
+
+    var t = polyanno_annos_of_target(targetID, "translation");
+    Polyanno.selected.translations.array = t;
+    Polyanno.selected.targets.array = [{id: targetID}];
     $(selection.anchorNode.parentElement).popover("show");
-  }    
+  }  
+
+  //if trying to select an overlapping area  
   else if (startParentID != endParentID) {
   
   }
@@ -2391,19 +2422,8 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
     Polyanno.textHighlighting.DOM = $("#"+newNodeInsertID);
 
     Polyanno.textHighlighting.DOM.css("background-color", Polyanno.colours.processing.span);
-    Polyanno.textHighlighting.DOM.popover({ 
-      trigger: 'manual',
-      html : true,
-      container: 'body',
-      placement: "auto top",
-      title: closeButtonHTML,
-      viewport: "#polyanno-page-body",
-      content: Polyanno.HTML.popups.textHighlighting[base]
-    });
-    Polyanno.textHighlighting.DOM.popover('show');
-    Polyanno.textHighlighting.DOM.on("shown.bs.popover", function(ev) {
-      Polyanno.textHighlighting.menu.newText();
-    });
+
+    Polyanno.textHighlighting.menu.newText(Polyanno.textHighlighting.DOM, base);
 
   };
 };
@@ -2423,9 +2443,6 @@ Polyanno.textHighlighting.reset = function() {
 };
 
 Polyanno.textHighlighting.new = function(base) {
-
-  var popover = Polyanno.textHighlighting.DOM.data('bs.popover');
-  popover.options.content = Polyanno.HTML.popups.children[base];
 
   var plural = base.concat("s");
 
@@ -2461,7 +2478,8 @@ Polyanno.textHighlighting.new = function(base) {
 
   var newEditor = Polyanno.editors.openEditor(base);
 
-  Polyanno.textHighlighting.menu.oldText($("#"+newEditor.id).find(".open"+base+"ChildrenPopup"), base);
+  var popover = Polyanno.textHighlighting.DOM.data('bs.popover');
+  popover.options.content = Polyanno.HTML.popups.children[base];
 
   Polyanno.textHighlighting.reset();
 
@@ -2901,7 +2919,25 @@ var check_for_concavity = function(coordinates) {
 ///////   }
 ///// ], ....
 
-//////Separating Axis Theorem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////Point In Polygon
 
 //anticlockwise between edges 1 and 2 is always the inside of the shape for all the convex polygons
 //so 180 degrees clockwise of an edge is always the side of the edge overlapping inside the shape
@@ -3319,7 +3355,7 @@ Polyanno.buildingParents.vector.update = function(temp_shape_layer, new_vec_laye
   var new_vec_JSON = new_vec_layer.toGeoJSON();
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
   var new_merge_coords = Polyanno.buildingParents.vector.calculateNewParent(old_shape_coords, new_vec_coords, merge_array);
-  var concavity_check = check_for_concavity(new_merge_coords);
+  var concavity_check; // = check_for_concavity(new_merge_coords);
 
   var tempGeoJSON = old_shape_JSON;
   if (isUseless(tempGeoJSON.properties)) {  tempGeoJSON.properties = {};  };
@@ -4073,6 +4109,7 @@ Polyanno.L.vec_event.created = function() {
 
       Polyanno.L.vectors.addLayer(layer);
 
+      //if there is intersecting overlap
       if (checkingOverlapping[0] == 1) {  
         Polyanno.L.vectors.removeLayer(layer);
         var mapCentre = Polyanno.L.map.getCenter();
@@ -4082,6 +4119,7 @@ Polyanno.L.vec_event.created = function() {
         }, 2000);
       }
 
+      //if new shape is entirely inside another
       else if (checkingOverlapping[0] == 2)  {   
         Polyanno.L.vectors.removeLayer(layer);
 
@@ -4100,6 +4138,7 @@ Polyanno.L.vec_event.created = function() {
         }, 2000);
       }
 
+      //if new shape contains another entirely
       else if (checkingOverlapping[0] == 3)  { 
         var popLtLngs = layer.getBounds().getCenter();  
         Polyanno.L.vectors.removeLayer(layer);
@@ -4120,9 +4159,10 @@ Polyanno.L.vec_event.created = function() {
         
       }
 
+      //if there is no overlap with other shapes
       else {
-        var concavity_check = check_for_concavity(shape.geometry.coordinates[0]);
-        if (concavity_check != false) {  layer.feature.properties.OCD = concavity_check;  };
+        //var concavity_check = check_for_concavity(shape.geometry.coordinates[0]);
+
         polyanno_new_vector_made(layer, shape);
       }; ///*************
     };
