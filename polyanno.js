@@ -25,7 +25,7 @@ var polyanno_fragment_alternatives_symbol = "<span class='glyphicon glyphicon-te
 var polyanno_merging_vectors_symbol = "<span class='glyphicon glyphicon-map-marker'></span> <span class='glyphicon glyphicon-stop'></span> <span class='glyphicon glyphicon-object-align-horizontal'></span>";
 var polyanno_linking_transcription_to_vectors_symbol = "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-list-alt'></span> <span class='glyphicon glyphicon-stop'></span>";
 var polyanno_linking_translation_to_vectors_symbol = "<span class='glyphicon glyphicon-link'></span> <span class='glyphicon glyphicon-globe'></span></span> <span class='glyphicon glyphicon-stop'></span>";
-var polyanno_show_alternatives_symbol = "<span class='glyphicon glyphicon-chevron-down'></span> <span class='glyphicon glyphicon-text-background'></span> <span class='glyphicon glyphicon-align-left'></span>";
+var polyanno_show_alternatives_symbol = `<span class="glyphicon glyphicon-chevron-down"></span> <span class="glyphicon glyphicon-text-background"></span> <span class="glyphicon glyphicon-align-left"></span>`;
 
 
 
@@ -84,7 +84,8 @@ var polyannoVotingRow2 = `
 var polyannoEditorHTML_partfinal = `
       <div class="row polyanno-vector-link-row">
         <button type="button" class="btn polyannoEditorDropdownBtn polyannoLinkVectorBtn">
-          Draw a Shape For This Text On the Image!
+          <span class="glyphicon glyphicon-plus"></span>
+          <span class="glyphicon glyphicon-stop"></span>
         </button> 
       </div>
 
@@ -111,7 +112,7 @@ var polyannoEditorHTML_partfinal = `
       </div>
 
       <div class="row polyanno-add-new-toggle-row">
-        <button type='button' class='btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle'>
+        <button type="button" class="btn polyannoEditorDropdownBtn polyannoAddAnnotationToggle">
           `+polyanno_new_anno_symbol+`
         </button> 
       </div>
@@ -310,8 +311,8 @@ var polyanno_annos_of_target = function(target, baseType, callback_function) {
   var data = Polyanno.getAnnotationsByTarget(target, baseType, true);
 
   var bodies = [];
-  for (var i=0; i< data.array.length; i++) { 
-    bodies.push(data.array[i].body); 
+  for (var i=0; i< data.length; i++) { 
+    bodies.push(data[i].body); 
   };
   if (!isUseless(callback_function)) {    callback_function(bodies);  }
   else { return bodies; };
@@ -1120,10 +1121,10 @@ Polyanno.getAnnotationsByTarget = function(target, type, expanded) {
     for (var n=0; n <ta.length; n++) {
       newA.push(expandingAnnotation(ta[n]));
     };
-    return {"array": newA};
+    return newA;
   }
   else {
-    return {"array": type_arr(type)};
+    return type_arr(type);
   };
 };
 
@@ -1223,7 +1224,7 @@ Polyanno.baseTextObject = function(value) {
   this.voting = {
     up: 0,
     down: 0,
-    rank: 0
+    rank: -1
   };
 };
 
@@ -1233,40 +1234,50 @@ Polyanno.baseTextObject = function(value) {
 var siblingSearch = function(type, item) {
   var anno = Polyanno.getAnnotationByBody(item.id);
   var parentA = $.grep(anno.target, function(a){
-    return a.id.includes(".html#");
+    return a.id.includes(".html#"); 
   });
   if (parentA.length == 0) { return []; };
   var siblings = polyanno_annos_of_target(parentA[0].id, type);
-  alert("so now the siblings are "+JSON.stringify(siblings)); ///...for some reason the rankings are now changing??
-  return siblings.sort(function(x, y){
-    return x.voting.rank - y.voting.rank;
+  var f = siblings.sort(function(x, y){
+    return x.voting.rank - y.voting.rank; //from lowest to highest numerically (0 to n) ranking
   });
+  return f;
+};
+
+var updateSiblingsRanks = function(original_rank, vote, siblings, newRank, arr) {
+  for (var i = original_rank - vote; ((vote > 0) && (i >= newRank)) || ((vote < 0) && (i <= newRank)); i -= vote) {
+    //updating the other items rankings
+    var thisID = siblings[i].id;
+    var thisNeighbour = arr.getById(thisID);
+    var newNeighbourRank = thisNeighbour.voting.rank + vote;
+    thisNeighbour.voting.rank = newNeighbourRank;
+  };
 };
 
 var setInitialRank = function(type, item) {
   ///those with more votes down could be ranked lower than those with no votes yet.
   var arr = Polyanno[type+"s"].array;
-  if (isUseless(arr)) {  return 0; } //if first of its kind at all then highest ranking
+  if (isUseless(arr)) {  item.voting.rank = 0; } //if first of its kind at all then highest ranking
   else {
-    var all = siblingSearch(type, item); //finds the other annos with the same parent ranked in order of rank
-    var blank = $.grep(all, function(a){
-      return (a.voting.up == 0) && (a.voting.down == 0); //finding the other annos with no votes
+    var all = siblingSearch(type, item); //finds the this and other annos with the same parent ranked in order of rank
+    all.splice(0, 1); //the new object will have a rank of -1 by default
+    var lowVoted = $.grep(all, function(a){
+      return (a.voting.up - a.voting.down) < 0 ; //finding the annos with lower rankings than no votes (zero)
     });
-    if (all.length == 0) {  return 0; } //if it is the first child then it is the highest ranking
-    else if (blank.length == 0) {
-      item.voting.rank = all[all.length -1].votingrank + 1; //if it is the only one with no votes then it is the lowest rank
+    if (all.length == 0) {  item.voting.rank = 0; } //if it is the first child then it is the highest ranking
+    else if (lowVoted.length == 0) {
+      item.voting.rank = all[all.length -1].voting.rank + 1; //if there are none worth less than zero then it is the lowest rank of them
     }
     else {
-      var nonvotedranked = blank.sort(function(x,y){
-        return y.voting.rank - x.voting.rank;
-      });
-      item.voting.rank = nonvotedranked[0].voting.rank + 1; //if there are others with no votes then be ranked one lower than the last of them
+      item.voting.rank = lowVoted[0].voting.rank - 1; //if there are others worth less than zero votes than ranked one higher than them
+      updateSiblingsRanks(all.length, 1, all, item.voting.rank, arr);
     };
   };
 };
 
 var voteChangeRank = function(type, item, vote) {
-  var arr = Polyanno[type+"s"];
+  var plural = type+"s";
+  var arr = Polyanno[plural];
   ///vote = +1 or -1
   var siblings = siblingSearch(type, item); //in order of ranking
   var index = siblings.indexOf(item); //should be equal value to voting.rank property
@@ -1290,13 +1301,34 @@ var voteChangeRank = function(type, item, vote) {
       ////if higher than top, then now top
       newRank = 0;
 
-      ///////parent doc needs to be updated to include new top ranking *****
+      ///////parent doc needs to be updated to include new top ranking text
       var theParent = arr.getById(item.parent);
-      var oldTopVotedID = siblings[0]._id;
+      var parentAnno = Polyanno.getAnnotationByBody(item.id);
+      var parentTarget = $.grep(parentAnno.target, function(a){
+        return a.id.includes(".html#"); 
+      });
+      var spanID = parentTarget[0].id.split(".html")[1];
       var oldParentText = theParent.text;
-      var t = $("<p>"+oldParentText+"</p>").find("#"+oldTopVotedID).html(item.text).attr("id", item._id).parent();
+      var t = $("<p>"+oldParentText+"</p>").find(spanID).html(item.text).parent();
       var newParentText = t.html();
       theParent.update({ text: newParentText });
+
+      ///////if the parent is open in editors then reload with new texts 
+      ///for all new editors opening the information should be okay, this is just for those already open
+      var parentEds = Polyanno.editors.findAllByDoc(item.parent, plural);
+      for (var a=0; a<parentEds.length; a++) {
+        var parentEdDocs = parentEds[a].docs[plural];
+        var theParentArray = $.grep(parentEdDocs, function(par){
+          return par.id == item.parent;
+        });
+        var theOldParentIndex = parentEdDocs.indexOf(theParentArray[0]);
+        parentEdDocs.splice(theOldParentIndex, 1, theParent);
+
+        var parentEdIdString = "#" + parentEds[a].id;
+        $(parentEdIdString).find(".polyanno-top-voted").html(" ");
+        $(parentEdIdString).find(".polyanno-list-alternatives-row").html(" ");
+        polyanno_display_editor_texts(parentEdDocs, parentEdIdString);
+      };
 
     }
     else if ((neighbour == siblings.length -1) && (diff < 0)) {
@@ -1312,13 +1344,7 @@ var voteChangeRank = function(type, item, vote) {
       newRank = siblings[neighbour].voting.rank + vote;
     };
 
-    for (var i = item.voting.rank - vote; ((vote > 0) && (i >= newRank)) || ((vote < 0) && (i <= newRank)); i -= vote) {
-      //updating the other items rankings
-      var thisID = siblings[i].id;
-      var thisNeighbour = arr.getById(thisID);
-      var newNeighbourRank = thisNeighbour.voting.rank + vote;
-      thisNeighbour.voting.rank = newNeighbourRank;
-    };
+    updateSiblingsRanks(item.voting.rank, vote, siblings, newRank, arr);
 
     item.voting.rank = newRank;
 
@@ -1348,25 +1374,6 @@ var votingFunction = function(vote, votedID, thisEditor) {
     oldDocs[plural] = siblingSearch(type, thisText);
     Polyanno.selected.setSelected(oldDocs);
     thisEditor.refresh();
-
-    ///////if the parent is open in editors then reload with new texts 
-    ///for all new editors opening the information should be okay, this is just for those already open
-    var thisParent = thisText.parent.split("#")[1];
-    var parentEds = Polyanno.editors.findAllByDoc(thisParent, plural);
-    var theNewParent = Polyanno[plural].getById(thisParent);
-    for (var a=0; a<parentEds.length; a++) {
-      var parentEdDocs = parentEds[a].docs[plural];
-      var theParentArray = $.grep(parentEdDocs, function(par){
-        return par.id == thisParent;
-      });
-      var theOldParentIndex = parentEdDocs.indexOf(theParentArray[0]);
-      parentEdDocs.splice(theOldParentIndex, 1, theNewParent);
-
-      var parentEdIdString = "#" + parentEds[a].id;
-      $(parentEdIdString).find(".polyanno-top-voted").html(" ");
-      $(parentEdIdString).find(".polyanno-list-alternatives-row").html(" ");
-      polyanno_display_editor_texts(parentEdDocs, parentEdIdString);
-    };
 
   }
   else {
@@ -2424,7 +2431,6 @@ Polyanno.textHighlighting.new = function(base) {
 
   ///objects
   var targetData = {
-    _id: Polyanno.textHighlighting.DOMid,
     text: Polyanno.textHighlighting.fragment, 
     metadata: imageSelectedMetadata, 
     parent: Polyanno.textHighlighting.parent,
