@@ -740,7 +740,7 @@ var polyanno_merging_mousemove_HTML = `<span>Select each shape in order to join 
 
 var polyanno_merging_added_shape_HTML = `<span>Click to unselect this shape.</span>`;
 
-var polyanno_merging_new_shape_HTML = `<span>Click to link this shape next.</span>`;
+var polyanno_merging_new_shape_HTML = `<span>Click to link this shape.</span>`;
 
 /////Methods
 
@@ -2261,15 +2261,20 @@ Polyanno.textHighlighting.menu.newText = function(theDOM, base) {
     viewport: "#polyanno-page-body",
     content: Polyanno.HTML.popups.textHighlighting[base]
   });
+
   theDOM.popover('show');
   theDOM.on("shown.bs.popover", function(ev) {
 
-    $('#polyanno-page-body').on("click", function(event) {
-      ///need to change so that the menu fo this particular DOM will always close before another can be opened
-      if (!$(event.target).hasClass("popupAnnoMenu") && (!isUseless(Polyanno.textHighlighting.DOMid))) {
+    var thisID = theDOM.attr("id");
+
+    $(document).on("mouseup", function(event) {
+      /*if ( $(event.target).closest('.openTranscriptionMenuNew,.openTranslationMenuNew,.openTranscriptionMenuOld,.openTranslationMenuOld').length == 0 ) { //if anything that is not the buttons is selected then the menu closes
+        alert("closing all");
         theDOM.popover("hide");
-        Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
-      }
+        if (!isUseless(Polyanno.textHighlighting.DOMid)) {
+          Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
+        };
+      };*/
     });
 
     $('.openTranscriptionMenuNew').on("click", function(event) {
@@ -2284,7 +2289,9 @@ Polyanno.textHighlighting.menu.newText = function(theDOM, base) {
 
     $('.closePopoverMenuBtn').on("click", function(event){
       theDOM.popover("hide");
-      Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
+      if (!isUseless(Polyanno.textHighlighting.DOMid)) {
+        Polyanno.textHighlighting.parentDOM.html(Polyanno.textHighlighting.oldContent); 
+      };
     }); 
 
     $('.openTranscriptionMenuOld').on("click", function(event) {
@@ -3279,20 +3286,20 @@ Polyanno.buildingParents.clicked = function(vec) {
       var the_index = Polyanno.buildingParents.vectors.indexOf(vec.layer);
       Polyanno.buildingParents.numbers.remove(vec.layer, Polyanno.buildingParents.vectors, the_index);
       Polyanno.buildingParents.vectors.splice(the_index, 1);
-      Polyanno.buildingParents.annos.remove(vec.layer);
+      //Polyanno.buildingParents.annos.remove(vec.layer);
       Polyanno.buildingParents.vector.remove(vec.layer, Polyanno.buildingParents.parent.vector);
     }
     else if (!isUseless(Polyanno.buildingParents.parent.vector)) {
       //click and merge this vector
       Polyanno.buildingParents.vectors.push(vec.layer);
-      Polyanno.buildingParents.annos.add(vec.layer);
+      //Polyanno.buildingParents.annos.add(vec.layer);
       Polyanno.buildingParents.vector.update(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
       Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
     }
     else {
       //click and start the new merge shape
       Polyanno.buildingParents.vectors.push(vec.layer);
-      Polyanno.buildingParents.annos.add(vec.layer);
+      //Polyanno.buildingParents.annos.add(vec.layer);
       Polyanno.buildingParents.vector.new(vec.layer);
       Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
     };
@@ -3449,33 +3456,35 @@ Polyanno.buildingParents.vector.submitted = function (merged_vector) {
 
 //numbers
 
+Polyanno.buildingParents.numbers.labels = [];
+
 Polyanno.buildingParents.numbers.add = function(new_vec, number) {
 
-  var the_number_label = "<span> "+number+"</span>";
-  var the_number_label_options = {
-    direction: "center",
-    permanent: true,
-    sticky: false
-  };
+  var the_number_label = "<div style='background-color: white; padding: 10px 18px 10px 12px; border-radius: 5px; margin: -12px 0px 0px -12px; text-align: center;'><span> "+number+" </span></div>";
   var hover_opts = {
       sticky: true,
       permanent: false,
       direction: 'auto'
   };
 
+  var centroidLtLngs = new_vec.getBounds().getCenter();
+  var numIcon = new L.divIcon({html: the_number_label});
+  var labelMarker = new L.marker(centroidLtLngs, {icon: numIcon}).addTo(Polyanno.L.map);
+  Polyanno.buildingParents.numbers.labels.push(labelMarker);
+
   new_vec.unbindTooltip();
-  new_vec.bindTooltip(the_number_label, the_number_label_options);
-  new_vec.bindTooltip(polyanno_merging_added_shape_HTML, hover_opts);
+  new_vec.bindTooltip(polyanno_merging_added_shape_HTML, hover_opts).openTooltip();
 };
 
 Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, array_index) {
+  Polyanno.buildingParents.numbers.labels[array_index].remove();
+  Polyanno.buildingParents.numbers.labels.splice(array_index, 1);
   vec_removed.unbindTooltip();
-  vec_removed.unbindTooltip();
-  vec_removed.bindTooltip(polyanno_merging_mousemove_HTML, {
+  vec_removed.bindTooltip(polyanno_merging_new_shape_HTML, {
       sticky: true,
-      permanent: true,
+      permanent: false,
       direction: 'auto'
-    });
+    }).openTooltip();
   var affected_array = merge_array;
   affected_array.splice(array_index+1);
   for (var i=0; i < affected_array.length; i++) {
@@ -3486,6 +3495,7 @@ Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, arr
 };
 
 Polyanno.buildingParents.numbers.rearrange = function(old_array_index, new_array_index) {
+  ////****
   var arr = Polyanno.buildingParents.vectors;
   var vec = arr[old_array_index];
   vec_removed.unbindTooltip();
@@ -3706,11 +3716,11 @@ Polyanno.buildingParents.listeners = function() {
     var n = vec._leaflet_id.toString();
     Polyanno.intEffects.buildingParents.vector.mouseover[n] = this_mouseover_listener;
     Polyanno.intEffects.buildingParents.vector.mouseout[n] = this_mouseout_listener;
-    vec.bindTooltip(polyanno_merging_mousemove_HTML, {
+    vec.bindTooltip(polyanno_merging_new_shape_HTML, {
       sticky: true,
-      permanent: true,
+      permanent: false,
       direction: 'auto'
-    });
+    }).openTooltip();
   });
  
 };
@@ -3719,6 +3729,8 @@ Polyanno.buildingParents.activated = function() {
 
   ///status ---> should this be evented??
   Polyanno.buildingParents.status = true;
+
+
 
   ///disabled unnecessary functionailty
   Polyanno.L.drawControl.default.remove();
