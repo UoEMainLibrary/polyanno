@@ -3458,40 +3458,42 @@ Polyanno.buildingParents.vector.submitted = function (merged_vector) {
 
 Polyanno.buildingParents.numbers.labels = [];
 
+Polyanno.buildingParents.numbers.new = function(this_vec, number) {
+  var the_number_label = "<div style='background-color: white; padding: 10px 18px 10px 12px; border-radius: 5px; margin: -12px 0px 0px -12px; text-align: center;'><span> "+number+" </span></div>";
+  var centroidLtLngs = this_vec.getBounds().getCenter();
+  var numIcon = new L.divIcon({html: the_number_label});
+  var labelMarker = new L.marker(centroidLtLngs, {icon: numIcon});
+  labelMarker.addTo(Polyanno.L.map);
+  return labelMarker;
+};
+
 Polyanno.buildingParents.numbers.add = function(new_vec, number) {
 
-  var the_number_label = "<div style='background-color: white; padding: 10px 18px 10px 12px; border-radius: 5px; margin: -12px 0px 0px -12px; text-align: center;'><span> "+number+" </span></div>";
   var hover_opts = {
       sticky: true,
       permanent: false,
       direction: 'auto'
   };
-
-  var centroidLtLngs = new_vec.getBounds().getCenter();
-  var numIcon = new L.divIcon({html: the_number_label});
-  var labelMarker = new L.marker(centroidLtLngs, {icon: numIcon}).addTo(Polyanno.L.map);
+  var labelMarker = Polyanno.buildingParents.numbers.new(new_vec, number);
   Polyanno.buildingParents.numbers.labels.push(labelMarker);
-
   new_vec.unbindTooltip();
   new_vec.bindTooltip(polyanno_merging_added_shape_HTML, hover_opts).openTooltip();
 };
 
 Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, array_index) {
-  Polyanno.buildingParents.numbers.labels[array_index].remove();
-  Polyanno.buildingParents.numbers.labels.splice(array_index, 1);
   vec_removed.unbindTooltip();
   vec_removed.bindTooltip(polyanno_merging_new_shape_HTML, {
       sticky: true,
       permanent: false,
       direction: 'auto'
     }).openTooltip();
-  var affected_array = merge_array;
-  affected_array.splice(array_index+1);
-  for (var i=0; i < affected_array.length; i++) {
-    var this_vec = affected_array[i];
-    this_vec.unbindTooltip();
-    Polyanno.buildingParents.numbers.add(this_vec, i+1);
+  for (var i=array_index+1; i < merge_array.length; i++) {
+    Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
+    var labelMarker = Polyanno.buildingParents.numbers.new(merge_array[i], i);
+    Polyanno.buildingParents.numbers.labels.splice(i, 1, labelMarker);
   };
+  Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[array_index]);
+  Polyanno.buildingParents.numbers.labels.splice(array_index, 1);
 };
 
 Polyanno.buildingParents.numbers.rearrange = function(old_array_index, new_array_index) {
