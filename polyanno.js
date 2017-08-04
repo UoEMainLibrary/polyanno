@@ -678,7 +678,7 @@ var polyanno_top_bar_HTML = `
 
         </div>
 
-        <button class="btn btn-default atu-custom-keyboard-btn" type="button">
+        <!-- <button class="btn btn-default atu-custom-keyboard-btn" type="button">
           <span class="glyphicon glyphicon-asterisk"></span>
           <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
         </button>
@@ -695,23 +695,23 @@ var polyanno_top_bar_HTML = `
                 <span class="glyphicon glyphicon-triangle-bottom"></span>
               </button>
 
-        </div>
+        </div> -->
 
       </div>
 
-      <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
+      <!-- <div class="btn-group polyanno-language-buttons" role="group" aria-label="...">
 
         <button class="btn btn-default polyanno-add-keyboard" type="button">
           <span class="glyphicon glyphicon-plus"></span>
           <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
-        </button> <!--add keyboard characters-->
+        </button> 
 
         <button class="btn btn-default polyanno-add-ime polyanno-IME-options-closed" type="button">
           <span class="glyphicon glyphicon-transfer"></span>
           <span class="glyphicon glyphicon-th"></span><span class="glyphicon glyphicon-th"></span>
-        </button> <!--add IME options-->
+        </button> 
 
-      </div>
+      </div> -->
 
       <div class="polyanno-enable-IME">
 
@@ -2295,13 +2295,13 @@ Polyanno.textHighlighting.menu.newText = function(theDOM, base) {
     }); 
 
     $('.openTranscriptionMenuOld').on("click", function(event) {
-      alert(JSON.stringify(Polyanno.selected.getAll())); 
+      //alert(JSON.stringify(Polyanno.selected.getAll())); 
       theDOM.popover("hide");
       Polyanno.editors.ifOpen('transcription');
     });
 
     $('.openTranslationMenuOld').on("click", function(event) {
-      alert(JSON.stringify(Polyanno.selected.getAll())); 
+      //alert(JSON.stringify(Polyanno.selected.getAll())); 
       theDOM.popover("hide");
       Polyanno.editors.ifOpen('transcription');
     });
@@ -2374,7 +2374,7 @@ Polyanno.textHighlighting.extractProperties = function(selection, classCheck) {
     var t = polyanno_annos_of_target(targetID, "transcription");
     Polyanno.selected.transcriptions.array = t;
     Polyanno.selected.targets.array = [{id: targetID}];
-    alert("before the popover opens the selected is "+JSON.stringify(Polyanno.selected.getAll()));
+    //alert("before the popover opens the selected is "+JSON.stringify(Polyanno.selected.getAll()));
     $(selection.anchorNode.parentElement).popover("show");
   }
   else if (classCheck.includes('opentranslationChildrenPopup')) { 
@@ -3286,20 +3286,20 @@ Polyanno.buildingParents.clicked = function(vec) {
       var the_index = Polyanno.buildingParents.vectors.indexOf(vec.layer);
       Polyanno.buildingParents.numbers.remove(vec.layer, Polyanno.buildingParents.vectors, the_index);
       Polyanno.buildingParents.vectors.splice(the_index, 1);
-      //Polyanno.buildingParents.annos.remove(vec.layer);
+      Polyanno.buildingParents.annos.remove(vec.layer);
       Polyanno.buildingParents.vector.remove(vec.layer, Polyanno.buildingParents.parent.vector);
     }
     else if (!isUseless(Polyanno.buildingParents.parent.vector)) {
       //click and merge this vector
       Polyanno.buildingParents.vectors.push(vec.layer);
-      //Polyanno.buildingParents.annos.add(vec.layer);
+      Polyanno.buildingParents.annos.add(vec.layer);
       Polyanno.buildingParents.vector.update(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
       Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
     }
     else {
       //click and start the new merge shape
       Polyanno.buildingParents.vectors.push(vec.layer);
-      //Polyanno.buildingParents.annos.add(vec.layer);
+      Polyanno.buildingParents.annos.add(vec.layer);
       Polyanno.buildingParents.vector.new(vec.layer);
       Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
     };
@@ -3605,7 +3605,7 @@ Polyanno.buildingParents.annos.removeText = function(text_type, children_array, 
     return item.vector == vec;
   });
   var this_child = this_child_array[0];
-  alert("this merged anno is "+JSON.stringify(this_child));
+  //alert("this merged anno is "+JSON.stringify(this_child));
   var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
 
   the_display_dom.removeChild(this_frag_dom);
@@ -4258,9 +4258,9 @@ Polyanno.L.vec_event.delete = function() {
 
 $('#polyanno-page-body').on("click", '.newAnnotation', function(event) {
 
-  atu_the_input = $(this);
+  //atu_the_input = $(this);
   //change the text input area that the IME conversions are using to this one
-  atu_initialise_IMEs($(this));
+  //atu_initialise_IMEs($(this));
 
 });
 
@@ -4269,12 +4269,13 @@ $("#polyanno-top-bar").on("click", ".polyanno-add-keyboard", function(event){
       "minimise": true,
       "initialise_min_bar": false
     };
-    addKeyboard(dragon_opts, false);
+    //addKeyboard(dragon_opts, false);
 });
 
 ////////custom keys
 
-var atu_blank_custom_keyboard_HTML = `
+var atu_blank_custom_keyboard_HTML = ``;
+/*`
   <div class="col-md-6">
     <div class="row">
       <span >Keyboard Name:</span>
@@ -4289,16 +4290,17 @@ var atu_blank_custom_keyboard_HTML = `
       </button>
     </div>
   </div>
-`;
+`;*/
 
-var atu_custom_keyboard_HTML = `
+var atu_custom_keyboard_HTML = ``;
+/*`
   <div class="row">
     <div id="newKeyboardForCloning" class="col-md-6 atu-cloning-keyboard">`
     + atu_main_HTML +`
     </div>`
     +atu_blank_custom_keyboard_HTML+`
   </div>
-`;
+`;*/
 
 var atu_custom_keyboard_handlebar_HTML = `
   
@@ -4610,9 +4612,9 @@ var polyanno_setup = function(opts) {
   var polyanno_image_title_HTML = "<span class='glyphicon glyphicon-picture'></span>";//"<span>"+polyanno_image_title()+"</span>";
 
   //will this induce synchronicity problems?
-  $("#polyanno-page-body").addClass("row atu-keyboard-parent");
+  //$("#polyanno-page-body").addClass("row atu-keyboard-parent");
 
-  createCustomKeyboard();
+  //createCustomKeyboard();
 
   var image_viewer_id = add_dragondrop_pop( "polyanno-image-box", polyanno_image_viewer_HTML , "polyanno-page-body", polyanno_minimising, polyanno_image_title_HTML, true );
   $(image_viewer_id)
@@ -4633,10 +4635,13 @@ var polyanno_setup = function(opts) {
 
   Polyanno.starting.voting();
 
+  /*
+  //Re add when working
   $(".atu-custom-keyboard-buttons").toggle();
   $(".atu-custom-keyboard-btn").on("click", function(event){
     $(".atu-custom-keyboard-buttons").toggle("swing");
   });
+  */
 
   window.hypothesisConfig = function () {
     return {
