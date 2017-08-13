@@ -3665,7 +3665,7 @@ Polyanno.buildingParents.annos.updateChildren = function(merged_vector, merged_t
       var createdText = new Polyanno[textType](this_json);
       Polyanno[plural].add(createdText);
       this_json.body = createdText;
-      var newAnno = Polyanno.annotation(this_json);
+      var newAnno = new Polyanno.annotation(this_json);
       Polyanno.annotations.add(newAnno);
       setInitialRank(textType, createdText);
     }
