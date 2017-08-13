@@ -3328,6 +3328,20 @@ Polyanno.buildingParents.vector.calculateNewParent = function(shape1, shape2, me
   return final_merge_shape_coords;
 };
 
+Polyanno.buildingParents.vector.replace = function(old_shape, new_shape) {
+  ///replace with setLatLngs method??
+  Polyanno.L.suggestedParentVector.removeLayer(old_shape);
+
+  L.geoJson(new_shape, 
+        { style: {color: Polyanno.colours.processing.vector },
+          onEachFeature: function (feature, layer) {
+            Polyanno.L.suggestedParentVector.addLayer(layer),
+            layer.bringToBack(),
+            Polyanno.buildingParents.parent.vector = layer
+          }
+        }).addTo(Polyanno.L.map);
+  Polyanno.L.suggestedParentVector.bringToBack();
+};
 
 Polyanno.buildingParents.vector.new = function(shape_to_copy) {
 
@@ -3357,71 +3371,54 @@ Polyanno.buildingParents.vector.new = function(shape_to_copy) {
 };
 
 Polyanno.buildingParents.vector.update = function(temp_shape_layer, new_vec_layer, merge_array) {
+
   var old_shape_JSON = temp_shape_layer.toGeoJSON();
   var old_shape_coords = old_shape_JSON.geometry.coordinates[0];
   var new_vec_JSON = new_vec_layer.toGeoJSON();
   var new_vec_coords = new_vec_JSON.geometry.coordinates[0];
-  var new_merge_coords = Polyanno.buildingParents.vector.calculateNewParent(old_shape_coords, new_vec_coords, merge_array);
-  var concavity_check; // = check_for_concavity(new_merge_coords);
 
+  var new_merge_coords = Polyanno.buildingParents.vector.calculateNewParent(old_shape_coords, new_vec_coords, merge_array);
+
+  ///*** add geometric properties checks here
+  var concavity_check; // = check_for_concavity(new_merge_coords);
   var tempGeoJSON = old_shape_JSON;
   if (isUseless(tempGeoJSON.properties)) {  tempGeoJSON.properties = {};  };
   if (!isUseless(concavity_check)) {
     tempGeoJSON.properties.OCD = concavity_check;
   };
+  tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
+
   tempGeoJSON.properties.transcription = Polyanno.buildingParents.transcriptions;
   tempGeoJSON.properties.translation = Polyanno.buildingParents.translations;
-  tempGeoJSON.geometry.coordinates[0] = new_merge_coords;
   tempGeoJSON.properties.children.push(new_vec_layer._leaflet_id);
 
-  Polyanno.L.suggestedParentVector.removeLayer(temp_shape_layer);
+  Polyanno.buildingParents.vector.replace(temp_shape_layer, tempGeoJSON);
 
-  L.geoJson(tempGeoJSON, 
-        { style: {color: Polyanno.colours.processing.vector },
-          onEachFeature: function (feature, layer) {
-            Polyanno.L.suggestedParentVector.addLayer(layer),
-            layer.bringToBack(),
-            Polyanno.buildingParents.parent.vector = layer
-          }
-        }).addTo(Polyanno.L.map);
-  Polyanno.L.suggestedParentVector.bringToBack();
 };
 
 Polyanno.buildingParents.vector.remove = function(vec_removed, merge_shape) {
+
   var old_shape_JSON = merge_shape.toGeoJSON();
   var removing_shape_JSON = vec_removed.toGeoJSON();
   var old_coords = old_shape_JSON.geometry.coordinates[0];
   var removing_coords = removing_shape_JSON.geometry.coordinates[0];
-  var new_coords = [];
-  for (var i=0; i<old_coords.length; i++) {
-    var this_vertex = old_coords[i];
-    if (!removing_coords.includes(this_vertex)) {
-      new_coords.push(this_vertex);
-    };
-  };
-  if (removing_coords.includes(old_coords[0])) {
-    var the_coords = new_coords;
-    new_coords.splice(0,1);
-    new_start = new_coords;
-    the_coords.push(new_start);
-    new_coords = the_coords;
+  var removing_coords_strings = removing_coords.map(function(v){
+    return JSON.stringify(v);
+  });
+
+  var new_coords = old_coords.filter(function(vertex){
+    return !removing_coords_strings.includes(JSON.stringify(vertex));
+  });
+  if ( JSON.stringify(new_coords[0]) != JSON.stringify(new_coords[new_coords.length-1]) ) {
+    var loop_v = new_coords[0];
+    new_coords.push(loop_v);
   };
   var new_shape = old_shape_JSON;
   new_shape.geometry.coordinates[0] = new_coords;
 
-  ///replace with setLatLngs method??
+  ///*** add geometric properties checks here
 
-  Polyanno.L.suggestedParentVector.removeLayer(merge_shape);
-
-  L.geoJson(new_shape, 
-        { style: {color: Polyanno.colours.processing.vector },
-          onEachFeature: function (feature, layer) {
-            Polyanno.L.suggestedParentVector.addLayer(layer),
-            layer.bringToBack(),
-            Polyanno.buildingParents.parent.vector = layer
-          }
-        }).addTo(Polyanno.L.map);
-  Polyanno.L.suggestedParentVector.bringToBack();
+  Polyanno.buildingParents.vector.replace(merge_shape, new_shape);
 
 };
 
@@ -3458,6 +3455,12 @@ Polyanno.buildingParents.vector.submitted = function (merged_vector) {
 
 Polyanno.buildingParents.numbers.labels = [];
 
+Polyanno.buildingParents.numbers.hover_opts = {
+    sticky: true,
+    permanent: false,
+    direction: 'auto'
+};
+
 Polyanno.buildingParents.numbers.new = function(this_vec, number) {
   var the_number_label = "<div style='background-color: white; padding: 10px 18px 10px 12px; border-radius: 5px; margin: -12px 0px 0px -12px; text-align: center;'><span> "+number+" </span></div>";
   var centroidLtLngs = this_vec.getBounds().getCenter();
@@ -3468,25 +3471,15 @@ Polyanno.buildingParents.numbers.new = function(this_vec, number) {
 };
 
 Polyanno.buildingParents.numbers.add = function(new_vec, number) {
-
-  var hover_opts = {
-      sticky: true,
-      permanent: false,
-      direction: 'auto'
-  };
   var labelMarker = Polyanno.buildingParents.numbers.new(new_vec, number);
   Polyanno.buildingParents.numbers.labels.push(labelMarker);
   new_vec.unbindTooltip();
-  new_vec.bindTooltip(polyanno_merging_added_shape_HTML, hover_opts).openTooltip();
+  new_vec.bindTooltip(polyanno_merging_added_shape_HTML, Polyanno.buildingParents.numbers.hover_opts).openTooltip();
 };
 
 Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, array_index) {
   vec_removed.unbindTooltip();
-  vec_removed.bindTooltip(polyanno_merging_new_shape_HTML, {
-      sticky: true,
-      permanent: false,
-      direction: 'auto'
-    }).openTooltip();
+  vec_removed.bindTooltip(polyanno_merging_new_shape_HTML, Polyanno.buildingParents.numbers.hover_opts).openTooltip();
   for (var i=array_index+1; i < merge_array.length; i++) {
     Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
     var labelMarker = Polyanno.buildingParents.numbers.new(merge_array[i], i);
@@ -3497,22 +3490,43 @@ Polyanno.buildingParents.numbers.remove = function(vec_removed, merge_array, arr
 };
 
 Polyanno.buildingParents.numbers.rearrange = function(old_array_index, new_array_index) {
-  ////****
+
   var arr = Polyanno.buildingParents.vectors;
   var vec = arr[old_array_index];
-  vec_removed.unbindTooltip();
-  Polyanno.buildingParents.numbers.add(vec, new_array_index+1);
-  var arr2 = arr;
-  arr2.splice(old_array_index, 1);
-  var merge_array = arr;
-  merge_array.splice(new_array_index, 0, vec);
-  for (var i=0; i < merge_array.length; i++) {
-    var this_vec = merge_array[i];
-      this_vec.unbindTooltip();
-    Polyanno.buildingParents.numbers.add(this_vec, i+1);  
-  };
-  Polyanno.buildingParents.vectors = merge_array;
+
+  Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[old_array_index]);
+  var labelMarker = Polyanno.buildingParents.numbers.new(vec, new_array_index+1);
+
+  /////only numbers between old and new are affected
   
+  //if the old index is earlier than the new one
+  if (old_array_index < new_array_index) {
+    for (var i=old_array_index+1; i <= new_array_index; i++) {
+      Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
+      var labelMarker = Polyanno.buildingParents.numbers.new(arr[i], i);
+      Polyanno.buildingParents.numbers.labels.splice(i, 1, labelMarker);
+    };
+  }
+  //if the old index is later than the new one
+  else if (old_array_index > new_array_index) {
+    for (var i=new_array_index; i < old_array_index; i++) {
+      Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
+      var labelMarker = Polyanno.buildingParents.numbers.new(arr[i], i+2);
+      Polyanno.buildingParents.numbers.labels.splice(i, 1, labelMarker);
+    };
+  };
+
+  Polyanno.buildingParents.numbers.labels.splice(old_array_index, 1);
+  Polyanno.buildingParents.numbers.labels.splice(new_array_index, 0, labelMarker); 
+
+};
+
+Polyanno.buildingParents.numbers.deactivated = function(merge_array) {
+  for (var i=0; i < merge_array.length; i++) {
+    Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
+    merge_array[i].unbindTooltip();
+  };
+  Polyanno.buildingParents.numbers.labels = [];
 };
 
 
@@ -3539,8 +3553,8 @@ Polyanno.buildingParents.annos.addJSON = function(new_vec, textType) {
     var newID = Math.random().toString().substring(2);
     var id = Polyanno.urls[textType].concat(newID);
     var vec = Polyanno.vectors.getById(new_vec._leaflet_id);
-    return {"_id": newID, "id": id, "text": "   ", "vector": new_vec, "isNew": true, metadata: imageSelectedMetadata, 
-    target: [ {id: new_vec.id,  format: "image/SVG"  }, 
+    return {"_id": newID, "id": id, "text": "   ", "vector": new_vec._leaflet_id, "isNew": true, metadata: imageSelectedMetadata, 
+    target: [ {id: new_vec._leaflet_id,  format: "image/SVG"  }, 
     {id: imageSelected,  format: "application/json"  } ]};
   }
   else {
@@ -3549,13 +3563,12 @@ Polyanno.buildingParents.annos.addJSON = function(new_vec, textType) {
 };
 
 Polyanno.buildingParents.annos.add = function(new_vec_obj) {
-  var new_vec = new_vec_obj.toGeoJSON();
 
-  var transcriptionJSON = Polyanno.buildingParents.annos.addJSON(new_vec, "transcription");
+  var transcriptionJSON = Polyanno.buildingParents.annos.addJSON(new_vec_obj, "transcription");
   Polyanno.buildingParents.transcriptions.push(transcriptionJSON);
   var transcriptionSpan = Polyanno.buildingParents.annos.addSpan(transcriptionJSON, "transcription");
 
-  var translationJSON = Polyanno.buildingParents.annos.addJSON(new_vec, "translation");
+  var translationJSON = Polyanno.buildingParents.annos.addJSON(new_vec_obj, "translation");
   Polyanno.buildingParents.translations.push(translationJSON);
   var translationSpan = Polyanno.buildingParents.annos.addSpan(translationJSON, "translation"); 
 
@@ -3602,22 +3615,20 @@ Polyanno.buildingParents.annos.add = function(new_vec_obj) {
 Polyanno.buildingParents.annos.removeText = function(text_type, children_array, vec) {
   var the_display_dom = document.getElementById("polyanno_merging_"+text_type);
   var this_child_array = $.grep(children_array, function(item, index){
-    return item.vector == vec;
+    return item.vector == vec._leaflet_id;
   });
   var this_child = this_child_array[0];
-  //alert("this merged anno is "+JSON.stringify(this_child));
-  var this_frag_dom = document.getElementById(this_child._id); /////////!!!!!!
+  var this_frag_dom = document.getElementById(this_child._id);
 
   the_display_dom.removeChild(this_frag_dom);
   var the_array_index = children_array.indexOf(this_child);
-  return children_array.slice(the_array_index, 1);
+  children_array.splice(the_array_index, 1);
+  return children_array;
 };
 
 Polyanno.buildingParents.annos.remove = function(vec_removed_layer) {
-  var vec_removed = vec_removed_layer.toGeoJSON();
-
-  Polyanno.buildingParents.transcriptions = Polyanno.buildingParents.annos.removeText("transcription", Polyanno.buildingParents.transcriptions, vec_removed);
-  Polyanno.buildingParents.translations = Polyanno.buildingParents.annos.removeText("translation", Polyanno.buildingParents.translations, vec_removed);
+  Polyanno.buildingParents.transcriptions = Polyanno.buildingParents.annos.removeText("transcription", Polyanno.buildingParents.transcriptions, vec_removed_layer);
+  Polyanno.buildingParents.translations = Polyanno.buildingParents.annos.removeText("translation", Polyanno.buildingParents.translations, vec_removed_layer);
 };
 
 Polyanno.buildingParents.annos.addText = function(merged_vector, textType) {
@@ -3815,15 +3826,9 @@ Polyanno.buildingParents.activated = function() {
 Polyanno.buildingParents.deactivated = function() {
 
   Polyanno.buildingParents.status = false;
-
-  //leaflet
-  for (var i=0; i < Polyanno.buildingParents.vectors.length; i++) {
-    var this_vec = Polyanno.buildingParents.vectors[i];
-    this_vec.unbindTooltip();
-  };
-  Polyanno.L.vectors.bindPopup(Polyanno.L.menu.newVector);
  
   //reset variables
+  Polyanno.buildingParents.numbers.deactivated(Polyanno.buildingParents.vectors);
   Polyanno.buildingParents.parent.vector = false;
   Polyanno.buildingParents.transcriptions = [];
   Polyanno.buildingParents.translations = [];
