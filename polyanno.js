@@ -319,18 +319,6 @@ var polyanno_annos_of_target = function(target, baseType, callback_function) {
 };
 
 
-/////////////////Interval Storage
-
-Polyanno.intEffects.buildingParents = {
-  transcription: null,
-  translation: null,
-  vector: {
-    mouseover: {},
-    mouseout: {}
-  }
-};
-
-
 //////////////////URLS
 
 Polyanno.urls = {
@@ -364,7 +352,11 @@ Polyanno.colours = {
     vector: "yellow",
     span: "yellow"
   },
-  highlightThis: {}
+  highlightThis: {},
+  buildingParents: {
+    annos: {},
+    vector: {}
+  }
 };
 
 /////Methods
@@ -451,44 +443,64 @@ Polyanno.colours.connectColours = function(object, type, action) {
     };
 };
 
-//
 
-var polyanno_start_span_bouncing = function(JQUIspan, text_type) {
-  return setInterval(function() {
-    /////still resulting in moving location!!
-    JQUIspan.effect('bounce', {distance: 2}, 500);
-  }, 500);
-
-};
-
-Polyanno.intEffects.buildingParents.span_mouseover = function(new_frag_id, text_type) {
+Polyanno.colours.buildingParents.annos.mouseover = function(new_frag_id) {
   JQUIspan = $("#"+new_frag_id);
 
   JQUIspan
   .css("background-color", Polyanno.colours.processing.span)
   .css("opacity", 1.0)
   .css("border", "none");
-  jQuery.effects.createPlaceholder(JQUIspan);
-
-  clearInterval(Polyanno.intEffects.buildingParents[text_type]);
-  var sibs = JQUIspan.siblings();
-  sibs
-  .css("background-color", Polyanno.colours.default.span)
-  .css("opacity", 0.7)
-  .css("border", "1px dotted grey");
-  //jQuery.effects.removePlaceholder(sibs);
 
   JQUIspan.parent().on("mouseleave", function(event){
     JQUIspan
     .css("background-color", Polyanno.colours.default.span)
     .css("opacity", 0.7)
-    .css("border", "1px dotted grey");
-    //jQuery.effects.removePlaceholder(JQUIspan);
-    clearInterval(Polyanno.intEffects.buildingParents[text_type]);
+    .css("border", "3px solid #e3e3e5");
   });
+};
 
-  var te = polyanno_start_span_bouncing(JQUIspan, text_type);
-  Polyanno.intEffects.buildingParents[text_type] = te;
+Polyanno.colours.buildingParents.vector.mouseover = function(theIndex){
+
+  if (theIndex != -1) {
+
+    var n = theIndex + 1;
+
+    Polyanno.colours.highlightThis.vector(Polyanno.buildingParents.vectors[theIndex], Polyanno.colours.processing.vector);
+
+    $("#polyanno_merging_transcription > a:nth-child("+n+")")
+    .css("background-color", Polyanno.colours.processing.span)
+    .css("opacity", 1.0)
+    .css("border", "none");
+
+    $("#polyanno_merging_translation > a:nth-child("+n+")").children()
+    .css("background-color", Polyanno.colours.processing.span)
+    .css("opacity", 1.0)
+    .css("border", "none");
+  };
+
+};
+
+Polyanno.colours.buildingParents.vector.mouseout = function(theIndex){
+
+  if (theIndex != -1) {
+
+    var n = theIndex + 1;
+
+    Polyanno.colours.highlightThis.vector(Polyanno.buildingParents.vectors[theIndex], Polyanno.colours.default.vector);
+
+    $("#polyanno_merging_transcription > a:nth-child("+n+")")
+    .css("background-color", Polyanno.colours.default.span)
+    .css("opacity", 0.7)
+    .css("border", "3px solid #e3e3e5");
+
+    $("#polyanno_merging_translation > a:nth-child("+n+")")
+    .css("background-color", Polyanno.colours.default.span)
+    .css("opacity", 0.7)
+    .css("border", "3px solid #e3e3e5");
+
+  };
+
 };
 
 Polyanno.starting.highlighting = function() {
@@ -509,7 +521,7 @@ Polyanno.starting.highlighting = function() {
         Polyanno.colours.connectColours(thisSpan, "span", "highlight");
       }
       else {
-        Polyanno.intEffects.buildingParents.span_mouseover(thisSpan, "transcription");
+        Polyanno.colours.buildingParents.annos.mouseover(thisSpan, "transcription");
       };
     });
 
@@ -531,15 +543,13 @@ Polyanno.starting.highlighting = function() {
     Polyanno.colours.connectColours(thisEditor, "editor", "default");
   });
 
-  ///the vector highlights are not working??
-
   Polyanno.L.vectors.on('mouseover', function(vec) {
     if (!Polyanno.buildingParents.status) {
       Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "highlight");
     }
     else {
-      var n = vec.layer._leaflet_id.toString();
-      Polyanno.intEffects.buildingParents.vector.mouseover[n]();
+      var ind = Polyanno.buildingParents.vectors.indexOf(vec.layer);
+      Polyanno.colours.buildingParents.vector.mouseover(ind);
     };
   });
   Polyanno.L.vectors.on('mouseout', function(vec) {
@@ -547,8 +557,8 @@ Polyanno.starting.highlighting = function() {
       Polyanno.colours.connectColours(vec.layer._leaflet_id, "vector", "default");
     }
     else {
-      var n = vec.layer._leaflet_id.toString();
-      Polyanno.intEffects.buildingParents.vector.mouseout[n]();
+      var ind = Polyanno.buildingParents.vectors.indexOf(vec.layer);
+      Polyanno.colours.buildingParents.vector.mouseout(ind);
     };
   });
 
@@ -3445,7 +3455,7 @@ Polyanno.buildingParents.vector.submitted = function (merged_vector) {
     var this_layer_id = this_layer._leaflet_id;
     var this_vec = Polyanno.vectors.getById(this_layer_id);
     this_vec.update({ parent: merged_vector  });
-    var thisAnno = Polyanno.annotations.getAnnotationByBody(this_layer_id);
+    var thisAnno = Polyanno.getAnnotationByBody(this_layer_id);
     thisAnno.addTargets([{"id": merged_vector.id, "format": "image/SVG"}]);
   };
 
@@ -3521,12 +3531,27 @@ Polyanno.buildingParents.numbers.rearrange = function(old_array_index, new_array
 
 };
 
+Polyanno.buildingParents.numbers.activated = function() {
+
+  Polyanno.L.vectors.eachLayer(function(vec){
+    vec.bindTooltip(polyanno_merging_new_shape_HTML, {
+      sticky: true,
+      permanent: false,
+      direction: 'auto'
+    }).openTooltip();
+  });
+ 
+};
+
 Polyanno.buildingParents.numbers.deactivated = function(merge_array) {
+  //if a shape has been rearranged then the label is not removed..????
   for (var i=0; i < merge_array.length; i++) {
     Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
-    merge_array[i].unbindTooltip();
   };
   Polyanno.buildingParents.numbers.labels = [];
+  Polyanno.L.vectors.eachLayer(function(vec){
+    vec.unbindTooltip();
+  });
 };
 
 
@@ -3571,44 +3596,6 @@ Polyanno.buildingParents.annos.add = function(new_vec_obj) {
   var translationJSON = Polyanno.buildingParents.annos.addJSON(new_vec_obj, "translation");
   Polyanno.buildingParents.translations.push(translationJSON);
   var translationSpan = Polyanno.buildingParents.annos.addSpan(translationJSON, "translation"); 
-
-  var this_mouseover_listener = function(){
-    //new_vec_obj.setStyle();
-    transcriptionSpan
-    .css("background-color", Polyanno.colours.processing.span)
-    .css("opacity", 1.0)
-    .css("border", "1px dotted grey");
-
-    translationSpan
-    .css("background-color", Polyanno.colours.processing.span)
-    .css("opacity", 1.0)
-    .css("border", "1px dotted grey");
-
-    var te1 = polyanno_start_span_bouncing(transcriptionSpan, "transcription");
-    var te2 = polyanno_start_span_bouncing(translationSpan, "translation");
-    Polyanno.intEffects.buildingParents.transcription = te1;
-    Polyanno.intEffects.buildingParents.translation = te2;
-  };
-
-  var this_mouseout_listener = function(){
-    clearInterval(Polyanno.intEffects.buildingParents.transcription);
-    clearInterval(Polyanno.intEffects.buildingParents.translation);
-
-    transcriptionSpan
-    .css("background-color", Polyanno.colours.default.span)
-    .css("opacity", 0.7)
-    .css("border", "none");
-
-    translationSpan
-    .css("background-color", Polyanno.colours.default.span)
-    .css("opacity", 0.7)
-    .css("border", "none");
-
-  };
-
-  var new_field_name = new_vec_obj._leaflet_id.toString();
-  Polyanno.intEffects.buildingParents.vector.mouseover[new_field_name] = this_mouseover_listener;
-  Polyanno.intEffects.buildingParents.vector.mouseout[new_field_name] = this_mouseout_listener;
 
 };
 
@@ -3716,27 +3703,7 @@ var animate_moving_image_box_focus_end = function(callback_function) {
   callback_function();
 };
 
-Polyanno.buildingParents.listeners = function() {
 
-  var this_mouseover_listener = function(){
-    ///
-  };
-  var this_mouseout_listener = function(){
-    ///
-  };
-
-  Polyanno.L.vectors.eachLayer(function(vec){
-    var n = vec._leaflet_id.toString();
-    Polyanno.intEffects.buildingParents.vector.mouseover[n] = this_mouseover_listener;
-    Polyanno.intEffects.buildingParents.vector.mouseout[n] = this_mouseout_listener;
-    vec.bindTooltip(polyanno_merging_new_shape_HTML, {
-      sticky: true,
-      permanent: false,
-      direction: 'auto'
-    }).openTooltip();
-  });
- 
-};
 
 Polyanno.buildingParents.activated = function() {
 
@@ -3750,7 +3717,7 @@ Polyanno.buildingParents.activated = function() {
   polyanno_disable_keyboards();
 
   Polyanno.L.map.fitBounds(Polyanno.L.vectors.getBounds());
-  Polyanno.buildingParents.listeners();
+  Polyanno.buildingParents.numbers.activated();
 
   animate_moving_image_box_focus_end(function() {
     $(".polyanno_merging_annos")
@@ -3771,26 +3738,93 @@ Polyanno.buildingParents.activated = function() {
   $(this_translation_display).css("height", ivh);
 
   $("#polyanno_merging_transcription").sortable({
+    forcePlaceholderSize: true,
+    placeholder: "polyanno_merging_placeholder",
     start: function(event, ui) {
-      var s = ui.item.id;
+      var s = $(ui.item).attr("id");
       var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
-        return t._id = s;
+        return t._id == s;
       });
-      var vec = Polyanno.L.vectors.getLayer(arr[0].vector);
-      ////
-
+      Polyanno.colours.highlightThis.vector(arr[0].vector, Polyanno.colours.processing.vector);
+      $(ui.item).css("background-color", Polyanno.colours.processing.span);
     },
-    update: function(event, ui) {
-      var s = ui.item.id;
-       var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
-        return t._id = s;
+    stop: function(event, ui) {
+      var s = $(ui.item).attr("id");
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id == s;
       });
-      var old = Polyanno.buildingParents.transcriptions.indexOf(arr[0]);
-      var newIndex = ui.item.index();
-      Polyanno.buildingParents.numbers.rearrange(old, newIndex);      
+      Polyanno.colours.highlightThis.vector(arr[0].vector, Polyanno.colours.default.vector);
+      $(ui.item).css("background-color", Polyanno.colours.default.span);
+    },    
+    update: function(event, ui) {
+      var s = $(ui.item).attr("id");
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id == s;
+      });
+
+      var old = Polyanno.buildingParents.transcriptions.indexOf(arr[0]); 
+      var newIndex = $(ui.item).index();
+
+      Polyanno.buildingParents.numbers.rearrange(old, newIndex); 
+
+      var the_transcription = Polyanno.buildingParents.transcriptions[old];
+      Polyanno.buildingParents.transcriptions.splice(old, 1);
+      Polyanno.buildingParents.transcriptions.splice(newIndex, 0, arr[0]);
+
+      var the_translation = Polyanno.buildingParents.translations[old];
+      Polyanno.buildingParents.translations.splice(old, 1);
+      Polyanno.buildingParents.translations.splice(newIndex, 0, the_translation);
+
+      var the_vector = Polyanno.buildingParents.vectors[old];
+      Polyanno.buildingParents.vectors.splice(old, 1);
+      Polyanno.buildingParents.vectors.splice(newIndex, 0, the_vector);
+
     }
   });
-  $("#polyanno_merging_translation").sortable();
+  $("#polyanno_merging_translation").sortable({
+    forcePlaceholderSize: true,
+    placeholder: "polyanno_merging_placeholder",
+    start: function(event, ui) {
+      var s = $(ui.item).attr("id");
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id == s;
+      });
+      Polyanno.colours.highlightThis.vector(arr[0].vector, Polyanno.colours.processing.vector);
+      $(ui.item).css("background-color", Polyanno.colours.processing.span);
+    },
+    stop: function(event, ui) {
+      var s = $(ui.item).attr("id");
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id == s;
+      });
+      Polyanno.colours.highlightThis.vector(arr[0].vector, Polyanno.colours.default.vector);
+      $(ui.item).css("background-color", Polyanno.colours.default.span);
+    },    
+    update: function(event, ui) {
+      var s = $(ui.item).attr("id");
+      var arr = $.grep(Polyanno.buildingParents.transcriptions, function(t) {
+        return t._id == s;
+      });
+
+      var old = Polyanno.buildingParents.transcriptions.indexOf(arr[0]); 
+      var newIndex = $(ui.item).index();
+
+      Polyanno.buildingParents.numbers.rearrange(old, newIndex); 
+
+      var the_transcription = Polyanno.buildingParents.transcriptions[old];
+      Polyanno.buildingParents.transcriptions.splice(old, 1);
+      Polyanno.buildingParents.transcriptions.splice(newIndex, 0, arr[0]);
+
+      var the_translation = Polyanno.buildingParents.translations[old];
+      Polyanno.buildingParents.translations.splice(old, 1);
+      Polyanno.buildingParents.translations.splice(newIndex, 0, the_translation);
+
+      var the_vector = Polyanno.buildingParents.vectors[old];
+      Polyanno.buildingParents.vectors.splice(old, 1);
+      Polyanno.buildingParents.vectors.splice(newIndex, 0, the_vector);
+
+    }
+  });
 
   $(".polyanno-merge-transcriptions-btn").on("click", function(event){  $(this_transcription_display).toggle("fold");  });
   $(".polyanno-merge-translations-btn").on("click", function(event){  $(this_translation_display).toggle("fold");  });

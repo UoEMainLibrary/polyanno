@@ -241,26 +241,19 @@
 .polyanno_merging_annos a {
   color: black;
   text-decoration: none;
-}
-
-.polyanno_merging_annos a:hover {
-  color: black;
-  text-decoration: none;
-  cursor: grab;
-}
-
-.polyanno_merging_annos a:active {
-  color: black;
-  text-decoration: none;
-  cursor: grabbing;
+  cursor: pointer;
+  padding: 2px;
+  border: 3px solid #e3e3e5;
+  border-radius: 5px;
 }
 
 .polyanno_merging_annos .ui-resizable-handle {
-  border: 3px dotted yellow;
+  /*border: 3px dotted yellow;*/
 }
 
 #polyanno_merging_transcription {
   overflow-y:scroll;
+  font-size: 2em;
   height: 100%;
   	text-align: center;
    white-space: pre-wrap;      /* Webkit */    
@@ -279,6 +272,11 @@
    white-space: -pre-wrap;     /* Opera <7 */    
    white-space: -o-pre-wrap;   /* Opera 7 */     
    word-wrap: break-word;      /* IE */ 
+}
+
+.polyanno_merging_placeholder {
+  width: 500px;
+  background-color: black;
 }
 
 .ui-effects-wrapper {
