@@ -337,6 +337,7 @@ Polyanno.urls = {
 ///////////////////Colours
 
 Polyanno.colours = {
+  larger_vector: "green",
   highlight: {
     editor: "#EC0028",
     vector: "#EC0028",
@@ -3290,29 +3291,31 @@ Polyanno.buildingParents = {
 Polyanno.buildingParents.clicked = function(vec) {
 
   vec.layer.closePopup();
-    ///need to introduce parents checks??
-    if (Polyanno.buildingParents.vectors.includes(vec.layer)) {
-      //unclick and remove this vector
-      var the_index = Polyanno.buildingParents.vectors.indexOf(vec.layer);
-      Polyanno.buildingParents.numbers.remove(vec.layer, Polyanno.buildingParents.vectors, the_index);
-      Polyanno.buildingParents.vectors.splice(the_index, 1);
-      Polyanno.buildingParents.annos.remove(vec.layer);
-      Polyanno.buildingParents.vector.remove(vec.layer, Polyanno.buildingParents.parent.vector);
-    }
-    else if (!isUseless(Polyanno.buildingParents.parent.vector)) {
-      //click and merge this vector
-      Polyanno.buildingParents.vectors.push(vec.layer);
-      Polyanno.buildingParents.annos.add(vec.layer);
-      Polyanno.buildingParents.vector.update(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
-      Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
-    }
-    else {
-      //click and start the new merge shape
-      Polyanno.buildingParents.vectors.push(vec.layer);
-      Polyanno.buildingParents.annos.add(vec.layer);
-      Polyanno.buildingParents.vector.new(vec.layer);
-      Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
-    };
+
+  if (Polyanno.buildingParents.vectors.includes(vec.layer)) {
+    //unclick and remove this vector
+    var the_index = Polyanno.buildingParents.vectors.indexOf(vec.layer);
+    Polyanno.buildingParents.numbers.remove(vec.layer, Polyanno.buildingParents.vectors, the_index);
+    Polyanno.buildingParents.vectors.splice(the_index, 1);
+    Polyanno.buildingParents.annos.remove(vec.layer);
+    Polyanno.buildingParents.vector.remove(vec.layer, Polyanno.buildingParents.parent.vector);
+  }
+  else if (!isUseless(Polyanno.buildingParents.parent.vector)) {
+    //click and merge this vector
+    ///need to introduce parent checks??
+    Polyanno.buildingParents.vectors.push(vec.layer);
+    Polyanno.buildingParents.annos.add(vec.layer);
+    Polyanno.buildingParents.vector.update(Polyanno.buildingParents.parent.vector, vec.layer, Polyanno.buildingParents.vectors);
+    Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
+  }
+  else {
+    //click and start the new merge shape
+    Polyanno.buildingParents.vectors.push(vec.layer);
+    Polyanno.buildingParents.annos.add(vec.layer);
+    Polyanno.buildingParents.vector.new(vec.layer);
+    Polyanno.buildingParents.numbers.add(vec.layer, Polyanno.buildingParents.vectors.length);
+  };
+
 };
 
 
@@ -3436,7 +3439,7 @@ Polyanno.buildingParents.addParentLayer = function() {
   var thisJSON = Polyanno.buildingParents.parent.vector.toGeoJSON();
   var submitted_layer_id;
   L.geoJson(thisJSON, 
-        { style: {color: Polyanno.colours.default.vector},
+        { style: {color: Polyanno.colours.larger_vector},
           onEachFeature: function (feature, layer) {
             Polyanno.L.vectors.addLayer(layer),
             submitted_layer_id = layer._leaflet_id,
@@ -3543,9 +3546,9 @@ Polyanno.buildingParents.numbers.activated = function() {
  
 };
 
-Polyanno.buildingParents.numbers.deactivated = function(merge_array) {
+Polyanno.buildingParents.numbers.deactivated = function() {
   //if a shape has been rearranged then the label is not removed..????
-  for (var i=0; i < merge_array.length; i++) {
+  for (var i=0; i < Polyanno.buildingParents.numbers.labels.length; i++) {
     Polyanno.L.map.removeLayer(Polyanno.buildingParents.numbers.labels[i]);
   };
   Polyanno.buildingParents.numbers.labels = [];
@@ -3658,7 +3661,7 @@ Polyanno.buildingParents.annos.updateChildren = function(merged_vector, merged_t
     }
     else {
       this_json.update({"parent": merged_text});
-      var thisAnno = Polyanno.annotations.getAnnotationByBody(this_json.id);
+      var thisAnno = Polyanno.getAnnotationByBody(this_json.id);
       thisAnno.addTargets(updatedTarget);
       setInitialRank(textType, this_json);
     };
@@ -3862,7 +3865,7 @@ Polyanno.buildingParents.deactivated = function() {
   Polyanno.buildingParents.status = false;
  
   //reset variables
-  Polyanno.buildingParents.numbers.deactivated(Polyanno.buildingParents.vectors);
+  Polyanno.buildingParents.numbers.deactivated();
   Polyanno.buildingParents.parent.vector = false;
   Polyanno.buildingParents.transcriptions = [];
   Polyanno.buildingParents.translations = [];
@@ -4141,11 +4144,31 @@ Polyanno.starting.leaflet = function() {
     Polyanno.L.vec_event.edit();
     Polyanno.L.vec_event.delete();
     Polyanno.buildingParents.btn_events();
+    Polyanno.L.map_event();
+  });
+};
+
+//*****
+
+Polyanno.L.map_event = function() {
+
+  var isInside = function(vertex, bounds) {
+    var x = vertex[0];
+    var y = vertex[1];
+    //
+  };
+
+  Polyanno.L.map.on( 'zoomend', function(event) {
+    alert("so now the coords are "+JSON.stringify(Polyanno.L.map.getBounds()));
+  });
+  Polyanno.L.map.on( 'moveend', function(event) {
+    
   });
 };
 
 
 Polyanno.L.vec_event.created = function() {
+
   Polyanno.L.map.on(L.Draw.Event.CREATED, function(evt) {
 
     var layer = evt.layer;
